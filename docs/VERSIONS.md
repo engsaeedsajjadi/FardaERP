@@ -73,4 +73,20 @@ in the current dev sandbox, which has Python 3.11). Execute via:
 | 2026-09-15 | G2 Deps | `adc8f88` | ✅ PASS | erpnext 16.34.2 · frappe range OK (v16.33.1) · HRMS v16.18.1 compatible · py3.14/node24/mariadb10.6 documented |
 | 2026-09-15 | G3 Python | `adc8f88` | ✅ PASS | `compileall` exit 0 on 2,637 files (sandbox py3.11; upstream target 3.14) |
 | 2026-09-15 | G4 Consistency | `adc8f88` | ✅ PASS | no `17.0.0-dev` refs; patches end at v16_0; version strings consistent; modules.txt = upstream 21 + `Farda Iran` |
-| 2026-09-15 | G5 Runtime smoke | — | ⏸ DEFERRED | needs Python 3.14 + MariaDB + Redis (§4 runbook; Phase 16/17) |
+| 2026-09-15 | G5 Runtime smoke (Python 3.14 / PostgreSQL 16.2 / Redis 7.4.1, site `smoke.farda.local`) | `29b8f8c` · tag `fardainerp-gate5-pass` | ✅ **PASS 13/13** | REAL runtime bench run (PostgreSQL site — stricter than MariaDB baseline). Steps: Currency(IRR), Company, Fiscal Year, Auth(+negative), Permissions(negative), Customer+Address+Contact, Supplier, Item+Price, **Purchase chain PO→PR→PI→PE**, **Sales chain SO→DN→SI→PE**, **Stock ledger+transfer+reconciliation**, **Accounting COA(95)+JE+GL(128)+TrialBalance+GeneralLedger reports**, HRMS(Employee/Dept/Leave/Attendance). Savepoint-isolated, rerun-idempotent (13/13 on repeated runs). Harness: `erpnext/farda_iran/tests/gate5_smoke.py` |
+
+### §5.1 — Actual G5 runtime environment (evidence)
+
+| Component | Value |
+|---|---|
+| Python | 3.14 (`/opt/tools/venv314`) |
+| Frappe | v16.33.1 (`988e54f3`) |
+| ERPNext | 16.34.2 (this repo, symlinked bench app) |
+| HRMS | v16.18.1 (`a4768b44`) |
+| Database | **PostgreSQL 16.2** (`db_type=postgres`) — NOT the MariaDB CI default; 12 upstream strict-PostgreSQL defects surfaced and are shimmed in `erpnext/farda_iran/tests/pg_compat.py` (PG-1..PG-12), queued for upstream reporting |
+| Redis | 7.4.1 |
+| Command | `bench --site smoke.farda.local execute erpnext.farda_iran.tests.gate5_smoke.run_all` |
+
+> NOTE (honesty): G5 passed on PostgreSQL. MariaDB was not available in this
+> sandbox; MariaDB path remains covered by upstream CI and must be re-verified
+> in the Phase "Production Docker" gate (DOCKER VALIDATION PENDING).
