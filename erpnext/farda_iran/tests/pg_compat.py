@@ -352,6 +352,139 @@ def _patch_get_matched_payment_request_of_references():
 	pe_mod.get_matched_payment_request_of_references = get_matched_payment_request_of_references
 
 
+def _patch_trial_balance_get_opening_balance():
+	from erpnext.accounts.report.trial_balance import trial_balance as tb_mod
+
+	def get_opening_balance(
+		doctype,
+		filters,
+		report_type,
+		accounting_dimensions,
+		period_closing_voucher=None,
+		start_date=None,
+		ignore_is_opening=0,
+		ignore_reporting_currency=True,
+	):
+		"""PG-11: opening-balance query selects account_currency but groups only
+		by account — illegal on PostgreSQL."""
+		from frappe.utils import cstr
+
+		closing_balance = frappe.qb.DocType(doctype)
+		accounts = frappe.db.get_all("Account", filters={"report_type": report_type}, pluck="name")
+
+		opening_balance = (
+			frappe.qb.from_(closing_balance)
+			.select(
+				closing_balance.account,
+				closing_balance.account_currency,
+				Sum(closing_balance.debit).as_("debit"),
+				Sum(closing_balance.credit).as_("credit"),
+				Sum(closing_balance.debit_in_account_currency).as_("debit_in_account_currency"),
+				Sum(closing_balance.credit_in_account_currency).as_("credit_in_account_currency"),
+			)
+			.where((closing_balance.company == filters.company) & (closing_balance.account.isin(accounts)))
+			.groupby(closing_balance.account, closing_balance.account_currency)
+		)
+
+		if not ignore_reporting_currency:
+			opening_balance = opening_balance.select(
+				Sum(closing_balance.debit_in_reporting_currency).as_("debit_in_reporting_currency"),
+				Sum(closing_balance.credit_in_reporting_currency).as_("credit_in_reporting_currency"),
+			)
+
+		if period_closing_voucher:
+			opening_balance = opening_balance.where(
+				closing_balance.period_closing_voucher == period_closing_voucher
+			)
+		else:
+			if start_date:
+				opening_balance = opening_balance.where(
+					(closing_balance.posting_date >= start_date)
+					& (closing_balance.posting_date < filters.from_date)
+				)
+				if not ignore_is_opening:
+					opening_balance = opening_balance.where(closing_balance.is_opening == "No")
+			else:
+				if not ignore_is_opening:
+					opening_balance = opening_balance.where(
+						(closing_balance.posting_date < filters.from_date)
+						| (closing_balance.is_opening == "Yes")
+					)
+				else:
+					opening_balance = opening_balance.where(closing_balance.posting_date < filters.from_date)
+
+		if doctype == "GL Entry":
+			opening_balance = opening_balance.where(closing_balance.is_cancelled == 0)
+
+		if (
+			not filters.show_unclosed_fy_pl_balances
+			and report_type == "Profit and Loss"
+			and doctype == "GL Entry"
+		):
+			opening_balance = opening_balance.where(
+				closing_balance.posting_date >= filters.year_start_date
+			)
+
+		if not flt(filters.with_period_closing_entry_for_opening):
+			if doctype == "Account Closing Balance":
+				opening_balance = opening_balance.where(
+					closing_balance.is_period_closing_voucher_entry == 0
+				)
+			else:
+				opening_balance = opening_balance.where(
+					closing_balance.voucher_type != "Period Closing Voucher"
+				)
+
+		if filters.cost_center:
+			opening_balance = opening_balance.where(
+				closing_balance.cost_center.isin(
+					tb_mod.get_cost_centers_with_children(filters.get("cost_center"))
+				)
+			)
+
+		if filters.project:
+			opening_balance = opening_balance.where(closing_balance.project.isin(filters.project))
+
+		if frappe.db.count("Finance Book"):
+			if filters.get("include_default_book_entries"):
+				company_fb = frappe.get_cached_value(
+					"Company", filters.company, "default_finance_book"
+				)
+				if filters.finance_book and company_fb and cstr(filters.finance_book) != cstr(company_fb):
+					frappe.throw(
+						_("To use a different finance book, please uncheck 'Include Default FB Entries'")
+					)
+				opening_balance = opening_balance.where(
+					(closing_balance.finance_book.isin([cstr(filters.finance_book), cstr(company_fb), ""]))
+					| (closing_balance.finance_book.isnull())
+				)
+			else:
+				opening_balance = opening_balance.where(
+					(closing_balance.finance_book.isin([cstr(filters.finance_book), ""]))
+					| (closing_balance.finance_book.isnull())
+				)
+
+		if accounting_dimensions:
+			for dimension in accounting_dimensions:
+				if filters.get(dimension.fieldname):
+					if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+						filters[dimension.fieldname] = tb_mod.get_dimension_with_children(
+							dimension.document_type, filters.get(dimension.fieldname)
+						)
+					opening_balance = opening_balance.where(
+						closing_balance[dimension.fieldname].isin(filters[dimension.fieldname])
+					)
+
+		gle = opening_balance.run(as_dict=1)
+
+		if filters and filters.get("presentation_currency") and ignore_reporting_currency:
+			tb_mod.convert_to_presentation_currency(gle, tb_mod.get_currency(filters))
+
+		return gle
+
+	tb_mod.get_opening_balance = get_opening_balance
+
+
 def _patch_get_held_invoices():
 	from erpnext.accounts import utils as accounts_utils
 
@@ -642,5 +775,6 @@ def apply():
 	_patch_get_negative_outstanding_invoices()
 	_patch_get_orders_to_be_billed()
 	_patch_get_matched_payment_request_of_references()
+	_patch_trial_balance_get_opening_balance()
 	_APPLIED = True
-	print("pg_compat: applied 10 upstream strict-PostgreSQL shims (PG-1..PG-10)")
+	print("pg_compat: applied 11 upstream strict-PostgreSQL shims (PG-1..PG-11)")
