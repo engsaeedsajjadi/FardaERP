@@ -22,3 +22,9 @@
 | Commit | File | Bug |
 |---|---|---|
 | f0c810f | farda_iran/tests/test_integration_iran.py | `frappe.db.savepoint()` returns None; using its value as `save_point=` made `frappe.db.rollback(None)` run a FULL rollback, silently wiping uncommitted VAT settings mid-test. Now uses frappe's `savepoint()` context-manager with `catch=()`. |
+
+## hooks.py (upstream file) — Farda additions
+
+| Date | Section | Addition | Reason |
+|---|---|---|---|
+| 2026-09-15 | `jinja.methods` | 6 methods: `farda_iran.invoice.persian.{fa, format_jalali_date, money_words_irr, money_words_toman, toman_str}` + `farda_iran.tax.service.invoice_totals` | Persian print formats (Farda Persian Invoice) need Jalali/Toman/Persian-digits/amount-in-words/VAT summary inside server-side Jinja rendering. |

@@ -77,3 +77,26 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 			},
 		)
 	doc.calculate_taxes_and_totals()
+
+
+def invoice_totals(doc) -> frappe._dict:
+	"""Summary for Persian print formats: net / VAT / grand, all in IRR.
+
+	Frappe-aware (used only inside server-side Jinja rendering).
+	"""
+	amount = frappe.utils.flt
+	s = get_settings()
+	vat_amount = 0.0
+	for row in doc.get("taxes") or []:
+		if s.vat_account and row.get("account_head") == s.vat_account:
+			vat_amount += amount(row.get("tax_amount"))
+	try:
+		rate = get_applicable_vat_rate(doc) if doc.get("farda_apply_vat") else 0.0
+	except Exception:
+		rate = 0.0
+	return frappe._dict(
+		net_total=amount(doc.get("net_total")),
+		vat_amount=vat_amount,
+		vat_rate=rate,
+		grand_total=amount(doc.get("grand_total")),
+	)

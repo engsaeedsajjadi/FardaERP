@@ -95,7 +95,7 @@ def format_toman(toman, persian_digits: bool = False, with_unit: bool = False) -
 	if with_unit:
 		text += " تومان"
 	if persian_digits:
-		text = text.translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+		text = text.replace(",", "٬").translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
 	return text
 
 

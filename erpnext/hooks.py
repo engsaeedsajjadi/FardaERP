@@ -105,6 +105,13 @@ demo_transaction_doctypes = [
 jinja = {
 	"methods": [
 		"erpnext.stock.serial_batch_bundle.get_serial_or_batch_nos",
+		# FardaERP: Persian invoice rendering helpers (jalali/toman/digits/words/VAT)
+		"erpnext.farda_iran.invoice.persian.fa",
+		"erpnext.farda_iran.invoice.persian.format_jalali_date",
+		"erpnext.farda_iran.invoice.persian.money_words_irr",
+		"erpnext.farda_iran.invoice.persian.money_words_toman",
+		"erpnext.farda_iran.invoice.persian.toman_str",
+		"erpnext.farda_iran.tax.service.invoice_totals",
 	],
 }
 

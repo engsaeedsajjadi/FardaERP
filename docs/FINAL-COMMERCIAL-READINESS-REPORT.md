@@ -102,3 +102,11 @@
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
+
+## 2026-09-15 — H7 Persian Invoice/PDF
+- Farda Persian Invoice print format (Jinja, RTL): seller/buyer با شناسه‌ها، Toman+Jalali+Persian digits, VAT row, مبلغ به حروف — synced as standard Print Format on Sales Invoice.
+- Jinja method exposure via hooks jinja.methods (CORE-CHANGES recorded).
+- words.py: Persian number-to-words (0..10^15, official «یکصد» style) — 9 new unit tests (133 total).
+- invoice/pdf.py: pure-Python Persian PDF (reportlab + arabic_reshaper + python-bidi + Vazirmatn OFL bundled) sharing the invoice façade with HTML.
+- E2E live-site 9/9 PASS incl. PDF text-layer verification (pdfminer).
+- ENV note: frappe's own weasyprint PDF needs system pango — absent in this sandbox; Docker image (DKR phase) must install pango for that path. Our renderer is independent of it.

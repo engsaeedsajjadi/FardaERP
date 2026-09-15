@@ -25,6 +25,7 @@ MODULES = (
 	"test_otp_core",
 	"test_sms_providers",
 	"test_payments_policy",
+	"test_invoice_words",
 )
 
 

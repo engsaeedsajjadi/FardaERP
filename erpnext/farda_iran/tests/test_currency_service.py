@@ -90,7 +90,7 @@ class TestFormatting(unittest.TestCase):
 		self.assertEqual(currency.format_irr_as_toman(1_000_000, with_unit=True), "100,000 تومان")
 
 	def test_format_persian_digits(self):
-		self.assertEqual(currency.format_irr_as_toman(1_000_000, persian_digits=True), "۱۰۰,۰۰۰")
+		self.assertEqual(currency.format_irr_as_toman(1_000_000, persian_digits=True), "۱۰۰٬۰۰۰")
 
 	def test_vat_sample_arithmetic(self):
 		# illustrative end-to-end arithmetic the VAT module will reuse:
