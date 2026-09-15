@@ -202,6 +202,99 @@ def _patch_get_negative_outstanding_invoices():
 	pe_mod.get_negative_outstanding_invoices = get_negative_outstanding_invoices
 
 
+def _patch_get_orders_to_be_billed():
+	from erpnext.accounts.doctype.payment_entry import payment_entry as pe_mod
+
+	def get_orders_to_be_billed(
+		posting_date,
+		party_type,
+		party,
+		company,
+		party_account_currency,
+		company_currency,
+		cost_center=None,
+		filters=None,
+	):
+		"""PG-9: upstream raw SQL uses MySQL if(a,b,c) and "Closed" as a
+		double-quoted string literal — both invalid on PostgreSQL."""
+		scrub = frappe.scrub
+		voucher_type = None
+		if party_type == "Customer":
+			voucher_type = "Sales Order"
+		elif party_type == "Supplier":
+			voucher_type = "Purchase Order"
+
+		if not voucher_type:
+			return []
+
+		# dynamic dimension filters
+		condition = ""
+		active_dimensions = pe_mod.get_dimensions(True)[0]
+		for dim in active_dimensions:
+			if filters.get(dim.fieldname):
+				condition += f" and {dim.fieldname}={frappe.db.escape(filters.get(dim.fieldname))}"
+
+		if party_account_currency == company_currency:
+			grand_total_field = "base_grand_total"
+			rounded_total_field = "base_rounded_total"
+		else:
+			grand_total_field = "grand_total"
+			rounded_total_field = "rounded_total"
+
+		invoice_amount_expr = (
+			f"case when {rounded_total_field} <> 0"
+			f" then {rounded_total_field} else {grand_total_field} end"
+		)
+		orders = frappe.db.sql(
+			f"""
+			select
+				name as voucher_no,
+				{invoice_amount_expr} as invoice_amount,
+				({invoice_amount_expr} - advance_paid) as outstanding_amount,
+				transaction_date as posting_date
+			from
+				`tab{voucher_type}`
+			where
+				{scrub(party_type)} = %s
+				and docstatus = 1
+				and company = %s
+				and status != 'Closed'
+				and {invoice_amount_expr} > advance_paid
+				and abs(100 - per_billed) > 0.01
+				{condition}
+			order by
+				transaction_date, name
+			""",
+			(party, company),
+			as_dict=True,
+		)
+
+		order_list = []
+		for d in orders:
+			if (
+				filters
+				and filters.get("outstanding_amt_greater_than")
+				and filters.get("outstanding_amt_less_than")
+				and not (
+					flt(filters.get("outstanding_amt_greater_than"))
+					<= flt(d.outstanding_amount)
+					<= flt(filters.get("outstanding_amt_less_than"))
+				)
+			):
+				continue
+
+			d["voucher_type"] = voucher_type
+			# This assumes that the exchange rate required is the one in the SO
+			d["exchange_rate"] = pe_mod.get_exchange_rate(
+				party_account_currency, company_currency, d.posting_date
+			)
+			order_list.append(d)
+
+		return order_list
+
+	pe_mod.get_orders_to_be_billed = get_orders_to_be_billed
+
+
 def _patch_get_held_invoices():
 	from erpnext.accounts import utils as accounts_utils
 
@@ -490,5 +583,6 @@ def apply():
 	_patch_query_payment_ledger()
 	_patch_get_held_invoices()
 	_patch_get_negative_outstanding_invoices()
+	_patch_get_orders_to_be_billed()
 	_APPLIED = True
-	print("pg_compat: applied 8 upstream strict-PostgreSQL shims (PG-1..PG-8)")
+	print("pg_compat: applied 9 upstream strict-PostgreSQL shims (PG-1..PG-9)")
