@@ -2,6 +2,8 @@
 # For license information, please see license.txt
 
 
+from unittest import TestCase
+
 import frappe
 from frappe.utils import today
 

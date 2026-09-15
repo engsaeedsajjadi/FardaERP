@@ -94,7 +94,6 @@ class AccountsSettings(Document):
 		merge_similar_account_heads: DF.Check
 		over_billing_allowance: DF.Currency
 		pcv_job_timeout: DF.Int
-		preview_mode: DF.Check
 		receivable_payable_fetch_method: DF.Literal["Buffered Cursor", "UnBuffered Cursor"]
 		receivable_payable_remarks_length: DF.Int
 		reconciliation_queue_size: DF.Int
@@ -204,8 +203,8 @@ class AccountsSettings(Document):
 		if self.add_taxes_from_item_tax_template and self.add_taxes_from_taxes_and_charges_template:
 			frappe.throw(
 				_("You cannot enable both the settings '{0}' and '{1}'.").format(
-					frappe.bold(self.meta.get_translated_label("add_taxes_from_item_tax_template")),
-					frappe.bold(self.meta.get_translated_label("add_taxes_from_taxes_and_charges_template")),
+					frappe.bold(_(self.meta.get_label("add_taxes_from_item_tax_template"))),
+					frappe.bold(_(self.meta.get_label("add_taxes_from_taxes_and_charges_template"))),
 				),
 				title=_("Auto Tax Settings Error"),
 			)
@@ -220,13 +219,6 @@ class AccountsSettings(Document):
 		doctypes += get_child_docs(doctypes)
 
 		set_allow_on_submit_for_dimension_fields(doctypes)
-
-
-@frappe.whitelist(methods=["POST"])
-def get_posting_date_confirmation() -> int:
-	return cint(
-		frappe.db.get_single_value("Accounts Settings", "confirm_before_resetting_posting_date", cache=False)
-	)
 
 
 def toggle_accounting_dimension_sections(hide):

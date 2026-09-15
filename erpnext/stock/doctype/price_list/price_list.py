@@ -5,7 +5,7 @@
 import frappe
 from frappe import _, throw
 from frappe.model.document import Document
-from frappe.utils import cint, now
+from frappe.utils import cint
 
 
 class PriceList(Document):
@@ -47,15 +47,11 @@ class PriceList(Document):
 				frappe.set_value("Buying Settings", "Buying Settings", "buying_price_list", self.name)
 
 	def update_item_price(self):
-		item_price = frappe.qb.DocType("Item Price")
-		(
-			frappe.qb.update(item_price)
-			.set(item_price.currency, self.currency)
-			.set(item_price.buying, cint(self.buying))
-			.set(item_price.selling, cint(self.selling))
-			.set(item_price.modified, now())
-			.where(item_price.price_list == self.name)
-		).run()
+		frappe.db.sql(
+			"""update `tabItem Price` set currency=%s,
+			buying=%s, selling=%s, modified=NOW() where price_list=%s""",
+			(self.currency, cint(self.buying), cint(self.selling), self.name),
+		)
 
 	def on_trash(self):
 		self.delete_price_list_details_key()
@@ -90,7 +86,3 @@ def get_price_list_details(price_list):
 		frappe.cache().hset("price_list_details", price_list, price_list_details)
 
 	return price_list_details or {}
-
-
-def is_price_list_enabled(price_list: str | None) -> bool:
-	return bool(price_list) and bool(frappe.get_cached_value("Price List", price_list, "enabled"))

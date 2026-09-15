@@ -2,8 +2,6 @@
 # For license information, please see license.txt
 
 
-from datetime import datetime
-
 import frappe
 from frappe import _
 from frappe.query_builder import DocType
@@ -121,13 +119,13 @@ class POSClosingEntry(StatusUpdater):
 				continue
 			if pos_invoice.pos_profile != self.pos_profile:
 				invalid_row.setdefault("msg", []).append(
-					_("POS Profile doesn't match {0}").format(frappe.bold(self.pos_profile))
+					_("POS Profile doesn't match {}").format(frappe.bold(self.pos_profile))
 				)
 			if pos_invoice.docstatus != 1:
 				invalid_row.setdefault("msg", []).append(_("POS Invoice is not submitted"))
 			if pos_invoice.owner != self.user:
 				invalid_row.setdefault("msg", []).append(
-					_("POS Invoice isn't created by user {0}").format(frappe.bold(self.owner))
+					_("POS Invoice isn't created by user {}").format(frappe.bold(self.owner))
 				)
 
 			if invalid_row.get("msg"):
@@ -139,7 +137,7 @@ class POSClosingEntry(StatusUpdater):
 		error_list = []
 		for row in invalid_rows:
 			for msg in row.get("msg"):
-				error_list.append(_("Row #{0}: {1}").format(row.get("idx"), msg))
+				error_list.append(_("Row #{}: {}").format(row.get("idx"), msg))
 
 		frappe.throw(error_list, title=_("Invalid POS Invoices"), as_list=True)
 
@@ -186,13 +184,13 @@ class POSClosingEntry(StatusUpdater):
 				invalid_row.setdefault("msg", []).append(_("Sales Invoice is not created using POS"))
 			if sales_invoice.pos_profile != self.pos_profile:
 				invalid_row.setdefault("msg", []).append(
-					_("POS Profile doesn't match {0}").format(frappe.bold(self.pos_profile))
+					_("POS Profile doesn't match {}").format(frappe.bold(self.pos_profile))
 				)
 			if sales_invoice.docstatus != 1:
 				invalid_row.setdefault("msg", []).append(_("Sales Invoice is not submitted"))
 			if sales_invoice.owner != self.user:
 				invalid_row.setdefault("msg", []).append(
-					_("Sales Invoice isn't created by user {0}").format(frappe.bold(self.owner))
+					_("Sales Invoice isn't created by user {}").format(frappe.bold(self.owner))
 				)
 
 			if invalid_row.get("msg"):
@@ -204,7 +202,7 @@ class POSClosingEntry(StatusUpdater):
 		error_list = []
 		for row in invalid_rows:
 			for msg in row.get("msg"):
-				error_list.append(_("Row #{0}: {1}").format(row.get("idx"), msg))
+				error_list.append(_("Row #{}: {}").format(row.get("idx"), msg))
 
 		frappe.throw(error_list, title=_("Invalid Sales Invoices"), as_list=True)
 
@@ -255,13 +253,13 @@ class POSClosingEntry(StatusUpdater):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_cashiers(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
+def get_cashiers(doctype, txt, searchfield, start, page_len, filters):
 	cashiers_list = frappe.get_all("POS Profile User", filters=filters, fields=["user"], as_list=1)
 	return [c for c in cashiers_list]
 
 
 @frappe.whitelist()
-def get_invoices(start: str | datetime, end: str | datetime, pos_profile: str, user: str):
+def get_invoices(start, end, pos_profile, user):
 	invoice_doctype = frappe.db.get_single_value("POS Settings", "invoice_type")
 	frappe.has_permission("POS Profile", doc=pos_profile, throw=True)
 
@@ -299,7 +297,7 @@ def get_payments(invoices):
 		.groupby(SalesInvoicePayment.mode_of_payment)
 		.select(
 			SalesInvoicePayment.mode_of_payment,
-			fn.Max(SalesInvoicePayment.account).as_("account"),
+			SalesInvoicePayment.account,
 			fn.Sum(SalesInvoicePayment.amount).as_("amount"),
 		)
 	)
@@ -423,7 +421,7 @@ def build_invoice_query(invoice_doctype, user, pos_profile, start, end):
 			InvoiceDocType.account_for_change_amount,
 			InvoiceDocType.is_return,
 			InvoiceDocType.return_against,
-			fn.CombineDatetime(InvoiceDocType.posting_date, InvoiceDocType.posting_time).as_("timestamp"),
+			fn.Timestamp(InvoiceDocType.posting_date, InvoiceDocType.posting_time).as_("timestamp"),
 			ConstantColumn(invoice_doctype).as_("doctype"),
 		)
 		.where(
@@ -432,8 +430,8 @@ def build_invoice_query(invoice_doctype, user, pos_profile, start, end):
 			& (InvoiceDocType.is_pos == 1)
 			& (InvoiceDocType.pos_profile == pos_profile)
 			& (
-				(fn.CombineDatetime(InvoiceDocType.posting_date, InvoiceDocType.posting_time) >= start)
-				& (fn.CombineDatetime(InvoiceDocType.posting_date, InvoiceDocType.posting_time) <= end)
+				(fn.Timestamp(InvoiceDocType.posting_date, InvoiceDocType.posting_time) >= start)
+				& (fn.Timestamp(InvoiceDocType.posting_date, InvoiceDocType.posting_time) <= end)
 			)
 		)
 	)

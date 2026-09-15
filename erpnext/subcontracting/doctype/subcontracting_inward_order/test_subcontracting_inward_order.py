@@ -3,8 +3,8 @@
 
 import frappe
 
-from erpnext.manufacturing.doctype.work_order.mapper import make_stock_entry as make_stock_entry_from_wo
-from erpnext.selling.doctype.sales_order.mapper import make_subcontracting_inward_order
+from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry as make_stock_entry_from_wo
+from erpnext.selling.doctype.sales_order.sales_order import make_subcontracting_inward_order
 from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 from erpnext.stock.doctype.item.test_item import make_item
 from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
@@ -169,10 +169,6 @@ class IntegrationTestSubcontractingInwardOrder(ERPNextTestSuite):
 		wo.submit()
 
 		manufacture = frappe.new_doc("Stock Entry").update(make_stock_entry_from_wo(wo.name, "Manufacture"))
-		self.assertEqual(
-			next(item.s_warehouse for item in manufacture.items if item.item_code == "Self RM"),
-			"Stores - _TC",
-		)
 		manufacture.save()
 		frappe.new_doc(
 			"Stock Entry Detail",
@@ -284,7 +280,6 @@ class IntegrationTestSubcontractingInwardOrder(ERPNextTestSuite):
 		delivery = frappe.new_doc("Stock Entry").update(scio.make_subcontracting_delivery())
 		delivery.items[0].use_serial_batch_fields = 1
 		delivery.save()
-		delivery.submit()
 		delivery_serial_list, _ = get_serial_batch_list_from_item(delivery.items[0])
 		self.assertEqual(sorted(serial_list), sorted(delivery_serial_list))
 
@@ -333,31 +328,6 @@ class IntegrationTestSubcontractingInwardOrder(ERPNextTestSuite):
 		scio.reload()
 		self.assertEqual(scio.items[0].delivered_qty, 2)
 		self.assertEqual(scio.items[0].returned_qty, 1)
-
-	def test_manufacture_consumption_validates_against_work_order(self):
-		"""Cover the non-skip-transfer manufacture path, where consumption is validated
-		against the Work Order's transferred quantity (the Work Order branch of
-		validate_manufacture)."""
-		so, scio = create_so_scio()
-		frappe.new_doc("Stock Entry").update(scio.make_rm_stock_entry_inward()).submit()
-
-		scio.reload()
-		wo = frappe.get_doc("Work Order", scio.make_work_order()[0])
-		wo.wip_warehouse = "Work In Progress - _TC"
-		next(
-			item for item in wo.required_items if item.item_code == "Self RM"
-		).source_warehouse = "Stores - _TC"
-		wo.submit()
-
-		frappe.new_doc("Stock Entry").update(
-			make_stock_entry_from_wo(wo.name, "Material Transfer for Manufacture")
-		).submit()
-
-		manufacture = frappe.new_doc("Stock Entry").update(make_stock_entry_from_wo(wo.name, "Manufacture"))
-		manufacture.submit()
-
-		scio.reload()
-		self.assertEqual(scio.items[0].produced_qty, 5)
 
 	@ERPNextTestSuite.change_settings("Selling Settings", {"allow_delivery_of_overproduced_qty": 1})
 	@ERPNextTestSuite.change_settings(
@@ -437,7 +407,7 @@ class IntegrationTestSubcontractingInwardOrder(ERPNextTestSuite):
 		frappe.new_doc("Stock Entry").update(scio.make_subcontracting_delivery()).submit()
 		scio.reload()
 
-		from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
+		from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 
 		si = make_sales_invoice(so.name)
 		self.assertEqual(si.items[-1].item_code, "Self RM")

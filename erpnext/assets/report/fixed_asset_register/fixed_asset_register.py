@@ -15,6 +15,7 @@ from erpnext.accounts.report.financial_statements import (
 	validate_fiscal_year,
 )
 from erpnext.accounts.utils import get_fiscal_year
+from erpnext.assets.doctype.asset.asset import get_asset_value_after_depreciation
 
 
 def execute(filters=None):
@@ -395,30 +396,32 @@ def get_group_by_data(
 
 
 def get_purchase_receipt_supplier_map():
-	pr = frappe.qb.DocType("Purchase Receipt")
-	pri = frappe.qb.DocType("Purchase Receipt Item")
 	return frappe._dict(
-		frappe.qb.from_(pr)
-		.inner_join(pri)
-		.on(pri.parent == pr.name)
-		.select(pr.name, pr.supplier)
-		.distinct()
-		.where((pri.is_fixed_asset == 1) & (pr.docstatus == 1) & (pr.is_return == 0))
-		.run()
+		frappe.db.sql(
+			""" Select
+		pr.name, pr.supplier
+		FROM `tabPurchase Receipt` pr, `tabPurchase Receipt Item` pri
+		WHERE
+			pri.parent = pr.name
+			AND pri.is_fixed_asset=1
+			AND pr.docstatus=1
+			AND pr.is_return=0"""
+		)
 	)
 
 
 def get_purchase_invoice_supplier_map():
-	pi = frappe.qb.DocType("Purchase Invoice")
-	pii = frappe.qb.DocType("Purchase Invoice Item")
 	return frappe._dict(
-		frappe.qb.from_(pi)
-		.inner_join(pii)
-		.on(pii.parent == pi.name)
-		.select(pi.name, pi.supplier)
-		.distinct()
-		.where((pii.is_fixed_asset == 1) & (pi.docstatus == 1) & (pi.is_return == 0))
-		.run()
+		frappe.db.sql(
+			""" Select
+		pi.name, pi.supplier
+		FROM `tabPurchase Invoice` pi, `tabPurchase Invoice Item` pii
+		WHERE
+			pii.parent = pi.name
+			AND pii.is_fixed_asset=1
+			AND pi.docstatus=1
+			AND pi.is_return=0"""
+		)
 	)
 
 

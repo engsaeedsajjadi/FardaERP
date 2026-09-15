@@ -3,17 +3,6 @@
 
 frappe.provide("erpnext.company");
 
-// Static filters (is_group / disabled / warehouse_type) live in the fields' link_filters.
-const WAREHOUSE_DEFAULT_FIELDS = [
-	"default_warehouse",
-	"sample_retention_warehouse",
-	"default_in_transit_warehouse",
-	"default_warehouse_for_sales_return",
-	"default_wip_warehouse",
-	"default_fg_warehouse",
-	"default_scrap_warehouse",
-];
-
 frappe.ui.form.on("Company", {
 	onload: function (frm) {
 		if (frm.doc.__islocal && frm.doc.parent_company) {
@@ -62,10 +51,23 @@ frappe.ui.form.on("Company", {
 			return { filters: { buying: 1 } };
 		});
 
-		WAREHOUSE_DEFAULT_FIELDS.forEach((fieldname) => {
-			frm.set_query(fieldname, function (doc) {
-				return { filters: { company: doc.name } };
-			});
+		frm.set_query("default_in_transit_warehouse", function () {
+			return {
+				filters: {
+					warehouse_type: "Transit",
+					is_group: 0,
+					company: frm.doc.company_name,
+				},
+			};
+		});
+
+		frm.set_query("default_warehouse_for_sales_return", function () {
+			return {
+				filters: {
+					company: frm.doc.name,
+					is_group: 0,
+				},
+			};
 		});
 
 		["default_wip_warehouse", "default_fg_warehouse", "default_scrap_warehouse"].forEach((fieldname) => {
@@ -77,22 +79,6 @@ frappe.ui.form.on("Company", {
 					},
 				};
 			});
-		});
-
-		frm.set_query("default_letter_head", function () {
-			return {
-				filters: {
-					letter_head_for: "DocType",
-				},
-			};
-		});
-
-		frm.set_query("default_letter_head_report", function () {
-			return {
-				filters: {
-					letter_head_for: "Report",
-				},
-			};
 		});
 	},
 
@@ -245,7 +231,7 @@ frappe.ui.form.on("Company", {
 							},
 							function (data) {
 								if (data.company_name !== frm.doc.name) {
-									frappe.msgprint(__("Company name does not match"));
+									frappe.msgprint(__("Company name not same"));
 									return;
 								}
 								frappe.call({
@@ -303,15 +289,12 @@ erpnext.company.setup_queries = function (frm) {
 			["round_off_account", { root_type: ["in", ["Expense", "Income"]] }],
 			["round_off_for_opening", { root_type: "Liability", account_type: "Round Off for Opening" }],
 			["write_off_account", { root_type: "Expense" }],
-			["bank_charges_account", { root_type: "Expense" }],
 			["default_deferred_expense_account", {}],
 			["default_deferred_revenue_account", {}],
 			["default_discount_account", {}],
 			["discount_allowed_account", { root_type: "Expense" }],
 			["discount_received_account", { root_type: "Income" }],
 			["exchange_gain_loss_account", { root_type: ["in", ["Expense", "Income"]] }],
-			["exchange_gain_account", { root_type: ["in", ["Expense", "Income"]] }],
-			["exchange_loss_account", { root_type: ["in", ["Expense", "Income"]] }],
 			[
 				"unrealized_exchange_gain_loss_account",
 				{ root_type: ["in", ["Expense", "Income", "Equity", "Liability"]] },
@@ -350,10 +333,6 @@ erpnext.company.setup_queries = function (frm) {
 				[
 					"stock_received_but_not_billed",
 					{ root_type: "Liability", account_type: "Stock Received But Not Billed" },
-				],
-				[
-					"stock_delivered_but_not_billed",
-					{ root_type: "Asset", account_type: "Stock Delivered But Not Billed" },
 				],
 				[
 					"service_received_but_not_billed",

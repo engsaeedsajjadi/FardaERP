@@ -70,14 +70,9 @@ def get_abbreviated_name(name, company):
 
 
 @frappe.whitelist()
-def get_children(
-	doctype: str,
-	parent: str | None = None,
-	company: str | None = None,
-	is_root: bool = False,
-	include_disabled: str | dict | None = None,
-):
-	include_disabled = frappe.parse_json(include_disabled)
+def get_children(doctype, parent=None, company=None, is_root=False, include_disabled=False):
+	if isinstance(include_disabled, str):
+		include_disabled = json.loads(include_disabled)
 	fields = ["name as value", "is_group as expandable"]
 	filters = {}
 
@@ -95,7 +90,7 @@ def get_children(
 	return frappe.get_all("Department", fields=fields, filters=filters, order_by="name")
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist()
 def add_node():
 	from frappe.desk.treeview import make_tree_args
 

@@ -55,7 +55,7 @@ class LedgerMerge(Document):
 
 
 @frappe.whitelist()
-def form_start_merge(docname: str):
+def form_start_merge(docname):
 	lm_doc = frappe.get_doc("Ledger Merge", docname)
 	lm_doc.check_permission("write")
 	return lm_doc.start_merge()
@@ -67,7 +67,6 @@ def start_merge(docname):
 	total = len(ledger_merge.merge_accounts)
 	for row in ledger_merge.merge_accounts:
 		if not row.merged:
-			frappe.db.savepoint("ledger_merge_row")
 			try:
 				merge_account(
 					row.account,
@@ -82,7 +81,8 @@ def start_merge(docname):
 					{"ledger_merge": ledger_merge.name, "current": successful_merges, "total": total},
 				)
 			except Exception:
-				frappe.db.rollback(save_point="ledger_merge_row")
+				if not frappe.in_test:
+					frappe.db.rollback()
 				ledger_merge.log_error("Ledger merge failed")
 			finally:
 				if successful_merges == total:

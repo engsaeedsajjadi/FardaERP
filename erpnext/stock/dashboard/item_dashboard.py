@@ -9,12 +9,7 @@ from erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry impor
 
 @frappe.whitelist()
 def get_data(
-	item_code: str | None = None,
-	warehouse: str | None = None,
-	item_group: str | None = None,
-	start: int = 0,
-	sort_by: str = "actual_qty",
-	sort_order: str = "desc",
+	item_code=None, warehouse=None, item_group=None, start=0, sort_by="actual_qty", sort_order="desc"
 ):
 	"""Return data to render the item dashboard"""
 	if not frappe.has_permission("Bin", "read"):
@@ -27,19 +22,13 @@ def get_data(
 		filters.append(["warehouse", "=", warehouse])
 	if item_group:
 		lft, rgt = frappe.db.get_value("Item Group", item_group, ["lft", "rgt"])
-		item = frappe.qb.DocType("Item")
-		item_group_dt = frappe.qb.DocType("Item Group")
-		items = (
-			frappe.qb.from_(item)
-			.select(item.name)
-			.where(
-				item.item_group.isin(
-					frappe.qb.from_(item_group_dt)
-					.select(item_group_dt.name)
-					.where((item_group_dt.lft >= lft) & (item_group_dt.rgt <= rgt))
-				)
-			)
-			.run(pluck="name")
+		items = frappe.db.sql_list(
+			"""
+			select i.name from `tabItem` i
+			where exists(select name from `tabItem Group`
+				where name=i.item_group and lft >=%s and rgt<=%s)
+		""",
+			(lft, rgt),
 		)
 		filters.append(["item_code", "in", items])
 	try:

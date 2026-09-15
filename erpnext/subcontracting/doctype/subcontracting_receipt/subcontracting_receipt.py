@@ -5,11 +5,12 @@ from collections import defaultdict
 
 import frappe
 from frappe import _
-from frappe.model.document import Document
+from frappe.model.mapper import get_mapped_doc
 from frappe.query_builder.functions import Sum
 from frappe.utils import cint, flt, get_link_to_form, getdate, nowdate
 
 import erpnext
+from erpnext.accounts.utils import get_account_currency
 from erpnext.controllers.subcontracting_controller import SubcontractingController
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
@@ -17,10 +18,6 @@ from erpnext.stock.doctype.inventory_dimension.inventory_dimension import get_in
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.stock.get_item_details import get_default_cost_center, get_default_expense_account
 from erpnext.stock.stock_ledger import get_valuation_rate
-
-from .mapper import (
-	make_purchase_receipt,
-)
 
 
 class BOMQuantityError(frappe.ValidationError):
@@ -143,12 +140,11 @@ class SubcontractingReceipt(SubcontractingController):
 			self.validate_inspection()
 
 		if getdate(self.posting_date) > getdate(nowdate()):
-			frappe.throw(_("Posting Date cannot be a future date"))
+			frappe.throw(_("Posting Date cannot be future date"))
 
 		super().validate()
 
 		self.set_missing_values()
-		self.validate_with_previous_doc()
 
 		# after set_missing_values, so the secondary rates are computed from the same
 		# calculated per-qty costs the Get Secondary Items button uses
@@ -168,23 +164,11 @@ class SubcontractingReceipt(SubcontractingController):
 		self.set_supplied_items_cost_center()
 		self.set_supplied_items_inventory_dimensions()
 
-	def validate_with_previous_doc(self):
-		super().validate_with_previous_doc(
-			{
-				"Subcontracting Order Item": {
-					"ref_dn_field": "subcontracting_order_item",
-					"compare_fields": [["project", "="]],
-					"is_child_table": True,
-					"allow_duplicate_prev_row_id": True,
-				},
-				"Purchase Order Item": {
-					"ref_dn_field": "purchase_order_item",
-					"compare_fields": [["project", "="]],
-					"is_child_table": True,
-					"allow_duplicate_prev_row_id": True,
-				},
-			}
-		)
+		# SubcontractingController.validate() does not call super() for Subcontracting Receipt, so
+		# the shared mandatory inventory dimension check must be invoked explicitly here. It runs
+		# last so auto-populated supplied-item dimensions (set_supplied_items_inventory_dimensions)
+		# are already in place.
+		self.validate_inventory_dimension_mandatory()
 
 	def on_submit(self):
 		self.validate_closed_subcontracting_order()
@@ -575,10 +559,11 @@ class SubcontractingReceipt(SubcontractingController):
 					supplied_items_details[item.name][
 						supplied_item.rm_item_code
 					] += supplied_item.available_qty
-		for item in self.get("supplied_items"):
-			item.available_qty_for_consumption = supplied_items_details.get(item.reference_name, {}).get(
-				item.rm_item_code, 0
-			)
+		else:
+			for item in self.get("supplied_items"):
+				item.available_qty_for_consumption = supplied_items_details.get(item.reference_name, {}).get(
+					item.rm_item_code, 0
+				)
 
 	def calculate_items_qty_and_amount(self):
 		rm_cost_map = {}
@@ -653,8 +638,9 @@ class SubcontractingReceipt(SubcontractingController):
 
 			total_qty += flt(item.qty) + flt(item.rejected_qty)
 			total_amount += item.amount
-		self.total_qty = total_qty
-		self.total = total_amount
+		else:
+			self.total_qty = total_qty
+			self.total = total_amount
 
 	def validate_secondary_items(self):
 		for item in self.items:
@@ -796,11 +782,265 @@ class SubcontractingReceipt(SubcontractingController):
 			)
 
 	def get_gl_entries(self, inventory_account_map=None):
-		from erpnext.subcontracting.doctype.subcontracting_receipt.services.gl_composer import (
-			SubcontractingReceiptGLComposer,
+		from erpnext.accounts.general_ledger import process_gl_map
+
+		if not erpnext.is_perpetual_inventory_enabled(self.company):
+			return []
+
+		gl_entries = []
+		self.make_item_gl_entries(gl_entries, inventory_account_map)
+		self.make_item_gl_entries_for_lcv(gl_entries, inventory_account_map)
+
+		return process_gl_map(gl_entries, from_repost=frappe.flags.through_repost_item_valuation)
+
+	def make_item_gl_entries(self, gl_entries, inventory_account_map=None):
+		warehouse_with_no_account = []
+
+		supplied_items_details = frappe._dict()
+		for item in self.supplied_items:
+			supplied_items_details.setdefault(item.reference_name, []).append(
+				frappe._dict(
+					{
+						"item_code": item.rm_item_code,
+						"amount": item.amount,
+						"expense_account": item.expense_account,
+						"cost_center": item.cost_center,
+					}
+				)
+			)
+
+		for item in self.items:
+			if flt(item.rate) and flt(item.qty):
+				_inv_dict = self.get_inventory_account_dict(item, inventory_account_map)
+
+				if _inv_dict.get("account"):
+					stock_value_diff = frappe.db.get_value(
+						"Stock Ledger Entry",
+						{
+							"voucher_type": "Subcontracting Receipt",
+							"voucher_no": self.name,
+							"voucher_detail_no": item.name,
+							"warehouse": item.warehouse,
+							"is_cancelled": 0,
+						},
+						"stock_value_difference",
+					)
+
+					remarks = self.get("remarks") or _("Accounting Entry for Stock")
+
+					# Accepted Warehouse Account (Debit)
+					self.add_gl_entry(
+						gl_entries=gl_entries,
+						account=_inv_dict["account"],
+						cost_center=item.cost_center,
+						debit=stock_value_diff,
+						credit=0.0,
+						remarks=remarks,
+						against_account=item.expense_account,
+						account_currency=_inv_dict["account_currency"],
+						project=item.project,
+						item=item,
+					)
+
+					service_cost = flt(
+						item.service_cost_per_qty, item.precision("service_cost_per_qty")
+					) * flt(item.qty, item.precision("qty"))
+					# Expense Account (Credit)
+					self.add_gl_entry(
+						gl_entries=gl_entries,
+						account=item.expense_account,
+						cost_center=item.cost_center,
+						debit=0.0,
+						credit=flt(stock_value_diff) - service_cost,
+						remarks=remarks,
+						against_account=_inv_dict["account"],
+						account_currency=get_account_currency(item.expense_account),
+						project=item.project,
+						item=item,
+					)
+
+					service_account = item.service_expense_account or item.expense_account
+					# Expense Account (Credit)
+					self.add_gl_entry(
+						gl_entries=gl_entries,
+						account=service_account,
+						cost_center=item.cost_center,
+						debit=0.0,
+						credit=service_cost,
+						remarks=remarks,
+						against_account=_inv_dict["account"],
+						account_currency=get_account_currency(service_account),
+						project=item.project,
+						item=item,
+					)
+
+					if flt(item.rm_supp_cost):
+						for rm_item in supplied_items_details.get(item.name):
+							_inv_dict = self.get_inventory_account_dict(
+								rm_item, inventory_account_map, "supplier_warehouse"
+							)
+
+							# Supplier Warehouse Account (Credit)
+							self.add_gl_entry(
+								gl_entries=gl_entries,
+								account=_inv_dict.get("account"),
+								cost_center=rm_item.cost_center or item.cost_center,
+								debit=0.0,
+								credit=flt(rm_item.amount),
+								remarks=remarks,
+								against_account=rm_item.expense_account or item.expense_account,
+								account_currency=_inv_dict.get("account_currency"),
+								project=item.project,
+								item=item,
+							)
+							# Expense Account (Debit)
+							self.add_gl_entry(
+								gl_entries=gl_entries,
+								account=rm_item.expense_account or item.expense_account,
+								cost_center=rm_item.cost_center or item.cost_center,
+								debit=flt(rm_item.amount),
+								credit=0.0,
+								remarks=remarks,
+								against_account=_inv_dict.get("account"),
+								account_currency=get_account_currency(item.expense_account),
+								project=item.project,
+								item=item,
+							)
+
+					# Expense Account (Debit)
+					if item.additional_cost_per_qty:
+						self.add_gl_entry(
+							gl_entries=gl_entries,
+							account=item.expense_account,
+							cost_center=self.cost_center or self.get_company_default("cost_center"),
+							debit=item.qty * item.additional_cost_per_qty,
+							credit=0.0,
+							remarks=remarks,
+							against_account=None,
+							account_currency=get_account_currency(item.expense_account),
+						)
+
+					if divisional_loss := flt(item.amount - stock_value_diff, item.precision("amount")):
+						loss_account = self.get_company_default(
+							"stock_adjustment_account", ignore_validation=True
+						)
+
+						# Loss Account (Credit)
+						self.add_gl_entry(
+							gl_entries=gl_entries,
+							account=loss_account,
+							cost_center=item.cost_center,
+							debit=0.0,
+							credit=divisional_loss,
+							remarks=remarks,
+							against_account=item.expense_account,
+							account_currency=get_account_currency(loss_account),
+							project=item.project,
+							item=item,
+						)
+						# Expense Account (Debit)
+						self.add_gl_entry(
+							gl_entries=gl_entries,
+							account=item.expense_account,
+							cost_center=item.cost_center,
+							debit=divisional_loss,
+							credit=0.0,
+							remarks=remarks,
+							against_account=loss_account,
+							account_currency=get_account_currency(item.expense_account),
+							project=item.project,
+							item=item,
+						)
+				elif (
+					item.warehouse not in warehouse_with_no_account
+					or item.rejected_warehouse not in warehouse_with_no_account
+				):
+					warehouse_with_no_account.append(item.warehouse)
+
+		for row in self.additional_costs:
+			credit_amount = (
+				flt(row.base_amount)
+				if (row.base_amount or row.account_currency != self.company_currency)
+				else flt(row.amount)
+			)
+
+			# Additional Cost Expense Account (Credit)
+			self.add_gl_entry(
+				gl_entries=gl_entries,
+				account=row.expense_account,
+				cost_center=self.cost_center or self.get_company_default("cost_center"),
+				debit=0.0,
+				credit=credit_amount,
+				remarks=remarks,
+				against_account=None,
+				account_currency=get_account_currency(row.expense_account),
+			)
+
+		if warehouse_with_no_account:
+			frappe.msgprint(
+				_("No accounting entries for the following warehouses")
+				+ ": \n"
+				+ "\n".join(warehouse_with_no_account)
+			)
+
+	def make_item_gl_entries_for_lcv(self, gl_entries, inventory_account_map):
+		from erpnext.stock.doctype.landed_cost_voucher.landed_cost_voucher import (
+			get_custom_dimension_overrides,
 		)
 
-		return SubcontractingReceiptGLComposer(self).compose(inventory_account_map)
+		landed_cost_entries = self.get_item_account_wise_lcv_entries()
+
+		if not landed_cost_entries:
+			return
+
+		for item in self.items:
+			item_entries = landed_cost_entries.get((item.item_code, item.name), [])
+
+			if item.landed_cost_voucher_amount and item_entries:
+				remarks = _("Accounting Entry for Landed Cost Voucher for SCR {0}").format(self.name)
+				_inv_dict = self.get_inventory_account_dict(item, inventory_account_map)
+
+				for entry in item_entries:
+					if not (entry.amount or entry.base_amount):
+						continue
+
+					account_currency = get_account_currency(entry.expense_account)
+					credit_amount = (
+						flt(entry.base_amount)
+						if (entry.base_amount or account_currency != self.company_currency)
+						else flt(entry.amount)
+					)
+
+					self.add_gl_entry(
+						gl_entries=gl_entries,
+						account=entry.expense_account,
+						cost_center=entry.dimensions.cost_center or item.cost_center,
+						debit=0.0,
+						credit=credit_amount,
+						remarks=remarks,
+						against_account=_inv_dict["account"],
+						credit_in_account_currency=flt(entry.amount),
+						account_currency=account_currency,
+						project=entry.dimensions.project or item.project,
+						item=item,
+						dimensions=get_custom_dimension_overrides(entry),
+					)
+
+					account_currency = get_account_currency(item.expense_account)
+
+					self.add_gl_entry(
+						gl_entries=gl_entries,
+						account=item.expense_account,
+						cost_center=item.cost_center,
+						debit=0.0,
+						credit=credit_amount * -1,
+						remarks=remarks,
+						against_account=_inv_dict["account"],
+						debit_in_account_currency=flt(entry.amount),
+						account_currency=account_currency,
+						project=item.project,
+						item=item,
+					)
 
 	def auto_create_purchase_receipt(self):
 		if frappe.db.get_single_value("Buying Settings", "auto_create_purchase_receipt"):
@@ -816,3 +1056,160 @@ class SubcontractingReceipt(SubcontractingController):
 				return True
 
 		return False
+
+
+@frappe.whitelist()
+def make_subcontract_return_against_rejected_warehouse(source_name):
+	from erpnext.controllers.sales_and_purchase_return import make_return_doc
+
+	return make_return_doc("Subcontracting Receipt", source_name, return_against_rejected_qty=True)
+
+
+@frappe.whitelist()
+def make_subcontract_return(source_name, target_doc=None):
+	from erpnext.controllers.sales_and_purchase_return import make_return_doc
+
+	return make_return_doc("Subcontracting Receipt", source_name, target_doc)
+
+
+@frappe.whitelist()
+def make_purchase_receipt(source_name, target_doc=None, save=False, submit=False, notify=False):
+	if isinstance(source_name, str):
+		source_doc = frappe.get_doc("Subcontracting Receipt", source_name)
+	else:
+		source_doc = source_name
+
+	if source_doc.is_return:
+		return
+
+	po_sr_item_dict = {}
+	po_name = None
+	for item in source_doc.items:
+		if not item.purchase_order:
+			continue
+
+		if not po_name:
+			po_name = item.purchase_order
+
+		po_sr_item_dict[item.purchase_order_item] = {
+			"qty": flt(item.qty),
+			"rejected_qty": flt(item.rejected_qty),
+			"warehouse": item.warehouse,
+			"rejected_warehouse": item.rejected_warehouse,
+			"subcontracting_receipt_item": item.name,
+		}
+
+	if not po_name:
+		frappe.throw(
+			_("Purchase Order Item reference is missing in Subcontracting Receipt {0}").format(
+				source_doc.name
+			)
+		)
+
+	def update_item(obj, target, source_parent):
+		sr_item_details = po_sr_item_dict.get(obj.name)
+		ratio = flt(obj.qty) / flt(obj.fg_item_qty)
+
+		target.update(
+			{
+				"qty": ratio * sr_item_details["qty"],
+				"rejected_qty": ratio * sr_item_details["rejected_qty"],
+				"warehouse": sr_item_details["warehouse"],
+				"rejected_warehouse": sr_item_details["rejected_warehouse"],
+				"subcontracting_receipt_item": sr_item_details["subcontracting_receipt_item"],
+			}
+		)
+
+	def post_process(source, target):
+		target.set_missing_values()
+		target.update(
+			{
+				"posting_date": source_doc.posting_date,
+				"posting_time": source_doc.posting_time,
+				"subcontracting_receipt": source_doc.name,
+				"supplier_warehouse": source_doc.supplier_warehouse,
+				"is_subcontracted": 1,
+				"is_old_subcontracting_flow": 0,
+				"currency": frappe.get_cached_value("Company", target.company, "default_currency"),
+			}
+		)
+
+	target_doc = get_mapped_doc(
+		"Purchase Order",
+		po_name,
+		{
+			"Purchase Order": {
+				"doctype": "Purchase Receipt",
+				"field_map": {"supplier_warehouse": "supplier_warehouse"},
+				"validation": {
+					"docstatus": ["=", 1],
+				},
+			},
+			"Purchase Order Item": {
+				"doctype": "Purchase Receipt Item",
+				"field_map": {
+					"name": "purchase_order_item",
+					"parent": "purchase_order",
+					"bom": "bom",
+				},
+				"postprocess": update_item,
+				"condition": lambda doc: doc.name in po_sr_item_dict,
+			},
+			"Purchase Taxes and Charges": {
+				"doctype": "Purchase Taxes and Charges",
+				"reset_value": True,
+				# for POs created in earlier version with tax_withholding_row
+				"condition": lambda doc: not doc.is_tax_withholding_account,
+			},
+		},
+		postprocess=post_process,
+	)
+
+	if not target_doc.get("items"):
+		add_po_items_to_pr(source_doc, target_doc)
+
+	if (save or submit) and frappe.has_permission(target_doc.doctype, "create"):
+		target_doc.save()
+
+		if submit and frappe.has_permission(target_doc.doctype, "submit", target_doc):
+			try:
+				target_doc.submit()
+			except Exception as e:
+				target_doc.add_comment("Comment", _("Submit Action Failed") + "<br><br>" + str(e))
+
+		if notify:
+			frappe.msgprint(
+				_("Purchase Receipt {0} created.").format(
+					get_link_to_form(target_doc.doctype, target_doc.name)
+				),
+				indicator="green",
+				alert=True,
+			)
+
+	return target_doc
+
+
+def add_po_items_to_pr(scr_doc, target_doc):
+	fg_items = {(item.item_code, item.purchase_order): item.qty for item in scr_doc.items}
+
+	for (item_code, po_name), fg_qty in fg_items.items():
+		po_doc = frappe.get_doc("Purchase Order", po_name)
+		for item in po_doc.items:
+			if item.fg_item != item_code:
+				continue
+
+			qty = (item.stock_qty - item.received_qty) * fg_qty / item.fg_item_qty
+			if qty:
+				target_doc.append(
+					"items",
+					{
+						"item_code": item.item_code,
+						"item_name": item.item_name,
+						"description": item.description,
+						"qty": qty,
+						"rate": item.rate,
+						"warehouse": item.warehouse,
+						"purchase_order": item.parent,
+						"purchase_order_item": item.name,
+					},
+				)

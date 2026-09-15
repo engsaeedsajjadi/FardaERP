@@ -19,10 +19,11 @@ class TestWarehouse(ERPNextTestSuite):
 	def test_warehouse_hierarchy(self):
 		p_warehouse = frappe.get_doc("Warehouse", "_Test Warehouse Group - _TC")
 
-		child_warehouses = frappe.get_all(
-			"Warehouse",
-			filters={"lft": [">", p_warehouse.lft], "rgt": ["<", p_warehouse.rgt]},
-			fields=["name", "is_group", "parent_warehouse"],
+		child_warehouses = frappe.db.sql(
+			"""select name, is_group, parent_warehouse from `tabWarehouse` wh
+			where wh.lft > %s and wh.rgt < %s""",
+			(p_warehouse.lft, p_warehouse.rgt),
+			as_dict=1,
 		)
 
 		for child_warehouse in child_warehouses:
@@ -226,27 +227,6 @@ class TestWarehouse(ERPNextTestSuite):
 		warehouse.run_method("onload")
 
 		self.assertNotIn("account", warehouse.get_onload())
-
-	def test_stock_accounts_are_fetched_once_per_company(self):
-		from unittest.mock import patch
-
-		from erpnext.stock import get_company_stock_accounts, get_warehouse_account_map
-
-		company, warehouse = create_ambiguous_inventory_account_warehouse()
-		other_warehouse = frappe.get_all(
-			"Warehouse",
-			filters={"company": company, "is_group": 0, "name": ["!=", warehouse.name]},
-			pluck="name",
-			limit=1,
-		)[0]
-		frappe.db.set_value("Warehouse", other_warehouse, "account", None)
-
-		with patch(
-			"erpnext.stock.get_company_stock_accounts", wraps=get_company_stock_accounts
-		) as fetch_stock_accounts:
-			get_warehouse_account_map(company)
-
-		fetch_stock_accounts.assert_called_once_with(company)
 
 
 def create_inventory_fallback_company():

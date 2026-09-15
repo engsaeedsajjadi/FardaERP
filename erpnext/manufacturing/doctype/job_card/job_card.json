@@ -27,8 +27,6 @@
   "finished_good",
   "column_break_mcnb",
   "semi_fg_bom",
-  "batch_split",
-  "weight_per_piece",
   "section_break_folk",
   "pending_qty",
   "column_break_cyjw",
@@ -95,6 +93,7 @@
   "operation_row_id",
   "amended_from",
   "column_break_xhzg",
+  "operation_row_number",
   "operation_id",
   "sequence_id",
   "section_break_jcmx",
@@ -254,7 +253,6 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:!doc.is_corrective_job_card",
    "fieldname": "requested_qty",
    "fieldtype": "Float",
    "label": "Requested Qty",
@@ -282,7 +280,7 @@
    "fieldtype": "Select",
    "label": "Status",
    "no_copy": 1,
-   "options": "Open\nWork In Progress\nPartially Transferred\nMaterial Transferred\nOn Hold\nSubmitted\nTo Manufacture\nCancelled\nCompleted",
+   "options": "Open\nWork In Progress\nPartially Transferred\nMaterial Transferred\nOn Hold\nSubmitted\nCancelled\nCompleted",
    "read_only": 1
   },
   {
@@ -333,6 +331,11 @@
    "fieldtype": "Read Only",
    "label": "Item Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "operation_row_number",
+   "fieldtype": "Select",
+   "label": "Operation Row Number"
   },
   {
    "fieldname": "sequence_id",
@@ -555,21 +558,6 @@
   },
   {
    "default": "0",
-   "fieldname": "batch_split",
-   "fieldtype": "Check",
-   "label": "Batch Split",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.batch_split",
-   "fieldname": "weight_per_piece",
-   "fieldtype": "Float",
-   "label": "Weight Per Piece",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "depends_on": "eval:!doc.is_corrective_job_card",
    "fieldname": "is_subcontracted",
    "fieldtype": "Check",
    "label": " Is Subcontracted",
@@ -622,7 +610,6 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:!doc.is_corrective_job_card",
    "fetch_from": "work_order.track_semi_finished_goods",
    "fieldname": "track_semi_finished_goods",
    "fieldtype": "Check",
@@ -716,7 +703,7 @@
  "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-28 12:00:00.000000",
+ "modified": "2026-08-01 14:22:19.926911",
  "modified_by": "Administrator",
  "module": "Manufacturing",
  "name": "Job Card",

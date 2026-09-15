@@ -38,49 +38,21 @@ frappe.query_reports["Warehouse wise Item Balance Age and Value"] = {
 		{
 			fieldname: "item_code",
 			label: __("Item"),
-			fieldtype: "MultiSelectList",
+			fieldtype: "Link",
 			width: "80",
 			options: "Item",
-			get_data: async function (txt) {
-				const item_group = frappe.query_report.get_filter_value("item_group");
-
-				let { message: data } = await frappe.call({
-					method: "erpnext.controllers.queries.item_query",
-					args: {
-						doctype: "Item",
-						txt: txt,
-						searchfield: "name",
-						start: 0,
-						page_len: 10,
-						filters: {
-							...(item_group && { item_group }),
-							is_stock_item: 1,
-						},
-						as_dict: 1,
-					},
-				});
-
-				data = data.map(({ name, ...rest }) => {
-					return {
-						value: name,
-						description: Object.values(rest),
-					};
-				});
-
-				return data || [];
-			},
 		},
 		{
 			fieldname: "warehouse",
 			label: __("Warehouse"),
-			fieldtype: "MultiSelectList",
+			fieldtype: "Link",
 			width: "80",
 			options: "Warehouse",
-			get_data: function (txt) {
+			get_query: function () {
 				const company = frappe.query_report.get_filter_value("company");
-				return frappe.db.get_link_options("Warehouse", txt, {
-					...(company && { company }),
-				});
+				return {
+					filters: { company: company },
+				};
 			},
 		},
 		{

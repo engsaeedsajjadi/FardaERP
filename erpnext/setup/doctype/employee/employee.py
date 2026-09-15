@@ -301,9 +301,6 @@ class Employee(NestedSet):
 		if not self.user_id:
 			return
 
-		if not self.has_value_changed("status") and not self.has_value_changed("user_id"):
-			return
-
 		user = frappe.get_doc("User", self.user_id)
 		enabled = user.enabled
 		if self.status != "Active" and enabled or self.status == "Active" and enabled == 0:
@@ -424,15 +421,15 @@ def is_holiday(employee, date=None, raise_exception=True, only_non_weekly=False,
 
 
 @frappe.whitelist()
-def deactivate_sales_person(status: str, employee: str):
+def deactivate_sales_person(status=None, employee=None):
 	frappe.has_permission("Employee", doc=employee, ptype="write", throw=True)
 	if status == "Left":
-		sales_person = frappe.db.get_value("Sales Person", {"employee": employee})
+		sales_person = frappe.db.get_value("Sales Person", {"Employee": employee})
 		if sales_person:
 			frappe.db.set_value("Sales Person", sales_person, "enabled", 0)
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist()
 def create_user(employee: str, email: str | None = None, create_user_permission: int = 0) -> str:
 	emp = frappe.get_doc("Employee", employee)
 	emp.check_permission("write")
@@ -516,13 +513,7 @@ def get_employee_emails(employee_list):
 
 
 @frappe.whitelist()
-def get_children(
-	doctype: str,
-	parent: str | None = None,
-	company: str | None = None,
-	is_root: bool = False,
-	is_tree: bool = False,
-):
+def get_children(doctype, parent=None, company=None, is_root=False, is_tree=False):
 	filters = [["status", "=", "Active"]]
 	if company and company != "All Companies":
 		filters.append(["company", "=", company])

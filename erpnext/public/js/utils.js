@@ -426,26 +426,6 @@ $.extend(erpnext.utils, {
 		}
 		return rows;
 	},
-	/**
-	 * Row flags for the Account / Cost Center trees: the caller's badges plus
-	 * a shared "Disabled" marker for records shown through the tree's
-	 * "include disabled" toggle.
-	 * @param {Object} node tree node (from treeview_settings.onrender)
-	 * @param {Array<string|HTMLElement>} flags badge markup / elements
-	 */
-	render_tree_node_flags: function (node, flags = []) {
-		if (cint(node.data?.disabled)) {
-			flags.push(frappe.ui.badge({ label: __("Disabled"), variant: "outline" }));
-			node.$tree_link.find("a.tree-label").addClass("text-ink-gray-5");
-		}
-		if (!flags.length) return;
-		const $flags = $(
-			'<span class="tree-node-flags inline-flex items-center gap-1.5 ms-2 shrink-0"></span>'
-		);
-		flags.forEach((flag) => $flags.append(flag));
-		$flags.insertAfter(node.$tree_link.find("a.tree-label"));
-	},
-
 	get_tree_options: function (option) {
 		// get valid options for tree based on user permission & locals dict
 		let unscrub_option = frappe.model.unscrub(option);
@@ -581,18 +561,6 @@ $.extend(erpnext.utils, {
 		}
 	},
 });
-
-erpnext.utils.confirm_negative_stock = function (frm) {
-	if (!frm.doc.allow_negative_stock) return;
-
-	frappe.confirm(
-		__(
-			"Using negative stock disables FIFO/Moving average valuation when inventory is negative. This is considered dangerous from accounting point of view.<br>Do you still want to enable negative inventory?"
-		),
-		() => {},
-		() => frm.set_value("allow_negative_stock", 0)
-	);
-};
 
 erpnext.utils.select_alternate_items = function (opts) {
 	const frm = opts.frm;
@@ -750,26 +718,24 @@ erpnext.utils.update_child_items = function (opts) {
 	const has_reserved_stock = opts.has_reserved_stock ? true : false;
 	const get_precision = (fieldname) => child_meta.fields.find((f) => f.fieldname == fieldname).precision;
 
-	this.data = frm.doc[opts.child_docname]
-		.filter((d) => !d.closed)
-		.map((d) => {
-			return {
-				docname: d.name,
-				name: d.name,
-				item_code: d.item_code,
-				item_name: d.item_name,
-				delivery_date: d.delivery_date,
-				schedule_date: d.schedule_date,
-				conversion_factor: d.conversion_factor,
-				qty: d.qty,
-				rate: d.rate,
-				uom: d.uom,
-				warehouse: d.warehouse,
-				fg_item: d.fg_item,
-				fg_item_qty: d.fg_item_qty,
-				description: d.description,
-			};
-		});
+	this.data = frm.doc[opts.child_docname].map((d) => {
+		return {
+			docname: d.name,
+			name: d.name,
+			item_code: d.item_code,
+			item_name: d.item_name,
+			delivery_date: d.delivery_date,
+			schedule_date: d.schedule_date,
+			conversion_factor: d.conversion_factor,
+			qty: d.qty,
+			rate: d.rate,
+			uom: d.uom,
+			warehouse: d.warehouse,
+			fg_item: d.fg_item,
+			fg_item_qty: d.fg_item_qty,
+			description: d.description,
+		};
+	});
 
 	const fields = [
 		{
@@ -797,7 +763,11 @@ erpnext.utils.update_child_items = function (opts) {
 					}
 				} else if (frm.doc.doctype == "Purchase Order") {
 					if (frm.doc.is_subcontracted) {
-						filters = { is_stock_item: 0 };
+						if (frm.doc.is_old_subcontracting_flow) {
+							filters = { is_sub_contracted_item: 1 };
+						} else {
+							filters = { is_stock_item: 0 };
+						}
 					} else {
 						filters = { is_purchase_item: 1 };
 					}
@@ -840,6 +810,7 @@ erpnext.utils.update_child_items = function (opts) {
 							pos_profile: cint(frm.doc.is_pos) ? frm.doc.pos_profile : "",
 							tax_category: frm.doc.tax_category,
 							child_doctype: frm.doc.doctype + " Item",
+							is_old_subcontracting_flow: frm.doc.is_old_subcontracting_flow,
 						},
 					},
 					callback: function (r) {
@@ -977,7 +948,11 @@ erpnext.utils.update_child_items = function (opts) {
 		});
 	}
 
-	if (["Purchase Order", "Sales Order"].includes(frm.doc.doctype) && frm.doc.is_subcontracted) {
+	if (
+		["Purchase Order", "Sales Order"].includes(frm.doc.doctype) &&
+		frm.doc.is_subcontracted &&
+		!frm.doc.is_old_subcontracting_flow
+	) {
 		fields.push(
 			{
 				fieldtype: "Link",

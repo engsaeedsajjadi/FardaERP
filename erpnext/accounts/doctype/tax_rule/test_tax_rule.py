@@ -1,10 +1,11 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+import unittest
 
 import frappe
 
 from erpnext.accounts.doctype.tax_rule.tax_rule import ConflictingTaxRule, get_tax_template
-from erpnext.crm.doctype.opportunity.mapper import make_quotation
+from erpnext.crm.doctype.opportunity.opportunity import make_quotation
 from erpnext.crm.doctype.opportunity.test_opportunity import make_opportunity
 from erpnext.tests.utils import ERPNextTestSuite
 
@@ -63,6 +64,25 @@ class TestTaxRule(ERPNextTestSuite):
 
 	def test_for_parent_supplier_group(self):
 		purchase_template = "_Test Purchase Taxes and Charges Template - _TC"
+		if not frappe.db.exists("Purchase Taxes and Charges Template", purchase_template):
+			frappe.get_doc(
+				{
+					"doctype": "Purchase Taxes and Charges Template",
+					"title": "_Test Purchase Taxes and Charges Template",
+					"company": "_Test Company",
+					"taxes": [
+						{
+							"account_head": "_Test Account VAT - _TC",
+							"charge_type": "On Net Total",
+							"description": "VAT",
+							"doctype": "Purchase Taxes and Charges",
+							"cost_center": "Main - _TC",
+							"rate": 6,
+						}
+					],
+				}
+			).insert()
+
 		make_tax_rule(
 			supplier_group="All Supplier Groups",
 			tax_type="Purchase",
@@ -368,7 +388,7 @@ class TestTaxRule(ERPNextTestSuite):
 		self.assertEqual(quotation.taxes_and_charges, "_Test Sales Taxes and Charges Template - _TC")
 
 		# Check if accounts heads and rate fetched are also fetched from tax template or not
-		self.assertGreater(len(quotation.taxes), 0)
+		self.assertTrue(len(quotation.taxes) > 0)
 
 
 def make_tax_rule(**args):

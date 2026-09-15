@@ -55,9 +55,7 @@ def get_level(site_info):
 	sales_data.append({"Communication": communication_number})
 
 	# recent login
-	if frappe.db.exists(
-		"User", {"last_login": [">", frappe.utils.add_to_date(frappe.utils.now_datetime(), days=-2)]}
-	):
+	if frappe.db.sql("select name from tabUser where last_login > date_sub(now(), interval 2 day) limit 1"):
 		activation_level += 1
 
 	level = {"activation_level": activation_level, "sales_data": sales_data}

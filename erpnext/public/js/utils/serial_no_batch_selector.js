@@ -184,7 +184,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		}
 
 		if (this.item?.type_of_transaction === "Outward") {
-			fields = [...this.get_filter_fields(), ...fields, ...this.get_attach_field()];
+			fields = [...this.get_filter_fields(), ...fields];
 		} else {
 			fields = [...fields, ...this.get_attach_field()];
 		}
@@ -216,7 +216,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		}
 
 		let fields = [];
-		if (this.item.has_serial_no && this.item?.type_of_transaction !== "Outward") {
+		if (this.item.has_serial_no) {
 			fields.push({
 				fieldtype: "Check",
 				label: __("Enter Manually"),
@@ -238,8 +238,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 				label: __("Import Using CSV file"),
 				fieldname: "import_using_csv_file",
 				depends_on: "eval:doc.enter_manually !== 1",
-				default: !this.item.has_serial_no || this.item?.type_of_transaction === "Outward" ? 1 : 0,
-				hidden: this.item?.type_of_transaction === "Outward",
+				default: !this.item.has_serial_no ? 1 : 0,
 				change() {
 					if (me.dialog.get_value("import_using_csv_file")) {
 						me.dialog.set_value("enter_manually", 0);
@@ -268,7 +267,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 			},
 		];
 
-		if (this.item?.has_serial_no && this.item?.type_of_transaction !== "Outward") {
+		if (this.item?.has_serial_no) {
 			fields = [
 				...fields,
 				{
@@ -289,7 +288,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 			];
 		}
 
-		if (this.item?.has_serial_no && this.item?.type_of_transaction !== "Outward") {
+		if (this.item?.has_serial_no) {
 			fields = [
 				...fields,
 				{
@@ -670,7 +669,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		}
 
 		if ((entries && !entries.length) || !entries) {
-			frappe.throw(__("Please add at least one Serial No / Batch No"));
+			frappe.throw(__("Please add atleast one Serial No / Batch No"));
 		}
 
 		if (!warehouse) {
@@ -678,7 +677,7 @@ erpnext.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		}
 
 		if (this.item?.is_rejected && this.item.rejected_warehouse === this.item.warehouse) {
-			frappe.throw(__("Rejected Warehouse and Accepted Warehouse cannot be the same."));
+			frappe.throw(__("Rejected Warehouse and Accepted Warehouse cannot be same."));
 		}
 
 		let qty_to_fetch = flt(this.dialog.get_value("qty"));

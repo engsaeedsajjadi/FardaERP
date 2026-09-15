@@ -14,6 +14,7 @@ import openpyxl
 from frappe import _
 from frappe.core.doctype.data_import.data_import import DataImport
 from frappe.core.doctype.data_import.importer import Importer, ImportFile
+from frappe.query_builder.functions import Count
 from frappe.utils.background_jobs import enqueue
 from frappe.utils.file_manager import get_file, save_file
 from frappe.utils.xlsxutils import ILLEGAL_CHARACTERS_RE, handle_html
@@ -167,7 +168,7 @@ def get_transaction_reference(txn_data: dict) -> str:
 
 
 @frappe.whitelist(methods=["POST"])
-def convert_mt940_to_csv(data_import: str, mt940_file_path: str):
+def convert_mt940_to_csv(data_import, mt940_file_path):
 	doc = frappe.get_doc("Bank Statement Import", data_import)
 	doc.check_permission("write")
 
@@ -233,30 +234,28 @@ def convert_mt940_to_csv(data_import: str, mt940_file_path: str):
 
 
 @frappe.whitelist()
-def get_preview_from_template(
-	data_import: str, import_file: str | None = None, google_sheets_url: str | None = None
-):
+def get_preview_from_template(data_import, import_file=None, google_sheets_url=None):
 	bsi = frappe.get_doc("Bank Statement Import", data_import)
 	bsi.check_permission()
 	return bsi.get_preview_from_template(import_file, google_sheets_url)
 
 
 @frappe.whitelist()
-def form_start_import(data_import: str):
+def form_start_import(data_import):
 	bsi = frappe.get_doc("Bank Statement Import", data_import)
 	bsi.check_permission("write")
 	return bsi.start_import()
 
 
 @frappe.whitelist()
-def download_errored_template(data_import_name: str):
+def download_errored_template(data_import_name):
 	data_import = frappe.get_doc("Bank Statement Import", data_import_name)
 	data_import.check_permission()
 	data_import.export_errored_rows()
 
 
 @frappe.whitelist()
-def download_import_log(data_import_name: str):
+def download_import_log(data_import_name):
 	bsi = frappe.get_doc("Bank Statement Import", data_import_name)
 	bsi.check_permission()
 	return bsi.download_import_log()
@@ -319,7 +318,7 @@ def update_mapping_db(bank, template_options):
 	for d in bank.bank_transaction_mapping:
 		d.delete()
 
-	for d in frappe.parse_json(template_options)["column_to_field_map"].items():
+	for d in json.loads(template_options)["column_to_field_map"].items():
 		bank.append("bank_transaction_mapping", {"bank_transaction_field": d[1], "file_field": d[0]})
 
 	bank.save()
@@ -336,7 +335,7 @@ def add_bank_account(data, bank_account):
 				bank_account_loc = loc
 
 	for row in data[1:]:
-		if bank_account_loc is not None:
+		if bank_account_loc:
 			row[bank_account_loc] = bank_account
 		else:
 			row.append(bank_account)
@@ -394,7 +393,7 @@ def write_xlsx(data, sheet_name, wb=None, column_widths=None, file_path=None):
 
 
 @frappe.whitelist()
-def get_import_status(docname: str):
+def get_import_status(docname):
 	import_status = {}
 
 	data_import = frappe.get_doc("Bank Statement Import", docname)

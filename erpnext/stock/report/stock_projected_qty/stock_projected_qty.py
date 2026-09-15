@@ -27,6 +27,7 @@ def execute(filters=None):
 		item_groups.append(filters.item_group)
 		item_groups.extend(get_descendants_of("Item Group", filters.item_group))
 
+	warehouse_company = {}
 	data = []
 	conversion_factors = []
 	for bin in bin_list:
@@ -36,10 +37,18 @@ def execute(filters=None):
 			# likely an item that has reached its end of life
 			continue
 
+		# item = item_map.setdefault(bin.item_code, get_item(bin.item_code))
+		company = warehouse_company.setdefault(
+			bin.warehouse, frappe.db.get_value("Warehouse", bin.warehouse, "company")
+		)
+
 		if filters.brand and filters.brand != item.brand:
 			continue
 
 		elif item_groups and item.item_group not in item_groups:
+			continue
+
+		elif filters.company and filters.company != company:
 			continue
 
 		re_order_level = re_order_qty = 0
@@ -97,11 +106,10 @@ def get_columns():
 			"fieldname": "item_code",
 			"fieldtype": "Link",
 			"options": "Item",
-			"width": 200,
-			"sticky": "True",
+			"width": 140,
 		},
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 200},
-		{"label": _("Description"), "fieldname": "description", "width": 100},
+		{"label": _("Item Name"), "fieldname": "item_name", "width": 100},
+		{"label": _("Description"), "fieldname": "description", "width": 200},
 		{
 			"label": _("Item Group"),
 			"fieldname": "item_group",
@@ -122,7 +130,6 @@ def get_columns():
 			"fieldtype": "Link",
 			"options": "Warehouse",
 			"width": 120,
-			"sticky": "True",
 		},
 		{
 			"label": _("UOM"),
@@ -256,16 +263,6 @@ def get_bin_list(filters):
 	if filters.item_code:
 		query = query.where(bin.item_code == filters.item_code)
 
-	if filters.company:
-		wh = frappe.qb.DocType("Warehouse")
-		query = query.where(
-			ExistsCriterion(
-				frappe.qb.from_(wh)
-				.select(wh.name)
-				.where((wh.name == bin.warehouse) & (wh.company == filters.company))
-			)
-		)
-
 	if filters.warehouse:
 		warehouse_details = frappe.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"], as_dict=1)
 
@@ -294,19 +291,17 @@ def get_item_map(item_code, include_uom):
 	bin = frappe.qb.DocType("Bin")
 	item = frappe.qb.DocType("Item")
 
-	# alive = end_of_life unset / future / MariaDB zero-date '0000-00-00' (an invalid date literal on
-	# postgres, where "not set" is NULL — already covered by IS NULL); zero-date term on MariaDB only.
-	alive = (item.end_of_life > today()) | item.end_of_life.isnull()
-	if frappe.db.db_type != "postgres":
-		alive |= item.end_of_life == "0000-00-00"
-
 	query = (
 		frappe.qb.from_(item)
 		.select(item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom)
 		.where(
 			(item.is_stock_item == 1)
 			& (item.disabled == 0)
-			& alive
+			& (
+				(item.end_of_life > today())
+				| (item.end_of_life.isnull())
+				| (item.end_of_life == "0000-00-00")
+			)
 			& (ExistsCriterion(frappe.qb.from_(bin).select(bin.name).where(bin.item_code == item.name)))
 		)
 	)

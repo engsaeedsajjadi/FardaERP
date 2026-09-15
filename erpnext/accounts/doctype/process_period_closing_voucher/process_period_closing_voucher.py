@@ -8,7 +8,7 @@ import frappe
 from frappe import qb
 from frappe.model.document import Document
 from frappe.query_builder.functions import Count, Max, Min, Sum
-from frappe.utils import flt, get_datetime
+from frappe.utils import add_days, flt, get_datetime
 from frappe.utils.scheduler import is_scheduler_inactive
 
 from erpnext.accounts.doctype.account_closing_balance.account_closing_balance import (
@@ -574,8 +574,7 @@ def process_individual_date(docname: str, row_name, date, report_type, parentfie
 		Sum(gle.credit).as_("credit"),
 		Sum(gle.debit_in_account_currency).as_("debit_in_account_currency"),
 		Sum(gle.credit_in_account_currency).as_("credit_in_account_currency"),
-		# account_currency is constant per grouped account -> Max() keeps the GROUP BY postgres-valid
-		Max(gle.account_currency).as_("account_currency"),
+		gle.account_currency,
 	).where(
 		(gle.company.eq(company))
 		& (gle.is_cancelled.eq(0))

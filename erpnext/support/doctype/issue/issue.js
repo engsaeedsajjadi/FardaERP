@@ -89,7 +89,7 @@ frappe.ui.form.on("Issue", {
 		if (!frm.timeline.wrapper.find(".btn-split-issue").length) {
 			let split_issue_btn = $(`
 				<a class="action-btn btn-split-issue" title="${__("Split Issue")}">
-					${frappe.utils.icon("git-branch", "sm")}
+					${frappe.utils.icon("branch", "sm")}
 				</a>
 			`);
 
@@ -123,9 +123,7 @@ frappe.ui.form.on("Issue", {
 								},
 								(r) => {
 									frappe.msgprint(
-										__("New issue created: {0}", [
-											`<a href="/app/issue/${r.message}">${r.message}</a>`,
-										])
+										`New issue created: <a href="/app/issue/${r.message}">${r.message}</a>`
 									);
 									frm.reload_doc();
 									dialog.hide();
@@ -146,7 +144,7 @@ frappe.ui.form.on("Issue", {
 
 		// 	let help_article = $(`
 		// 		<a class="action-btn btn-add-to-kb" title="${__('Help Article')}">
-		// 			${frappe.utils.icon('info', 'sm')}
+		// 			${frappe.utils.icon('solid-info', 'sm')}
 		// 		</a>
 		// 	`);
 

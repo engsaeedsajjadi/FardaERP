@@ -1,3 +1,5 @@
+import unittest
+
 import frappe
 from frappe.utils import getdate
 
@@ -23,11 +25,6 @@ class TestAccountBalance(ERPNextTestSuite):
 				"account": "Direct Income - _TC2",
 				"currency": "EUR",
 				"balance": -100.0,
-			},
-			{
-				"account": "Exchange Gain - _TC2",
-				"currency": "EUR",
-				"balance": 0.0,
 			},
 			{
 				"account": "Income - _TC2",

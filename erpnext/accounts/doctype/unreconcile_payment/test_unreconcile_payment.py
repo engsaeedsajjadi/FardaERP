@@ -9,7 +9,7 @@ from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sal
 from erpnext.accounts.party import get_party_account
 from erpnext.accounts.test.accounts_mixin import AccountsTestMixin
 from erpnext.buying.doctype.purchase_order.test_purchase_order import create_purchase_order
-from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 from erpnext.tests.utils import ERPNextTestSuite
 
@@ -424,7 +424,7 @@ class TestUnreconcilePayment(ERPNextTestSuite, AccountsTestMixin):
 		self.disable_advance_as_liability()
 
 	def test_07_adv_from_so_to_invoice(self):
-		frappe.db.set_value("Company", self.company, "book_advance_payments_in_separate_party_account", 1)
+		frappe.db.set_value("Company", self.company, "book_advance_payments_in_separate_party_account", True)
 		frappe.db.set_value(
 			"Company", self.company, "default_advance_received_account", "Advance Received - _TC"
 		)

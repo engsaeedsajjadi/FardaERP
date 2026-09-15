@@ -4,7 +4,7 @@ import frappe
 from frappe.query_builder.functions import Count
 from frappe.utils import flt
 
-from erpnext.stock.doctype.purchase_receipt.services.billing_status import (
+from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 	get_billed_amount_against_po,
 	get_billed_amount_against_pr,
 	get_purchase_receipts_against_po_details,

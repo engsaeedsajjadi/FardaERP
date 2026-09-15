@@ -7,7 +7,7 @@ import frappe
 from frappe import _, qb
 from frappe.model.document import Document
 from frappe.query_builder import Criterion
-from frappe.query_builder.functions import Abs, Max, Sum
+from frappe.query_builder.functions import Abs, Sum
 from frappe.utils.data import comma_and
 
 from erpnext.accounts.utils import (
@@ -72,7 +72,7 @@ class UnreconcilePayment(Document):
 				alloc.party,
 			)
 
-			frappe.db.set_value("Unreconcile Payment Entries", alloc.name, "unlinked", 1)
+			frappe.db.set_value("Unreconcile Payment Entries", alloc.name, "unlinked", True)
 
 
 @frappe.whitelist()
@@ -106,8 +106,6 @@ def get_linked_payments_for_doc(
 	company: str | None = None, doctype: str | None = None, docname: str | None = None
 ) -> list:
 	if company and doctype and docname:
-		frappe.has_permission(doctype, doc=docname, throw=True)
-
 		_dt = doctype
 		_dn = docname
 		ple = qb.DocType("Payment Ledger Entry")
@@ -122,20 +120,18 @@ def get_linked_payments_for_doc(
 			res = (
 				qb.from_(ple)
 				.select(
-					Max(ple.account).as_("account"),
-					Max(ple.party_type).as_("party_type"),
-					Max(ple.party).as_("party"),
-					Max(ple.company).as_("company"),
-					Max(ple.voucher_type).as_("reference_doctype"),
+					ple.account,
+					ple.party_type,
+					ple.party,
+					ple.company,
+					ple.voucher_type.as_("reference_doctype"),
 					ple.voucher_no.as_("reference_name"),
 					Abs(Sum(ple.amount_in_account_currency)).as_("allocated_amount"),
-					Max(ple.account_currency).as_("account_currency"),
+					ple.account_currency,
 				)
 				.where(Criterion.all(criteria))
 				.groupby(ple.voucher_no, ple.against_voucher_no)
-				.having(Abs(Sum(ple.amount_in_account_currency)) > 0)
-				# deterministic order across backends (postgres GROUP BY does not imply ordering)
-				.orderby(ple.voucher_no)
+				.having(qb.Field("allocated_amount") > 0)
 				.run(as_dict=True)
 			)
 			return res
@@ -150,19 +146,17 @@ def get_linked_payments_for_doc(
 			query = (
 				qb.from_(ple)
 				.select(
-					Max(ple.company).as_("company"),
-					Max(ple.account).as_("account"),
-					Max(ple.party_type).as_("party_type"),
-					Max(ple.party).as_("party"),
-					Max(ple.against_voucher_type).as_("reference_doctype"),
+					ple.company,
+					ple.account,
+					ple.party_type,
+					ple.party,
+					ple.against_voucher_type.as_("reference_doctype"),
 					ple.against_voucher_no.as_("reference_name"),
 					Abs(Sum(ple.amount_in_account_currency)).as_("allocated_amount"),
-					Max(ple.account_currency).as_("account_currency"),
+					ple.account_currency,
 				)
 				.where(Criterion.all(criteria))
 				.groupby(ple.against_voucher_no)
-				# deterministic order across backends (postgres GROUP BY does not imply ordering)
-				.orderby(ple.against_voucher_no)
 			)
 
 			res = query.run(as_dict=True)
@@ -186,26 +180,23 @@ def get_linked_advances(company, docname):
 	return (
 		qb.from_(adv)
 		.select(
-			# non-grouped columns are constant per against_voucher_no -> Max() is unchanged and postgres-valid
-			Max(adv.company).as_("company"),
-			Max(adv.against_voucher_type).as_("reference_doctype"),
+			adv.company,
+			adv.against_voucher_type.as_("reference_doctype"),
 			adv.against_voucher_no.as_("reference_name"),
 			Abs(Sum(adv.amount)).as_("allocated_amount"),
-			Max(adv.currency).as_("currency"),
+			adv.currency,
 		)
 		.where(Criterion.all(criteria))
-		.having(Abs(Sum(adv.amount)) > 0)
+		.having(qb.Field("allocated_amount") > 0)
 		.groupby(adv.against_voucher_no)
-		# deterministic order across backends (postgres GROUP BY does not imply ordering)
-		.orderby(adv.against_voucher_no)
 		.run(as_dict=True)
 	)
 
 
 @frappe.whitelist()
-def create_unreconcile_doc_for_selection(selections: str | list | None = None):
+def create_unreconcile_doc_for_selection(selections=None):
 	if selections:
-		selections = frappe.parse_json(selections)
+		selections = json.loads(selections)
 		# assuming each row is a unique voucher
 		for row in selections:
 			unrecon = frappe.new_doc("Unreconcile Payment")

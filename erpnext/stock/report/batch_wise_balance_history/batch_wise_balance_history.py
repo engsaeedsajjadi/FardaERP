@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_to_date, cint, flt, get_datetime, getdate
+from frappe.utils import add_to_date, cint, flt, get_datetime, get_table_name, getdate
 from pypika import functions as fn
 
 from erpnext.accounts.report.utils import validate_mandatory_date_range
@@ -38,7 +38,6 @@ def execute(filters=None):
 	columns = get_columns(filters)
 	item_map = get_item_details(filters)
 	iwb_map = get_item_warehouse_batch_map(filters, float_precision)
-	reserved_stock = get_reserved_stock(filters, iwb_map)
 
 	data = []
 	for item in sorted(iwb_map):
@@ -64,7 +63,6 @@ def execute(filters=None):
 								),
 								flt(qty_dict.bal_value, float_precision),
 								item_map[item]["stock_uom"],
-								flt(reserved_stock.get((item, wh, batch), 0), float_precision),
 							]
 						)
 
@@ -87,46 +85,9 @@ def get_columns(filters):
 		_("Valuation Rate") + ":Float:120",
 		_("Balance Value") + ":Currency:120",
 		_("UOM") + "::90",
-		_("Reserved Stock (Current)") + ":Float:175",
 	]
 
 	return columns
-
-
-def get_reserved_stock(filters, iwb_map):
-	if not iwb_map:
-		return {}
-
-	sre = frappe.qb.DocType("Stock Reservation Entry")
-	sb_entry = frappe.qb.DocType("Serial and Batch Entry")
-	warehouses = {warehouse for item in iwb_map.values() for warehouse in item}
-	query = (
-		frappe.qb.from_(sre)
-		.inner_join(sb_entry)
-		.on(sre.name == sb_entry.parent)
-		.select(
-			sre.item_code,
-			sre.warehouse,
-			sb_entry.batch_no,
-			fn.Sum(sb_entry.qty - sb_entry.delivered_qty).as_("reserved_qty"),
-		)
-		.where(
-			(sre.docstatus == 1)
-			& (sre.reservation_based_on == "Serial and Batch")
-			& (sre.status.notin(["Closed", "Delivered"]))
-			& (sre.item_code.isin(list(iwb_map)))
-			& (sre.warehouse.isin(warehouses))
-			& (sb_entry.batch_no.isnotnull())
-			& (sb_entry.qty > sb_entry.delivered_qty)
-		)
-		.groupby(sre.item_code, sre.warehouse, sb_entry.batch_no)
-	)
-	if filters.get("company"):
-		query = query.where(sre.company == filters.company)
-	if filters.get("batch_no"):
-		query = query.where(sb_entry.batch_no == filters.batch_no)
-
-	return {(row.item_code, row.warehouse, row.batch_no): row.reserved_qty for row in query.run(as_dict=True)}
 
 
 def get_stock_ledger_entries(filters):
@@ -176,8 +137,7 @@ def get_stock_ledger_entries_for_batch_no(filters):
 			sle.item_code,
 			sle.warehouse,
 			sle.batch_no,
-			# posting_date is constant per voucher_no (grouped) -> Max() is unchanged and postgres-valid
-			fn.Max(sle.posting_date).as_("posting_date"),
+			sle.posting_date,
 			fn.Sum(sle.actual_qty).as_("actual_qty"),
 			fn.Sum(sle.stock_value_difference).as_("stock_value_difference"),
 		)
@@ -222,13 +182,10 @@ def get_stock_ledger_entries_for_batch_bundle(filters):
 		.inner_join(batch_package)
 		.on(batch_package.parent == sle.serial_and_batch_bundle)
 		.select(
-			# item_code/warehouse/posting_date are constant per grouped voucher_no+batch_no+warehouse
-			# (a batch belongs to one item; warehouse mirrors the grouped batch_package.warehouse;
-			# a voucher has one posting_date) -> Max() is unchanged and postgres-valid
-			fn.Max(sle.item_code).as_("item_code"),
-			fn.Max(sle.warehouse).as_("warehouse"),
+			sle.item_code,
+			sle.warehouse,
 			batch_package.batch_no,
-			fn.Max(sle.posting_date).as_("posting_date"),
+			sle.posting_date,
 			fn.Sum(batch_package.qty).as_("actual_qty"),
 			fn.Sum(batch_package.stock_value_difference).as_("stock_value_difference"),
 		)

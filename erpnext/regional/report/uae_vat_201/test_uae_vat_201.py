@@ -1,3 +1,5 @@
+from unittest import TestCase
+
 import frappe
 
 import erpnext

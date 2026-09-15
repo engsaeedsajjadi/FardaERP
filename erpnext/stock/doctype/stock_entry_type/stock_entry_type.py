@@ -9,6 +9,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt
 
+from erpnext.manufacturing.doctype.bom.bom import get_bom_items_as_dict
 from erpnext.stock.serial_batch_bundle import SerialBatchCreation
 from erpnext.stock.utils import get_combine_datetime
 
@@ -23,7 +24,6 @@ class StockEntryType(Document):
 		from frappe.types import DF
 
 		add_to_transit: DF.Check
-		batch_split: DF.Check
 		is_standard: DF.Check
 		purpose: DF.Literal[
 			"Material Issue",
@@ -47,9 +47,6 @@ class StockEntryType(Document):
 		if self.add_to_transit and self.purpose != "Material Transfer":
 			self.add_to_transit = 0
 
-		if self.batch_split and self.purpose != "Repack":
-			self.batch_split = 0
-
 	def validate_standard_type(self):
 		if self.is_standard and self.name not in [
 			"Material Issue",
@@ -66,7 +63,7 @@ class StockEntryType(Document):
 			"Subcontracting Delivery",
 			"Subcontracting Return",
 		]:
-			frappe.throw(_("Stock Entry Type {0} cannot be set as standard").format(self.name))
+			frappe.throw(f"Stock Entry Type {self.name} cannot be set as standard")
 
 
 class ManufactureEntry:
@@ -109,9 +106,7 @@ class ManufactureEntry:
 				)
 
 	def add_raw_materials(self):
-		from erpnext.stock.doctype.stock_entry.services.manufacturing import (
-			set_previous_operation_serial_batch,
-		)
+		from erpnext.stock.doctype.stock_entry.stock_entry import set_previous_operation_serial_batch
 
 		if self.job_card:
 			item_dict = {}
@@ -131,10 +126,10 @@ class ManufactureEntry:
 				available_serial_batches = self.get_transferred_serial_batches()
 
 			production_share = self.get_production_share()
+			items_to_remove = []
 			for item_code, _dict in item_dict.items():
-				_dict.s_warehouse = self.source_wh.get(item_code) or self.wip_warehouse
-				_dict.t_warehouse = ""
-				_dict.item_code = item_code
+				_dict.from_warehouse = self.source_wh.get(item_code) or self.wip_warehouse
+				_dict.to_warehouse = ""
 
 				if backflush_based_on != "BOM" and not self.skip_material_transfer:
 					calculated_qty = flt(_dict.transferred_qty) - flt(_dict.consumed_qty)
@@ -149,12 +144,16 @@ class ManufactureEntry:
 					remaining_qty = max(flt(_dict.qty) - flt(_dict.consumed_qty), 0)
 					_dict.qty = min(flt(_dict.qty) * production_share, remaining_qty)
 					if not _dict.qty:
+						items_to_remove.append(item_code)
 						continue
 
 					if self.skip_material_transfer:
 						set_previous_operation_serial_batch(self.stock_entry, _dict)
 
-				self.stock_entry.append("items", _dict)
+			for item_code in items_to_remove:
+				item_dict.pop(item_code)
+
+			self.stock_entry.add_to_stock_entry_detail(item_dict)
 
 	def get_production_share(self):
 		"""Fraction of the job card's production this entry accounts for; raw materials are
@@ -337,8 +336,8 @@ class ManufactureEntry:
 		item = get_item_defaults(self.production_item, self.company)
 
 		args = {
-			"t_warehouse": self.fg_warehouse,
-			"s_warehouse": "",
+			"to_warehouse": self.fg_warehouse,
+			"from_warehouse": "",
 			"qty": self.for_quantity - self.process_loss_qty,
 			"item_name": item.item_name,
 			"description": item.description,
@@ -346,7 +345,6 @@ class ManufactureEntry:
 			"expense_account": item.get("expense_account"),
 			"cost_center": item.get("buying_cost_center"),
 			"is_finished_item": 1,
-			"item_code": self.production_item,
 		}
 
-		self.stock_entry.append("items", args)
+		self.stock_entry.add_to_stock_entry_detail({self.production_item: args}, bom_no=self.bom_no)

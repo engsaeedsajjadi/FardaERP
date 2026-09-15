@@ -5,7 +5,8 @@
 import frappe
 from frappe import _
 from frappe.query_builder import DocType
-from frappe.query_builder.functions import Date, GroupConcat
+from frappe.query_builder.custom import GROUP_CONCAT
+from frappe.query_builder.functions import Date
 
 Opportunity = DocType("Opportunity")
 OpportunityLostReasonDetail = DocType("Opportunity Lost Reason Detail")
@@ -71,9 +72,6 @@ def get_columns():
 
 
 def get_data(filters):
-	# db-aware GROUP_CONCAT (MariaDB) / STRING_AGG (postgres) with a ", " separator
-	lost_reasons = GroupConcat(OpportunityLostReasonDetail.lost_reason, ", ", alias="lost_reason")
-
 	query = (
 		frappe.qb.from_(Opportunity)
 		.left_join(OpportunityLostReasonDetail)
@@ -87,7 +85,7 @@ def get_data(filters):
 			Opportunity.party_name,
 			Opportunity.customer_name,
 			Opportunity.opportunity_type,
-			lost_reasons,
+			GROUP_CONCAT(OpportunityLostReasonDetail.lost_reason, alias="lost_reason").separator(", "),
 			Opportunity.sales_stage,
 			Opportunity.territory,
 		)

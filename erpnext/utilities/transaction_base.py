@@ -343,6 +343,7 @@ class TransactionBase(StatusUpdater):
 					"item_tax_template": item.get("item_tax_template"),
 					"child_doctype": item.get("doctype"),
 					"child_docname": item.get("name"),
+					"is_old_subcontracting_flow": self.get("is_old_subcontracting_flow"),
 					"use_serial_batch_fields": item.get("use_serial_batch_fields"),
 				}
 			),
@@ -350,13 +351,11 @@ class TransactionBase(StatusUpdater):
 		)
 
 	@frappe.whitelist()
-	def process_item_selection(
-		self, item_idx: int, reset_item_details: bool = False, parentfield: str = "items"
-	):
+	def process_item_selection(self, item_idx: int, reset_item_details: bool = False):
 		# Server side 'item' doc. Update this to reflect in UI
-		item_obj = self.get_selected_item_row(parentfield, item_idx)
+		item_obj = self.get("items", {"idx": item_idx})[0]
 
-		if not item_obj or not item_obj.item_code:
+		if not item_obj.item_code:
 			return
 
 		if cint(reset_item_details):
@@ -385,13 +384,6 @@ class TransactionBase(StatusUpdater):
 		self.handle_internal_parties(item_obj, item_details)
 		self.conversion_factor(item_obj, item_details)
 		self.calculate_taxes_and_totals()
-
-	def get_selected_item_row(self, parentfield: str, item_idx: int):
-		if not self.get_table_field_doctype(parentfield):
-			frappe.throw(_("{0} is not a child table of {1}").format(parentfield, self.doctype))
-
-		rows = self.get(parentfield, {"idx": item_idx})
-		return rows[0] if rows else None
 
 	def set_fetched_values(self, item_obj: object, item_details: dict) -> None:
 		for k, v in item_details.items():
@@ -466,35 +458,31 @@ class TransactionBase(StatusUpdater):
 			)
 
 	def copy_from_first_row(self, row, fields):
-		sibling_rows = self.get(row.parentfield) if row else None
-		if sibling_rows:
+		if self.items and row:
 			fields.extend([x.get("fieldname") for x in get_dimensions(True)[0]])
-			first_row = sibling_rows[0]
+			first_row = self.items[0]
 			[setattr(row, k, first_row.get(k)) for k in fields if hasattr(first_row, k)]
 
 	def add_free_item(self, item_obj: object, item_details: dict) -> None:
 		free_items = item_details.get("free_item_data")
-		if not free_items:
-			return
+		if free_items and len(free_items):
+			existing_free_items = [x for x in self.items if x.is_free_item]
+			for free_item in free_items:
+				_matches = [
+					x
+					for x in existing_free_items
+					if x.item_code == free_item.get("item_code")
+					and x.pricing_rules == free_item.get("pricing_rules")
+				]
+				if _matches:
+					row_to_modify = _matches[0]
+				else:
+					row_to_modify = self.append("items")
 
-		parentfield = item_obj.parentfield
-		existing_free_items = [x for x in self.get(parentfield) if x.is_free_item]
-		for free_item in free_items:
-			_matches = [
-				x
-				for x in existing_free_items
-				if x.item_code == free_item.get("item_code")
-				and x.pricing_rules == free_item.get("pricing_rules")
-			]
-			if _matches:
-				row_to_modify = _matches[0]
-			else:
-				row_to_modify = self.append(parentfield)
+				for k, _v in free_item.items():
+					setattr(row_to_modify, k, free_item.get(k))
 
-			for k, _v in free_item.items():
-				setattr(row_to_modify, k, free_item.get(k))
-
-			self.copy_from_first_row(row_to_modify, ["expense_account", "income_account"])
+				self.copy_from_first_row(row_to_modify, ["expense_account", "income_account"])
 
 	def conversion_factor(self, item_obj: object, item_details: dict) -> None:
 		if frappe.get_meta(item_obj.doctype).has_field("stock_qty"):
@@ -603,20 +591,23 @@ class TransactionBase(StatusUpdater):
 			"is_internal_customer": self.is_internal_customer,
 		}
 		# TODO: test method call impact on document
-		apply_price_list(ctx=args, as_doc=True, doc=self)
+		apply_price_list(cts=args, as_doc=True, doc=self)
 
 
 def delete_events(ref_type, ref_name):
-	event = frappe.qb.DocType("Event")
-	participant = frappe.qb.DocType("Event Participants")
 	events = (
-		frappe.qb.from_(event)
-		.inner_join(participant)
-		.on(event.name == participant.parent)
-		.select(event.name)
-		.distinct()
-		.where((participant.reference_doctype == ref_type) & (participant.reference_docname == ref_name))
-		.run(pluck="name")
+		frappe.db.sql_list(
+			""" SELECT
+			distinct `tabEvent`.name
+		from
+			`tabEvent`, `tabEvent Participants`
+		where
+			`tabEvent`.name = `tabEvent Participants`.parent
+			and `tabEvent Participants`.reference_doctype = %s
+			and `tabEvent Participants`.reference_docname = %s
+		""",
+			(ref_type, ref_name),
+		)
 		or []
 	)
 
@@ -644,13 +635,13 @@ def validate_uom_is_integer(doc, uom_field, qty_fields, child_dt=None):
 			for f in qty_fields:
 				qty = d.get(f)
 				if qty:
-					qty = flt(qty, d.precision(f))
-					if qty != cint(qty):
+					precision = d.precision(f)
+					if abs(cint(qty) - flt(qty, precision)) > 0.0000001:
 						frappe.throw(
 							_(
 								"Row {1}: Quantity ({0}) cannot be a fraction. To allow this, disable '{2}' in UOM {3}."
 							).format(
-								qty,
+								flt(qty, precision),
 								d.idx,
 								frappe.bold(_("Must be Whole Number")),
 								frappe.bold(d.get(uom_field)),

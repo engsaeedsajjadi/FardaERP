@@ -500,7 +500,7 @@ erpnext.utils.BarcodeScanner = class BarcodeScanner {
 
 			const clear_btn = `
 				<a class="btn-clear-last-scanned-warehouse" title="${__("Clear Last Scanned Warehouse")}">
-					${frappe.utils.icon("x", "xs")}
+					${frappe.utils.icon("close", "xs", "es-icon")}
 				</a>
 			`;
 
@@ -529,7 +529,7 @@ erpnext.utils.BarcodeScanner = class BarcodeScanner {
 		this.show_alert(
 			__("{0} will be set as the {1} in subsequently scanned items", [
 				__(warehouse).bold(),
-				__(warehouse_field_label, null, cur_grid.doctype).bold(),
+				__(warehouse_field_label).bold(),
 			]),
 			"green",
 			6

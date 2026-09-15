@@ -11,6 +11,7 @@ from erpnext.stock.doctype.inventory_dimension.inventory_dimension import (
 	CanNotBeDefaultDimension,
 	DoNotChangeError,
 	delete_dimension,
+	get_inventory_dimensions,
 )
 from erpnext.stock.doctype.item.test_item import create_item, make_item
 from erpnext.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
@@ -221,34 +222,74 @@ class TestInventoryDimension(ERPNextTestSuite):
 		doc.reqd = 1
 		doc.save()
 
-		self.assertTrue(
+		# Mandatory enforcement is now done server-side, so the custom field must NOT be `reqd`.
+		self.assertFalse(
 			frappe.db.get_value(
-				"Custom Field", {"fieldname": "pallet_75", "dt": "Delivery Note Item", "reqd": 1}, "name"
+				"Custom Field", {"fieldname": "pallet_75", "dt": "Delivery Note Item"}, "reqd"
 			)
 		)
+
+		item_code = "Test Mandatory Dimension Item"
+		create_item(item_code)
+		warehouse = create_warehouse("Mandatory Dimension Warehouse")
+
+		dn_doc = create_delivery_note(item_code=item_code, qty=5, warehouse=warehouse, do_not_save=True)
+
+		# Dimension value missing -> server-side validation should block the document.
+		self.assertRaises(frappe.ValidationError, dn_doc.save)
+
+		if not frappe.db.exists("Pallet", "Pallet 75 Value"):
+			frappe.get_doc({"doctype": "Pallet", "pallet_name": "Pallet 75 Value"}).insert(
+				ignore_permissions=True
+			)
+
+		dn_doc.items[0].pallet_75 = "Pallet 75 Value"
+		dn_doc.save()
 
 		doc.reqd = 0
 		doc.save()
 
-	def test_check_mandatory_depends_on_dimensions(self):
+	def test_check_mandatory_depends_on_backend(self):
 		doc = create_inventory_dimension(
 			reference_document="Pallet",
 			type_of_transaction="Outward",
-			dimension_name="Pallet",
+			dimension_name="Pallet Backend",
 			apply_to_all_doctypes=0,
-			document_type="Stock Entry Detail",
+			document_type="Delivery Note Item",
 		)
 
-		doc.mandatory_depends_on = "t_warehouse"
+		doc.reqd = 0
+		doc.mandatory_depends_on_backend = "doc.qty > 0"
 		doc.save()
 
-		self.assertTrue(
+		# The condition is enforced server-side, the custom field must not carry field-level `reqd`.
+		self.assertFalse(
 			frappe.db.get_value(
-				"Custom Field",
-				{"fieldname": "pallet", "dt": "Stock Entry Detail", "mandatory_depends_on": "t_warehouse"},
-				"name",
+				"Custom Field", {"fieldname": "pallet_backend", "dt": "Delivery Note Item"}, "reqd"
 			)
 		)
+
+		item_code = "Test Backend Dimension Item"
+		create_item(item_code)
+		warehouse = create_warehouse("Backend Dimension Warehouse")
+
+		dn_doc = create_delivery_note(item_code=item_code, qty=5, warehouse=warehouse, do_not_save=True)
+
+		# qty > 0 -> backend condition is met, so the dimension is mandatory and blocks the save.
+		self.assertRaises(frappe.ValidationError, dn_doc.save)
+
+		if not frappe.db.exists("Pallet", "Pallet Backend Value"):
+			frappe.get_doc({"doctype": "Pallet", "pallet_name": "Pallet Backend Value"}).insert(
+				ignore_permissions=True
+			)
+
+		dn_doc.items[0].pallet_backend = "Pallet Backend Value"
+		dn_doc.save()
+
+		# Reset so the always-true condition does not make the dimension mandatory for
+		# subsequent Delivery Note tests sharing the same test database.
+		doc.mandatory_depends_on_backend = ""
+		doc.save()
 
 	def test_for_purchase_sales_and_stock_transaction(self):
 		from erpnext.controllers.sales_and_purchase_return import make_return_doc
@@ -367,7 +408,7 @@ class TestInventoryDimension(ERPNextTestSuite):
 
 	def test_inter_transfer_return_against_inventory_dimension(self):
 		from erpnext.controllers.sales_and_purchase_return import make_return_doc
-		from erpnext.stock.doctype.delivery_note.mapper import make_inter_company_purchase_receipt
+		from erpnext.stock.doctype.delivery_note.delivery_note import make_inter_company_purchase_receipt
 
 		data = prepare_data_for_internal_transfer()
 
@@ -443,8 +484,6 @@ class TestInventoryDimension(ERPNextTestSuite):
 			document_type="Inv Site",
 			validate_negative_stock=1,
 		)
-		inv_dimension.db_set("validate_negative_stock", 1)
-		frappe.clear_cache(doctype="Inventory Dimension")
 
 		warehouse = create_warehouse("Negative Stock Warehouse")
 
@@ -760,13 +799,24 @@ def create_inventory_dimension(**args):
 
 
 def prepare_data_for_internal_transfer():
+	from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_internal_supplier
+	from erpnext.selling.doctype.customer.test_customer import create_internal_customer
 	from erpnext.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
 	from erpnext.stock.doctype.warehouse.test_warehouse import create_warehouse
 
 	company = "_Test Company with perpetual inventory"
 
-	customer = "_Test Internal Customer 2"
-	supplier = "_Test Internal Supplier 2"
+	customer = create_internal_customer(
+		"_Test Internal Customer 2",
+		company,
+		company,
+	)
+
+	supplier = create_internal_supplier(
+		"_Test Internal Supplier 2",
+		company,
+		company,
+	)
 
 	for store in ["Inter Transfer Store 1", "Inter Transfer Store 2", "Inter Transfer Store 3"]:
 		if not frappe.db.exists("Store", store):

@@ -1,5 +1,6 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
+import unittest
 
 import frappe
 from frappe.utils import flt, today
@@ -55,19 +56,15 @@ class TestPeriodClosingVoucher(ERPNextTestSuite):
 			("Sales - TPC", 400.0, 0.0),
 		)
 
-		pcv_gle = [
-			tuple(row)
-			for row in frappe.get_all(
-				"GL Entry",
-				filters={"voucher_no": pcv.name},
-				fields=["account", "debit", "credit"],
-				order_by="account",
-				as_list=True,
-			)
-		]
+		pcv_gle = frappe.db.sql(
+			"""
+			select account, debit, credit from `tabGL Entry` where voucher_no=%s order by account
+		""",
+			(pcv.name),
+		)
 		pcv.reload()
 		self.assertEqual(pcv.gle_processing_status, "Completed")
-		self.assertEqual(tuple(pcv_gle), expected_gle)
+		self.assertEqual(pcv_gle, expected_gle)
 
 	def test_cost_center_wise_posting(self):
 		surplus_account = create_account()
@@ -110,16 +107,14 @@ class TestPeriodClosingVoucher(ERPNextTestSuite):
 			("Sales - TPC", 200.0, 0.0, cost_center2),
 		)
 
-		pcv_gle = [
-			tuple(row)
-			for row in frappe.get_all(
-				"GL Entry",
-				filters={"voucher_no": pcv.name},
-				fields=["account", "debit", "credit", "cost_center"],
-				order_by="account, cost_center",
-				as_list=True,
-			)
-		]
+		pcv_gle = frappe.db.sql(
+			"""
+			select account, debit, credit, cost_center
+			from `tabGL Entry` where voucher_no=%s
+			order by account, cost_center
+		""",
+			(pcv.name),
+		)
 
 		self.assertSequenceEqual(pcv_gle, expected_gle)
 
@@ -172,19 +167,16 @@ class TestPeriodClosingVoucher(ERPNextTestSuite):
 			("Sales - TPC", 400.0, 0.0, jv.finance_book),
 		)
 
-		pcv_gle = [
-			tuple(row)
-			for row in frappe.get_all(
-				"GL Entry",
-				filters={"voucher_no": pcv.name},
-				fields=["account", "debit", "credit", "finance_book"],
-				order_by="account, finance_book",
-				as_list=True,
-			)
-		]
+		pcv_gle = frappe.db.sql(
+			"""
+			select account, debit, credit, finance_book
+			from `tabGL Entry` where voucher_no=%s
+			order by account, finance_book
+		""",
+			(pcv.name),
+		)
 
-		# compare order-independently: postgres and MariaDB order NULL finance_book differently
-		self.assertSequenceEqual(sorted(pcv_gle, key=str), sorted(expected_gle, key=str))
+		self.assertSequenceEqual(pcv_gle, expected_gle)
 
 	def test_gl_entries_restrictions(self):
 		cost_center = create_cost_center("Test Cost Center 1")
@@ -314,77 +306,6 @@ class TestPeriodClosingVoucher(ERPNextTestSuite):
 
 		repost_doc.posting_date = today()
 		repost_doc.save()
-
-	def test_dimension_grouped_opening_balance_matches_gl_scan(self):
-		"""
-		A dimension-grouped Balance Sheet must produce identical per-dimension
-		figures whether opening balances come from
-
-		- Account Closing Balance (the fast path) or
-		- from a full GL scan (the fallback).
-		"""
-		from frappe.utils import add_days, getdate
-
-		from erpnext.accounts.report.balance_sheet.balance_sheet import execute
-		from erpnext.accounts.report.financial_statements import build_period_list
-
-		company = "Test PCV Company"
-		cc1 = create_cost_center("Test Cost Center 1")
-		cc2 = create_cost_center("Test Cost Center 2")
-
-		# Post to two cost centers, then close the year so balances land in Account Closing Balance.
-		for amount, cost_center in ((400, cc1), (200, cc2)):
-			jv = make_journal_entry(
-				posting_date="2021-03-15",
-				amount=amount,
-				account1="Cash - TPC",
-				account2="Sales - TPC",
-				cost_center=cost_center,
-				company=company,
-				save=False,
-			)
-			jv.company = company
-			jv.save()
-			jv.submit()
-
-		pcv = self.make_period_closing_voucher(posting_date="2021-03-31")
-		report_date = add_days(getdate(pcv.period_end_date), 1)
-
-		report_filters = frappe._dict(
-			company=company,
-			period_start_date=report_date,
-			period_end_date=report_date,
-			periodicity="Yearly",
-			filter_based_on="Date Range",
-			accumulated_values=True,
-			group_by_dimension="Cost Center",
-		)
-
-		period_list = build_period_list(report_filters)
-		period_keys = [p.key for p in period_list]
-
-		def key_for(cost_center):
-			return next(p.key for p in period_list if p.dimension_value == cost_center)
-
-		def figures(data):
-			return {
-				row["account_name"]: {k: row.get(k) for k in period_keys}
-				for row in data
-				if row.get("account_name")
-			}
-
-		# Fast path: opening balance sourced from Account Closing Balance.
-		acb_figures = figures(execute(report_filters)[1])
-
-		# Fallback: force a full GL scan and expect the same numbers.
-		with self.change_settings("Accounts Settings", {"ignore_account_closing_balance": 1}):
-			gl_figures = figures(execute(report_filters)[1])
-
-		self.assertEqual(acb_figures, gl_figures)
-
-		# the fast path must carry per-dimension opening balances, not aggregates or zeros
-		self.assertEqual(acb_figures["Cash"][key_for(cc1)], 400)
-		self.assertEqual(acb_figures["Cash"][key_for(cc2)], 200)
 
 	def test_stock_validations_before_period_closing(self):
 		from unittest.mock import patch
@@ -653,10 +574,14 @@ class TestPeriodClosingVoucher(ERPNextTestSuite):
 		finally:
 			frappe.db.set_value("Company", "Test PCV Company", "accounts_frozen_till_date", None)
 
-		totals_after_cancel = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Journal Entry", "voucher_no": jv.name, "is_cancelled": 0},
-			fields=[{"SUM": "debit", "as": "total_debit"}, {"SUM": "credit", "as": "total_credit"}],
+		totals_after_cancel = frappe.db.sql(
+			"""
+				select sum(debit) as total_debit, sum(credit) as total_credit
+				from `tabGL Entry`
+				where voucher_type=%s and voucher_no=%s and is_cancelled=0
+			""",
+			("Journal Entry", jv.name),
+			as_dict=True,
 		)[0]
 
 		self.assertEqual(totals_after_cancel.total_debit, totals_after_cancel.total_credit)

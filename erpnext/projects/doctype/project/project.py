@@ -1,17 +1,19 @@
 # Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
+
 import frappe
 from email_reply_parser import EmailReplyParser
 from frappe import _, qb
+from frappe.desk.reportview import get_match_cond
 from frappe.model.document import Document
-from frappe.query_builder import Case, Interval
-from frappe.query_builder.functions import Count, CurDate, Date, Locate, Lower, Sum, UnixTimestamp
-from frappe.utils import add_days, flt, get_datetime, get_link_to_form, get_time, nowtime, today
+from frappe.query_builder import Interval
+from frappe.query_builder.functions import Count, CurDate, Date, Sum, UnixTimestamp
+from frappe.utils import add_days, flt, get_datetime, get_link_to_form, get_time, get_url, nowtime, today
 from frappe.utils.user import is_website_user
-from pypika import Order
 
 from erpnext import get_default_company
+from erpnext.controllers.queries import get_filters_cond
 from erpnext.controllers.website_list_for_contact import get_customers_suppliers
 from erpnext.setup.doctype.holiday_list.holiday_list import is_holiday
 
@@ -73,15 +75,16 @@ class Project(Document):
 	# end: auto-generated types
 
 	def onload(self):
-		timesheet_detail = frappe.qb.DocType("Timesheet Detail")
 		self.set_onload(
 			"activity_summary",
-			frappe.qb.from_(timesheet_detail)
-			.select(timesheet_detail.activity_type, Sum(timesheet_detail.hours).as_("total_hours"))
-			.where((timesheet_detail.project == self.name) & (timesheet_detail.docstatus < 2))
-			.groupby(timesheet_detail.activity_type)
-			.orderby("total_hours", order=frappe.qb.desc)
-			.run(as_dict=True),
+			frappe.db.sql(
+				"""select activity_type,
+			sum(hours) as total_hours
+			from `tabTimesheet Detail` where project=%s and docstatus < 2 group by activity_type
+			order by total_hours desc""",
+				self.name,
+				as_dict=True,
+			),
 		)
 
 	def before_print(self, settings=None):
@@ -97,24 +100,20 @@ class Project(Document):
 		self.validate_from_to_dates("expected_start_date", "expected_end_date")
 		self.validate_from_to_dates("actual_start_date", "actual_end_date")
 
-	def copy_from_template(self, trigger=None):
+	def copy_from_template(self):  # nosemgrep
 		"""
 		Copy tasks from template
 		"""
-		if self.project_template and not frappe.db.exists("Task", {"project": self.name}):
+		if self.project_template and not frappe.db.get_all("Task", dict(project=self.name), limit=1):
 			# has a template, and no loaded tasks, so lets create
 			if not self.expected_start_date:
 				# project starts today
 				self.expected_start_date = today()
-				if trigger == "after_insert":
-					self.db_set("expected_start_date", self.expected_start_date)
 
 			template = frappe.get_doc("Project Template", self.project_template)
 
 			if not self.project_type:
 				self.project_type = template.project_type
-				if trigger == "after_insert":
-					self.db_set("project_type", self.project_type)
 
 			# create tasks from template
 			project_tasks = []
@@ -167,40 +166,6 @@ class Project(Document):
 			self.check_depends_on_value(template_task, project_task, project_tasks)
 			self.check_for_parent_tasks(template_task, project_task, project_tasks)
 
-	def set_consumed_material_cost(self):
-		parent_doc = frappe.qb.DocType("Stock Entry")
-		child_doc = frappe.qb.DocType("Stock Entry Detail")
-		lcv_doc = frappe.qb.DocType("Landed Cost Taxes and Charges")
-
-		amount = (
-			qb.from_(child_doc)
-			.select(Sum(child_doc.amount))
-			.where(
-				(child_doc.project == self.name)
-				& (child_doc.docstatus == 1)
-				& ((child_doc.t_warehouse.isnull()) | (child_doc.t_warehouse == ""))
-			)
-		).run(as_list=1)
-
-		amount = flt(amount[0][0]) if amount else 0
-
-		additional_costs = (
-			qb.from_(parent_doc)
-			.join(lcv_doc)
-			.on(parent_doc.name == lcv_doc.parent)
-			.select(Sum(lcv_doc.base_amount))
-			.where(
-				(parent_doc.project == self.name)
-				& (parent_doc.docstatus == 1)
-				& (parent_doc.purpose == "Manufacture")
-			)
-		).run(as_list=1)
-
-		additional_cost_amt = flt(additional_costs[0][0]) if additional_costs else 0
-
-		amount += additional_cost_amt
-		self.total_consumed_material_cost = amount
-
 	def check_depends_on_value(self, template_task, project_task, project_tasks):
 		if template_task.get("depends_on") and not project_task.get("depends_on"):
 			project_template_map = {pt.template_task: pt for pt in project_tasks}
@@ -238,31 +203,10 @@ class Project(Document):
 		self.db_update()
 
 	def after_insert(self):
-		self.copy_from_template("after_insert")
-		self.link_with_sales_order()
+		self.copy_from_template()  # nosemgrep
+		if self.sales_order:
+			frappe.db.set_value("Sales Order", self.sales_order, "project", self.name)
 		self.control_access_for_project_users()
-
-	def link_with_sales_order(self) -> None:
-		"""Back-link the source Sales Order to this project.
-
-		The link is set only when the Sales Order is not already tied to another
-		project, so projects created concurrently for the same Sales Order cannot
-		overwrite each other's reference.
-		"""
-		if not self.sales_order:
-			return
-
-		existing_project = frappe.db.get_value("Sales Order", self.sales_order, "project")
-		if existing_project and existing_project != self.name:
-			frappe.msgprint(
-				_("Sales Order {0} is already linked to Project {1}, skipping the link.").format(
-					self.sales_order, existing_project
-				),
-				alert=True,
-			)
-			return
-
-		frappe.db.set_value("Sales Order", self.sales_order, "project", self.name)
 
 	def on_trash(self):
 		frappe.db.set_value("Sales Order", {"project": self.name}, "project", "")
@@ -290,25 +234,32 @@ class Project(Document):
 			if (self.percent_complete_method == "Task Completion" and total > 0) or (
 				not self.percent_complete_method and total > 0
 			):
-				completed = frappe.db.count(
-					"Task", {"project": self.name, "status": ["in", ["Cancelled", "Completed"]]}
-				)
+				completed = frappe.db.sql(
+					"""select count(name) from tabTask where
+					project=%s and status in ('Cancelled', 'Completed')""",
+					self.name,
+				)[0][0]
 				self.percent_complete = flt(flt(completed) / total * 100, 2)
 
 			if self.percent_complete_method == "Task Progress" and total > 0:
-				task = frappe.qb.DocType("Task")
-				progress = (
-					frappe.qb.from_(task).select(Sum(task.progress)).where(task.project == self.name).run()
+				progress = frappe.db.sql(
+					"""select sum(progress) from tabTask where
+					project=%s""",
+					self.name,
 				)[0][0]
 				self.percent_complete = flt(flt(progress) / total, 2)
 
 			if self.percent_complete_method == "Task Weight" and total > 0:
-				task = frappe.qb.DocType("Task")
-				weight_sum = (
-					frappe.qb.from_(task).select(Sum(task.task_weight)).where(task.project == self.name).run()
+				weight_sum = frappe.db.sql(
+					"""select sum(task_weight) from tabTask where
+					project=%s""",
+					self.name,
 				)[0][0]
-				weighted_progress = frappe.get_all(
-					"Task", filters={"project": self.name}, fields=["progress", "task_weight"]
+				weighted_progress = frappe.db.sql(
+					"""select progress, task_weight from tabTask where
+					project=%s""",
+					self.name,
+					as_dict=1,
 				)
 				pct_complete = 0
 				for row in weighted_progress:
@@ -369,12 +320,10 @@ class Project(Document):
 		self.total_purchase_cost = total_purchase_cost and total_purchase_cost[0][0] or 0
 
 	def update_sales_amount(self):
-		so = frappe.qb.DocType("Sales Order")
-		total_sales_amount = (
-			frappe.qb.from_(so)
-			.select(Sum(so.base_net_total))
-			.where((so.project == self.name) & (so.docstatus == 1))
-			.run()
+		total_sales_amount = frappe.db.sql(
+			"""select sum(base_net_total)
+			from `tabSales Order` where project = %s and docstatus=1""",
+			self.name,
 		)
 
 		self.total_sales_amount = total_sales_amount and total_sales_amount[0][0] or 0
@@ -383,31 +332,25 @@ class Project(Document):
 		self.total_billed_amount = self.get_billed_amount_from_parent() + self.get_billed_amount_from_child()
 
 	def get_billed_amount_from_parent(self):
-		si = frappe.qb.DocType("Sales Invoice")
-		si_item = frappe.qb.DocType("Sales Invoice Item")
-		total_billed_amount = (
-			frappe.qb.from_(si)
-			.join(si_item)
-			.on(si_item.parent == si.name)
-			.select(Sum(si_item.base_net_amount))
-			.where(
-				si_item.project.isnull()
-				& si.project.isnotnull()
-				& (si.project == self.name)
-				& (si.docstatus == 1)
-			)
-			.run()
+		total_billed_amount = frappe.db.sql(
+			"""select sum(base_net_amount)
+			from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si_item.parent = si.name
+				where si_item.project is null
+				and si.project is not null
+				and si.project = %s
+				and si.docstatus = 1""",
+			self.name,
 		)
 
 		return total_billed_amount and total_billed_amount[0][0] or 0
 
 	def get_billed_amount_from_child(self):
-		si_item = frappe.qb.DocType("Sales Invoice Item")
-		total_billed_amount = (
-			frappe.qb.from_(si_item)
-			.select(Sum(si_item.base_net_amount))
-			.where((si_item.project == self.name) & (si_item.docstatus == 1))
-			.run()
+		total_billed_amount = frappe.db.sql(
+			"""select sum(base_net_amount)
+			from `tabSales Invoice Item`
+				where project = %s
+				and docstatus = 1""",
+			self.name,
 		)
 
 		return total_billed_amount and total_billed_amount[0][0] or 0
@@ -473,10 +416,8 @@ def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 	timesheet_detail = frappe.qb.DocType("Timesheet Detail")
 
 	return dict(
-		# select the same day-bucket expression that is grouped on (postgres rejects selecting the
-		# ungrouped from_time); UnixTimestamp(Date(...)) is the day's epoch, which is the timeline key.
 		frappe.qb.from_(timesheet_detail)
-		.select(UnixTimestamp(Date(timesheet_detail.from_time)), Count("*"))
+		.select(UnixTimestamp(timesheet_detail.from_time), Count("*"))
 		.where(timesheet_detail.project == name)
 		.where(timesheet_detail.from_time > CurDate() - Interval(years=1))
 		.where(timesheet_detail.docstatus < 2)
@@ -518,8 +459,6 @@ def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, o
 			else:
 				filters.append([doctype, "name", "like", "%" + txt + "%"])
 
-	# No distinct=True: it never dedupes here (single table, fields="*" carries PK `name`) but makes
-	# frappe drop ORDER BY on Postgres, leaving the portal list unordered there.
 	return frappe.get_list(
 		doctype,
 		fields="*",
@@ -529,6 +468,7 @@ def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, o
 		limit_page_length=limit_page_length,
 		order_by=order_by,
 		ignore_permissions=ignore_permissions,
+		distinct=True,
 	)
 
 
@@ -553,49 +493,34 @@ def get_list_context(context=None):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_users_for_project(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
-	User = frappe.qb.DocType("User")
-	search_str = f"%{txt}%"
-	txt_no_percent = txt.replace("%", "")
-
-	query = frappe.qb.get_query(
-		"User",
-		fields=["name", "full_name"],
-		filters=filters,
-		ignore_permissions=False,
-	)
-
-	return (
-		query.where(User.enabled == 1)
-		.where(User.name.notin(["Guest", "Administrator"]))
-		.where(User[searchfield].like(search_str) | User.full_name.like(search_str))
-		.orderby(
-			Case()
-			.when(
-				Locate(Lower(txt_no_percent), Lower(User.name)) > 0,
-				Locate(Lower(txt_no_percent), Lower(User.name)),
-			)
-			.else_(99999)
-		)
-		.orderby(
-			Case()
-			.when(
-				Locate(Lower(txt_no_percent), Lower(User.full_name)) > 0,
-				Locate(Lower(txt_no_percent), Lower(User.full_name)),
-			)
-			.else_(99999)
-		)
-		.orderby(User.idx, order=Order.desc)
-		.orderby(User.name)
-		.orderby(User.full_name)
-		.limit(page_len)
-		.offset(start)
-		.run()
+def get_users_for_project(doctype, txt, searchfield, start, page_len, filters):
+	conditions = []
+	return frappe.db.sql(
+		"""select name, concat_ws(' ', first_name, middle_name, last_name)
+		from `tabUser`
+		where enabled=1
+			and name not in ("Guest", "Administrator")
+			and ({key} like %(txt)s
+				or full_name like %(txt)s)
+			{fcond} {mcond}
+		order by
+			(case when locate(%(_txt)s, name) > 0 then locate(%(_txt)s, name) else 99999 end),
+			(case when locate(%(_txt)s, full_name) > 0 then locate(%(_txt)s, full_name) else 99999 end),
+			idx desc,
+			name, full_name
+		limit %(page_len)s offset %(start)s""".format(
+			**{
+				"key": searchfield,
+				"fcond": get_filters_cond(doctype, filters, conditions),
+				"mcond": get_match_cond(doctype),
+			}
+		),
+		{"txt": "%%%s%%" % txt, "_txt": txt.replace("%", ""), "start": start, "page_len": page_len},
 	)
 
 
 @frappe.whitelist()
-def get_cost_center_name(project: str):
+def get_cost_center_name(project):
 	return frappe.db.get_value("Project", project, "cost_center")
 
 
@@ -650,7 +575,11 @@ def weekly_reminder():
 
 
 def allow_to_make_project_update(project, time, frequency):
-	data = frappe.get_all("Project Update", filters={"project": project, "date": today()}, pluck="name")
+	data = frappe.db.sql(
+		""" SELECT name from `tabProject Update`
+		WHERE project = %s and date = %s """,
+		(project, today()),
+	)
 
 	# len(data) > 1 condition is checked for twicely frequency
 	if data and (frequency in ["Daily", "Weekly"] or len(data) > 1):
@@ -660,12 +589,12 @@ def allow_to_make_project_update(project, time, frequency):
 		return True
 
 
-@frappe.whitelist(methods=["POST"])
-def create_duplicate_project(prev_doc: str | dict, project_name: str):
+@frappe.whitelist()
+def create_duplicate_project(prev_doc, project_name):
 	"""Create duplicate project based on the old project"""
 	import json
 
-	prev_doc = frappe.parse_json(prev_doc)
+	prev_doc = json.loads(prev_doc)
 
 	# prev_doc is caller-supplied, but the tasks below are read from the db by name
 	if source_name := prev_doc.get("name"):
@@ -805,7 +734,7 @@ def update_project_sales_billing():
 
 
 @frappe.whitelist()
-def create_kanban_board_if_not_exists(project: str):
+def create_kanban_board_if_not_exists(project):
 	from frappe.desk.doctype.kanban_board.kanban_board import quick_kanban_board
 
 	project = frappe.get_doc("Project", project)
@@ -815,8 +744,8 @@ def create_kanban_board_if_not_exists(project: str):
 	return True
 
 
-@frappe.whitelist(methods=["POST"])
-def set_project_status(project: str, status: str):
+@frappe.whitelist()
+def set_project_status(project, status):
 	"""
 	set status for project and all related tasks
 	"""
@@ -833,7 +762,7 @@ def set_project_status(project: str, status: str):
 	project.save()
 
 
-def get_holiday_list(company: str | None = None) -> str:
+def get_holiday_list(company=None):
 	if not company:
 		company = get_default_company() or frappe.get_all("Company")[0].name
 

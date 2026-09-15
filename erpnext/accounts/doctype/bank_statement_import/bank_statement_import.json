@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_bulk_edit": 1,
  "autoname": "format:Bank Statement Import on {creation}",
  "creation": "2019-08-04 14:16:08.318714",
  "doctype": "DocType",
@@ -221,16 +220,16 @@
    "default": "0",
    "fieldname": "import_mt940_fromat",
    "fieldtype": "Check",
-   "label": "Import MT940 Format"
+   "label": "Import MT940 Fromat"
   }
  ],
  "hide_toolbar": 1,
  "links": [],
- "modified": "2026-06-19 14:18:00.000000",
+ "modified": "2026-05-30 20:51:10.353723",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Bank Statement Import",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

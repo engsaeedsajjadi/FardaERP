@@ -99,11 +99,9 @@ def identify_is_group(child):
 
 
 @frappe.whitelist()
-def get_chart(chart_template: str | None, existing_company: str | None = None):
+def get_chart(chart_template, existing_company=None):
 	chart = {}
 	if existing_company:
-		frappe.has_permission("Company", doc=existing_company, throw=True)
-
 		return get_account_tree_from_existing_company(existing_company)
 
 	elif chart_template == "Standard":
@@ -134,12 +132,12 @@ def get_chart(chart_template: str | None, existing_company: str | None = None):
 
 
 @frappe.whitelist()
-def get_charts_for_country(country: str, with_standard: bool = False):
+def get_charts_for_country(country, with_standard=False):
 	charts = []
 
 	def _get_chart_name(content):
 		if content:
-			content = frappe.parse_json(content)
+			content = json.loads(content)
 			if (
 				content and content.get("disabled", "No") == "No"
 			) or frappe.local.flags.allow_unverified_charts:
@@ -227,7 +225,7 @@ def build_account_tree(tree, parent, all_accounts):
 
 
 @frappe.whitelist()
-def validate_bank_account(coa: str, bank_account: str):
+def validate_bank_account(coa, bank_account):
 	accounts = []
 	chart = get_chart(coa)
 
@@ -246,9 +244,7 @@ def validate_bank_account(coa: str, bank_account: str):
 
 
 @frappe.whitelist()
-def build_tree_from_json(
-	chart_template: str, chart_data: dict | None = None, from_coa_importer: bool = False
-):
+def build_tree_from_json(chart_template, chart_data=None, from_coa_importer=False):
 	"""get chart template from its folder and parse the json to be rendered as tree"""
 	chart = chart_data or get_chart(chart_template)
 

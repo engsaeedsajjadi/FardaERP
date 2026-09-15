@@ -9,15 +9,15 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cint, flt, get_link_to_form
+from frappe.utils import cint, cstr, flt, get_link_to_form
 from frappe.utils.number_format import NUMBER_FORMAT_MAP, NumberFormat
 
-from erpnext.stock.doctype.quality_inspection_template.quality_inspection_template import (
-	get_template_details,
-)
-from erpnext.stock.services.quality_inspection_service import (
+from erpnext.controllers.stock_controller import (
 	QI_INCOMING_PURPOSES,
 	QI_OUTGOING_PURPOSES,
+)
+from erpnext.stock.doctype.quality_inspection_template.quality_inspection_template import (
+	get_template_details,
 )
 
 
@@ -141,7 +141,7 @@ class QualityInspection(Document):
 		):
 			frappe.throw(
 				_(
-					"'Inspection Required before Purchase' is disabled for the item {0}, no need to create the QI"
+					"'Inspection Required before Purchase' has disabled for the item {0}, no need to create the QI"
 				).format(get_link_to_form("Item", self.item_code))
 			)
 
@@ -150,7 +150,7 @@ class QualityInspection(Document):
 		):
 			frappe.throw(
 				_(
-					"'Inspection Required before Delivery' is disabled for the item {0}, no need to create the QI"
+					"'Inspection Required before Delivery' has disabled for the item {0}, no need to create the QI"
 				).format(get_link_to_form("Item", self.item_code))
 			)
 
@@ -222,13 +222,14 @@ class QualityInspection(Document):
 
 		if self.reference_type == "Job Card":
 			if self.reference_name:
-				ref = frappe.qb.DocType(self.reference_type)
-				(
-					frappe.qb.update(ref)
-					.set(ref.quality_inspection, quality_inspection)
-					.set(ref.modified, self.modified)
-					.where((ref.name == self.reference_name) & (ref.production_item == self.item_code))
-				).run()
+				frappe.db.sql(
+					f"""
+					UPDATE `tab{self.reference_type}`
+					SET quality_inspection = %s, modified = %s
+					WHERE name = %s and production_item = %s
+				""",
+					(quality_inspection, self.modified, self.reference_name, self.item_code),
+				)
 
 		else:
 			doctype = self.reference_type + " Item"
@@ -500,26 +501,23 @@ def item_query(doctype: Any, txt: str | None, searchfield: Any, start: int, page
 			filters=my_filters,
 			offset=start,
 			limit=page_len,
+			order_by="items.item_code",
 			ignore_permissions=False,
 			distinct=True,
 		)
-		# frappe's db_query drops ORDER BY for a distinct query on Postgres, which (with offset/limit)
-		# changes both the order and the page contents vs MariaDB. Appending the order to the built
-		# query instead keeps it -- item_code is in the DISTINCT select, so it is valid on Postgres.
-		items_field = frappe.get_meta(reference_doctype).get_field("items")
-		if items_field:
-			child = frappe.qb.DocType(items_field.options)
-			if require_distinct_warehouse:
-				query = query.where(child.t_warehouse.isnull() | (child.s_warehouse != child.t_warehouse))
-			query = query.orderby(child.item_code)
+		if require_distinct_warehouse:
+			# The cross-column guard (s_warehouse != t_warehouse) can't be expressed in frappe's
+			# filter-list syntax, so it is appended as a raw query-builder condition. This relies on
+			# the "items.s_warehouse" filter above having already LEFT-JOINed the child table, so
+			# child.t_warehouse references that same joined table.
+			child = frappe.qb.DocType(frappe.get_meta(reference_doctype).get_field("items").options)
+			query = query.where(child.t_warehouse.isnull() | (child.s_warehouse != child.t_warehouse))
 		return query.run()
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def quality_inspection_query(
-	doctype: Any, txt: str | None, searchfield: Any, start: int, page_len: int, filters: dict
-):
+def quality_inspection_query(doctype, txt, searchfield, start, page_len, filters):
 	return frappe.get_all(
 		"Quality Inspection",
 		limit_start=start,
@@ -536,7 +534,7 @@ def quality_inspection_query(
 
 
 @frappe.whitelist()
-def make_quality_inspection(source_name: str, target_doc: str | dict | Document | None = None):
+def make_quality_inspection(source_name, target_doc=None):
 	def postprocess(source, doc):
 		doc.inspected_by = frappe.session.user
 		doc.get_quality_inspection_template()

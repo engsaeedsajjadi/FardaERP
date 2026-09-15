@@ -57,7 +57,7 @@ erpnext.SalesFunnel = class SalesFunnel {
 					function () {
 						me.get_data();
 					},
-					"refresh-cw"
+					"fa fa-refresh"
 				),
 			});
 
@@ -111,7 +111,7 @@ erpnext.SalesFunnel = class SalesFunnel {
 	get_data(btn) {
 		var me = this;
 		if (!this.company) {
-			frappe.throw(__("Please select a company."));
+			frappe.throw(__("Please Select a Company."));
 		}
 
 		const method_map = {

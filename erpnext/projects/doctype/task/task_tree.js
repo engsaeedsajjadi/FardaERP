@@ -40,7 +40,6 @@ frappe.treeview_settings["Task"] = {
 	toolbar: [
 		{
 			label: __("Add Multiple"),
-			icon: "list-plus",
 			condition: function (node) {
 				return node.expandable;
 			},
@@ -76,6 +75,7 @@ frappe.treeview_settings["Task"] = {
 								data: dialog.get_values()["multiple_tasks"],
 								parent: node.data.value,
 							},
+							callback: function () {},
 						});
 					},
 					primary_action_label: __("Create"),

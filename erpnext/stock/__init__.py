@@ -30,25 +30,14 @@ def get_warehouse_account_map(company=None):
 			filters["company"] = company
 			frappe.flags.setdefault("warehouse_account_map", {}).setdefault(company, {})
 
-		warehouses = frappe.get_all(
+		for d in frappe.get_all(
 			"Warehouse",
 			fields=["name", "account", "parent_warehouse", "company", "is_group"],
 			filters=filters,
 			order_by="lft, rgt",
-		)
-		stock_accounts = {
-			company_name: get_company_stock_accounts(company_name)
-			for company_name in {d.company for d in warehouses if d.company and not d.account}
-		}
-
-		for d in warehouses:
+		):
 			if not d.account:
-				d.account = get_warehouse_account(
-					d,
-					warehouse_account,
-					raise_error=False,
-					stock_accounts=stock_accounts.get(d.company, []),
-				)
+				d.account = get_warehouse_account(d, warehouse_account, raise_error=False)
 
 			if d.account:
 				d.account_currency = frappe.db.get_value("Account", d.account, "account_currency", cache=True)
@@ -64,37 +53,41 @@ def get_warehouse_account_map(company=None):
 	return frappe.flags.warehouse_account_map
 
 
-def get_warehouse_account(warehouse, warehouse_account=None, *, raise_error=True, stock_accounts=None):
+def get_warehouse_account(warehouse, warehouse_account=None, *, raise_error=True):
 	account = warehouse.account
 	if not account and warehouse.parent_warehouse:
 		if warehouse_account:
-			if parent := warehouse_account.get(warehouse.parent_warehouse):
-				account = parent.account
+			if warehouse_account.get(warehouse.parent_warehouse):
+				account = warehouse_account.get(warehouse.parent_warehouse).account
+			else:
+				from frappe.utils.nestedset import rebuild_tree
+
+				rebuild_tree("Warehouse")
 		else:
-			account = frappe.get_all(
-				"Warehouse",
-				filters={
-					"lft": ["<=", warehouse.lft],
-					"rgt": [">=", warehouse.rgt],
-					"company": warehouse.company,
-					"account": ["is", "set"],
-				},
-				pluck="account",
-				order_by="lft desc",
-				limit=1,
+			account = frappe.db.sql(
+				"""
+				select
+					account from `tabWarehouse`
+				where
+					lft <= %s and rgt >= %s and company = %s
+					and account is not null and ifnull(account, '') !=''
+				order by lft desc limit 1""",
+				(warehouse.lft, warehouse.rgt, warehouse.company),
+				as_list=1,
 			)
 
-			account = account[0] if account else None
+			account = account[0][0] if account else None
 
 	if not account and warehouse.company:
 		account = get_company_default_inventory_account(warehouse.company)
 
 	if not account and warehouse.company:
-		if stock_accounts is None:
-			stock_accounts = get_company_stock_accounts(warehouse.company)
+		inventory_accounts = frappe.get_all(
+			"Account", {"account_type": "Stock", "is_group": 0, "company": warehouse.company}, pluck="name"
+		)
 
-		if len(stock_accounts) == 1:
-			account = stock_accounts[0]
+		if len(inventory_accounts) == 1:
+			account = inventory_accounts[0]
 
 	if raise_error and not account and warehouse.company and not warehouse.is_group:
 		frappe.throw(
@@ -107,9 +100,3 @@ def get_warehouse_account(warehouse, warehouse_account=None, *, raise_error=True
 
 def get_company_default_inventory_account(company):
 	return frappe.get_cached_value("Company", company, "default_inventory_account")
-
-
-def get_company_stock_accounts(company):
-	return frappe.get_all(
-		"Account", {"account_type": "Stock", "is_group": 0, "company": company}, pluck="name"
-	)

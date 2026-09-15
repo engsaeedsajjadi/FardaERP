@@ -1,3 +1,5 @@
+import unittest
+
 import frappe
 
 from erpnext.crm.report.sales_pipeline_analytics.sales_pipeline_analytics import execute

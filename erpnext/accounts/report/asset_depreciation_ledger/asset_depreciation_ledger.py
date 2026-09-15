@@ -15,7 +15,10 @@ def execute(filters=None):
 
 def get_data(filters):
 	data = []
-	depreciation_accounts = frappe.get_all("Account", filters={"account_type": "Depreciation"}, pluck="name")
+	depreciation_accounts = frappe.db.sql_list(
+		""" select name from tabAccount
+		where ifnull(account_type, '') = 'Depreciation' """
+	)
 
 	filters_data = [
 		["company", "=", filters.get("company")],
@@ -30,8 +33,10 @@ def get_data(filters):
 		filters_data.append(["against_voucher", "=", filters.get("asset")])
 
 	if filters.get("asset_category"):
-		assets = frappe.get_all(
-			"Asset", filters={"asset_category": filters.get("asset_category"), "docstatus": 1}, pluck="name"
+		assets = frappe.db.sql_list(
+			"""select name from tabAsset
+			where asset_category = %s and docstatus=1""",
+			filters.get("asset_category"),
 		)
 
 		filters_data.append(["against_voucher", "in", assets])

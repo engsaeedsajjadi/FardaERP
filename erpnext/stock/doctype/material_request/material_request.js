@@ -22,10 +22,9 @@ frappe.ui.form.on("Material Request", {
 			return doc.stock_qty <= doc.ordered_qty ? "green" : "orange";
 		});
 
-		frm.set_query("item_code", "items", function (doc) {
+		frm.set_query("item_code", "items", function () {
 			return {
 				query: "erpnext.controllers.queries.item_query",
-				filters: { company: doc.company },
 			};
 		});
 
@@ -281,7 +280,7 @@ frappe.ui.form.on("Material Request", {
 
 	get_items_from_sales_order: function (frm) {
 		erpnext.utils.map_current_doc({
-			method: "erpnext.selling.doctype.sales_order.mapper.make_material_request",
+			method: "erpnext.selling.doctype.sales_order.sales_order.make_material_request",
 			source_doctype: "Sales Order",
 			target: frm,
 			setters: {
@@ -432,7 +431,7 @@ frappe.ui.form.on("Material Request", {
 
 	make_purchase_order: function (frm) {
 		frappe.call({
-			method: "erpnext.stock.doctype.material_request.mapper.get_item_default_suppliers",
+			method: "erpnext.stock.doctype.material_request.material_request.get_item_default_suppliers",
 			args: {
 				source_name: frm.doc.name,
 				filtered_children: (frm.get_selected() || {}).items || [],
@@ -448,7 +447,7 @@ frappe.ui.form.on("Material Request", {
 				}
 
 				frappe.model.open_mapped_doc({
-					method: "erpnext.stock.doctype.material_request.mapper.make_purchase_order",
+					method: "erpnext.stock.doctype.material_request.material_request.make_purchase_order",
 					frm: frm,
 					args: { supplier: items.length ? items[0].supplier : null },
 					run_link_triggers: true,
@@ -553,7 +552,7 @@ frappe.ui.form.on("Material Request", {
 				},
 			],
 			primary_action_label: __("Create"),
-			primary_action: async function (values) {
+			primary_action: function (values) {
 				const item_suppliers = (values.items || []).filter((row) => row.__checked);
 				if (!item_suppliers.length) {
 					frappe.throw(__("Select at least one Item"));
@@ -587,12 +586,8 @@ frappe.ui.form.on("Material Request", {
 					);
 				}
 
-				if (!(await erpnext.utils.confirm_if_drafts_exist(frm.doc, "Purchase Order"))) {
-					return;
-				}
-
 				frappe.call({
-					method: "erpnext.stock.doctype.material_request.mapper.make_purchase_orders_by_supplier",
+					method: "erpnext.stock.doctype.material_request.material_request.make_purchase_orders_by_supplier",
 					args: { source_name: frm.doc.name, item_suppliers: item_suppliers },
 					freeze: true,
 					callback: function (r) {
@@ -614,7 +609,7 @@ frappe.ui.form.on("Material Request", {
 
 	make_request_for_quotation: function (frm) {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.stock.doctype.material_request.mapper.make_request_for_quotation",
+			method: "erpnext.stock.doctype.material_request.material_request.make_request_for_quotation",
 			frm: frm,
 			run_link_triggers: true,
 		});
@@ -622,14 +617,14 @@ frappe.ui.form.on("Material Request", {
 
 	make_supplier_quotation: function (frm) {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.stock.doctype.material_request.mapper.make_supplier_quotation",
+			method: "erpnext.stock.doctype.material_request.material_request.make_supplier_quotation",
 			frm: frm,
 		});
 	},
 
 	make_stock_entry: function (frm) {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.stock.doctype.material_request.mapper.make_stock_entry",
+			method: "erpnext.stock.doctype.material_request.material_request.make_stock_entry",
 			frm: frm,
 		});
 	},
@@ -656,7 +651,7 @@ frappe.ui.form.on("Material Request", {
 			],
 			(values) => {
 				frappe.call({
-					method: "erpnext.stock.doctype.material_request.mapper.make_in_transit_stock_entry",
+					method: "erpnext.stock.doctype.material_request.material_request.make_in_transit_stock_entry",
 					args: {
 						source_name: frm.doc.name,
 						in_transit_warehouse: values.in_transit_warehouse,
@@ -676,7 +671,7 @@ frappe.ui.form.on("Material Request", {
 
 	create_pick_list: (frm) => {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.stock.doctype.material_request.mapper.create_pick_list",
+			method: "erpnext.stock.doctype.material_request.material_request.create_pick_list",
 			frm: frm,
 		});
 	},
@@ -798,7 +793,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 
 	onload() {
 		this.frm.set_query("item_code", "items", function (doc, cdt, cdn) {
-			let filters = { is_stock_item: 1, company: doc.company };
+			let filters = { is_stock_item: 1 };
 
 			if (doc.material_request_type == "Customer Provided") {
 				filters.customer = doc.customer;

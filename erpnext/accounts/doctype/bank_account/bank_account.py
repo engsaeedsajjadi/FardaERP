@@ -130,7 +130,7 @@ def get_default_company_bank_account(company, party_type, party, ignore_permissi
 
 
 @frappe.whitelist()
-def get_bank_account_details(bank_account: str):
+def get_bank_account_details(bank_account):
 	frappe.has_permission("Bank Account", doc=bank_account, ptype="read", throw=True)
 	return frappe.get_cached_value(
 		"Bank Account", bank_account, ["account", "bank", "bank_account_no"], as_dict=1
@@ -196,7 +196,7 @@ def get_closing_balance_as_per_statement(bank_account: str, date: str):
 	return {"balance": 0, "date": None}
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist()
 def set_closing_balance_as_per_statement(bank_account: str, date: str | datetime.date, balance: float):
 	"""
 	Set the closing balance as per statement for a bank account and date

@@ -1,15 +1,18 @@
 # Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
+import ast
 import json
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+from enum import Enum
+from typing import Any, ClassVar
 
 import frappe
 from frappe import _, is_whitelisted
 from frappe.database.operator_map import OPERATOR_MAP
+from frappe.database.query import SQLFunctionParser
 
 
 def get_valid_api_method(api_path: str):
@@ -378,7 +381,7 @@ class CalculationFormulaValidator(Validator):
 					"sqrt": lambda x: x**0.5,
 					"pow": pow,
 					"ceil": lambda x: int(x) + (1 if x % 1 else 0),
-					"floor": int,
+					"floor": lambda x: int(x),
 				}
 			)
 

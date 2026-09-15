@@ -17,14 +17,13 @@ from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import g
 from erpnext.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation import (
 	is_any_doc_running,
 )
-from erpnext.accounts.services.advances import get_advance_payment_entries_for_regional
-from erpnext.accounts.services.exchange_gain_loss import get_exchange_gain_loss_account
 from erpnext.accounts.utils import (
 	QueryPaymentLedger,
 	create_gain_loss_journal,
 	get_outstanding_invoices,
 	reconcile_against_document,
 )
+from erpnext.controllers.accounts_controller import get_advance_payment_entries_for_regional
 
 
 class PaymentReconciliation(Document):
@@ -465,9 +464,7 @@ class PaymentReconciliation(Document):
 		return frappe.get_single_value("Accounts Settings", "auto_reconcile_payments")
 
 	@frappe.whitelist()
-	def calculate_difference_on_allocation_change(
-		self, payment_entry: list, invoice: list, allocated_amount: float
-	):
+	def calculate_difference_on_allocation_change(self, payment_entry, invoice, allocated_amount):
 		invoice_exchange_map = self.get_invoice_exchange_map(invoice, payment_entry)
 		invoice[0]["exchange_rate"] = invoice_exchange_map.get(invoice[0].get("invoice_number"))
 		if payment_entry[0].get("reference_type") in ["Sales Invoice", "Purchase Invoice"]:
@@ -479,13 +476,16 @@ class PaymentReconciliation(Document):
 		return new_difference_amount
 
 	@frappe.whitelist()
-	def allocate_entries(self, args: dict):
+	def allocate_entries(self, args):
 		self.validate_entries()
 
 		exc_gain_loss_posting_date = frappe.db.get_single_value(
 			"Accounts Settings", "exchange_gain_loss_posting_date", cache=True
 		)
 		invoice_exchange_map = self.get_invoice_exchange_map(args.get("invoices"), args.get("payments"))
+		default_exchange_gain_loss_account = frappe.get_cached_value(
+			"Company", self.company, "exchange_gain_loss_account"
+		)
 
 		entries = []
 		for pay in args.get("payments"):
@@ -505,10 +505,7 @@ class PaymentReconciliation(Document):
 					pay["exchange_rate"] = invoice_exchange_map.get(pay.get("reference_name"))
 
 				res.difference_amount = self.get_difference_amount(pay, inv, res["allocated_amount"])
-				is_gain = (
-					res.difference_amount > 0 if self.party_type == "Customer" else res.difference_amount < 0
-				)
-				res.difference_account = get_exchange_gain_loss_account(self.company, is_gain)
+				res.difference_account = default_exchange_gain_loss_account
 				res.exchange_rate = inv.get("exchange_rate")
 				res.update({"gain_loss_posting_date": pay.get("posting_date")})
 				if not pay.get("is_advance"):
@@ -647,7 +644,7 @@ class PaymentReconciliation(Document):
 	def check_mandatory_to_fetch(self):
 		for fieldname in ["company", "party_type", "party", "receivable_payable_account"]:
 			if not self.get(fieldname):
-				frappe.throw(_("Please select {0} first").format(self.meta.get_translated_label(fieldname)))
+				frappe.throw(_("Please select {0} first").format(_(self.meta.get_label(fieldname))))
 
 	def validate_entries(self):
 		if not self.get("invoices"):

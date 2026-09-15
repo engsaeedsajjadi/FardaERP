@@ -1,7 +1,6 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-from datetime import date
 
 import frappe
 from frappe import _
@@ -89,16 +88,14 @@ def get_loyalty_details(
 
 @frappe.whitelist()
 def get_loyalty_program_details_with_points(
-	customer: str,
-	loyalty_program: str | None = None,
-	expiry_date: str | date | None = None,
-	company: str | None = None,
-	silent: bool = False,
-	include_expired_entry: bool = False,
-	current_transaction_amount: int | float = 0,
+	customer,
+	loyalty_program=None,
+	expiry_date=None,
+	company=None,
+	silent=False,
+	include_expired_entry=False,
+	current_transaction_amount=0,
 ):
-	frappe.has_permission("Customer", doc=customer, throw=True)
-
 	lp_details = get_loyalty_program_details(customer, loyalty_program, company=company, silent=silent)
 	loyalty_program = frappe.get_doc("Loyalty Program", loyalty_program)
 	loyalty_details = get_loyalty_details(
@@ -122,12 +119,12 @@ def get_loyalty_program_details_with_points(
 
 @frappe.whitelist()
 def get_loyalty_program_details(
-	customer: str,
-	loyalty_program: str | None = None,
-	expiry_date: str | date | None = None,
-	company: str | None = None,
-	silent: bool = False,
-	include_expired_entry: bool = False,
+	customer,
+	loyalty_program=None,
+	expiry_date=None,
+	company=None,
+	silent=False,
+	include_expired_entry=False,
 ):
 	lp_details = frappe._dict()
 
@@ -149,7 +146,7 @@ def get_loyalty_program_details(
 
 
 @frappe.whitelist()
-def get_redeemption_factor(loyalty_program: str | None = None, customer: str | None = None):
+def get_redeemption_factor(loyalty_program=None, customer=None):
 	customer_loyalty_program = None
 	if not loyalty_program:
 		customer_loyalty_program = frappe.db.get_value("Customer", customer, "loyalty_program")

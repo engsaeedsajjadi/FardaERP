@@ -10,7 +10,7 @@ erpnext.stock.LandedCostVoucher = class LandedCostVoucher extends erpnext.stock.
 			<table class="table table-bordered" style="background-color: var(--scrollbar-track-color);">
 				<tr><td>
 					<h4>
-						<svg class="icon icon-sm"><use href="#icon-info"></use></svg>
+						<i class="fa fa-hand-right"></i>
 						${__("Notes")}:
 					</h4>
 					<ul>

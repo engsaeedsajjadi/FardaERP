@@ -472,7 +472,6 @@ class StockBalanceReport:
 				"fieldtype": "Link",
 				"options": "Item",
 				"width": 100,
-				"sticky": "True",
 			},
 			{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
 			{
@@ -488,7 +487,6 @@ class StockBalanceReport:
 				"fieldtype": "Link",
 				"options": "Warehouse",
 				"width": 100,
-				"sticky": "True",
 			},
 		]
 
@@ -519,7 +517,6 @@ class StockBalanceReport:
 					"fieldtype": "Float",
 					"width": 100,
 					"convertible": "qty",
-					"sticky": "True",
 				},
 				{
 					"label": _("Balance Value"),
@@ -527,7 +524,6 @@ class StockBalanceReport:
 					"fieldtype": "Currency",
 					"width": 100,
 					"options": "Company:company:default_currency",
-					"sticky": "True",
 				},
 				{
 					"label": _("Opening Qty"),

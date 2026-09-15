@@ -1,5 +1,6 @@
 # Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+import unittest
 
 import frappe
 from frappe import qb
@@ -9,8 +10,6 @@ from frappe.utils import add_days, add_months, flt, get_first_day, nowdate, nowt
 from erpnext.assets.doctype.asset.asset import (
 	get_asset_account,
 	get_asset_value_after_depreciation,
-)
-from erpnext.assets.doctype.asset.mapper import (
 	make_sales_invoice,
 )
 from erpnext.assets.doctype.asset.test_asset import (
@@ -20,6 +19,7 @@ from erpnext.assets.doctype.asset.test_asset import (
 from erpnext.assets.doctype.asset_depreciation_schedule.asset_depreciation_schedule import (
 	get_asset_depr_schedule_doc,
 )
+from erpnext.stock.doctype.item.test_item import create_item
 from erpnext.stock.doctype.serial_and_batch_bundle.test_serial_and_batch_bundle import (
 	get_serial_nos_from_bundle,
 	make_serial_batch_bundle,
@@ -31,6 +31,7 @@ class TestAssetRepair(ERPNextTestSuite):
 	def setUp(self):
 		self.load_test_records("Stock Entry")
 		set_depreciation_settings_in_company()
+		create_item("_Test Stock Item")
 
 	def test_asset_status(self):
 		date = nowdate()
@@ -221,29 +222,26 @@ class TestAssetRepair(ERPNextTestSuite):
 		self.assertRaises(frappe.ValidationError, asset_repair2.save)
 
 	def test_gl_entries_with_perpetual_inventory(self):
-		company = "_Test Company with perpetual inventory"
-		set_depreciation_settings_in_company(company)
+		set_depreciation_settings_in_company(company="_Test Company with perpetual inventory")
 
 		asset_category = frappe.get_doc("Asset Category", "Computers")
-
-		if not any(row.company_name == company for row in asset_category.accounts):
-			asset_category.append(
-				"accounts",
-				{
-					"company_name": company,
-					"fixed_asset_account": "_Test Fixed Asset - TCP1",
-					"accumulated_depreciation_account": "_Test Accumulated Depreciations - TCP1",
-					"depreciation_expense_account": "_Test Depreciations - TCP1",
-					"capital_work_in_progress_account": "CWIP Account - TCP1",
-				},
-			)
-			asset_category.save()
+		asset_category.append(
+			"accounts",
+			{
+				"company_name": "_Test Company with perpetual inventory",
+				"fixed_asset_account": "_Test Fixed Asset - TCP1",
+				"accumulated_depreciation_account": "_Test Accumulated Depreciations - TCP1",
+				"depreciation_expense_account": "_Test Depreciations - TCP1",
+				"capital_work_in_progress_account": "CWIP Account - TCP1",
+			},
+		)
+		asset_category.save()
 
 		asset_repair = create_asset_repair(
 			capitalize_repair_cost=1,
 			stock_consumption=1,
 			warehouse="Stores - TCP1",
-			company=company,
+			company="_Test Company with perpetual inventory",
 			pi_expense_account1="Administrative Expenses - TCP1",
 			pi_expense_account2="Legal Expenses - TCP1",
 			item="_Test Non Stock Item",
@@ -251,13 +249,22 @@ class TestAssetRepair(ERPNextTestSuite):
 			submit=1,
 		)
 
-		gle = frappe.qb.DocType("GL Entry")
-		gl_entries = (
-			frappe.qb.from_(gle)
-			.select(gle.account, Sum(gle.debit).as_("debit"), Sum(gle.credit).as_("credit"))
-			.where((gle.voucher_type == "Asset Repair") & (gle.voucher_no == asset_repair.name))
-			.groupby(gle.account)
-		).run(as_dict=True)
+		gl_entries = frappe.db.sql(
+			"""
+			select
+				account,
+				sum(debit) as debit,
+				sum(credit) as credit
+			from `tabGL Entry`
+			where
+				voucher_type='Asset Repair'
+				and voucher_no=%s
+			group by
+				account
+		""",
+			asset_repair.name,
+			as_dict=1,
+		)
 
 		self.assertTrue(gl_entries)
 
@@ -291,13 +298,22 @@ class TestAssetRepair(ERPNextTestSuite):
 			submit=1,
 		)
 
-		gle = frappe.qb.DocType("GL Entry")
-		gl_entries = (
-			frappe.qb.from_(gle)
-			.select(gle.account, Sum(gle.debit).as_("debit"), Sum(gle.credit).as_("credit"))
-			.where((gle.voucher_type == "Asset Repair") & (gle.voucher_no == asset_repair.name))
-			.groupby(gle.account)
-		).run(as_dict=True)
+		gl_entries = frappe.db.sql(
+			"""
+			select
+				account,
+				sum(debit) as debit,
+				sum(credit) as credit
+			from `tabGL Entry`
+			where
+				voucher_type='Asset Repair'
+				and voucher_no=%s
+			group by
+				account
+		""",
+			asset_repair.name,
+			as_dict=1,
+		)
 
 		self.assertTrue(gl_entries)
 

@@ -5,7 +5,6 @@
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
- "is_submittable": 1,
  "field_order": [
   "closing_date",
   "account",

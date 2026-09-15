@@ -3,7 +3,6 @@
 
 
 import copy
-from unittest.mock import patch
 
 import frappe
 from frappe.utils import add_days, add_to_date, flt, now, nowtime, today
@@ -27,18 +26,6 @@ from erpnext.tests.utils import ERPNextTestSuite
 class TestLandedCostVoucher(ERPNextTestSuite):
 	def setUp(self):
 		self.load_test_records("Currency Exchange")
-
-	def test_get_vendor_invoices_runs(self):
-		# get_vendor_invoice_query filters unclaimed vendor invoices; the threshold moved from a HAVING
-		# (which referenced a SELECT alias with no GROUP BY -- invalid on Postgres) to a WHERE.
-		from erpnext.stock.doctype.landed_cost_voucher.landed_cost_voucher import get_vendor_invoices
-
-		pi = make_purchase_invoice(item_code="_Test Non Stock Item", qty=1, rate=100)
-
-		rows = get_vendor_invoices(
-			"Purchase Invoice", "", "name", 0, 20, {"company": "_Test Company", "name": pi.name}
-		)
-		self.assertTrue(any(r[0] == pi.name for r in rows))
 
 	def test_landed_cost_voucher(self):
 		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
@@ -634,56 +621,6 @@ class TestLandedCostVoucher(ERPNextTestSuite):
 			self.assertEqual(entry.credit, amounts[0])
 			self.assertEqual(entry.credit_in_account_currency, amounts[1])
 
-	def test_landed_cost_charge_in_transaction_currency(self):
-		from erpnext.setup.doctype.currency_exchange.test_currency_exchange import save_new_records
-
-		save_new_records(self.globalTestRecords["Currency Exchange"])  # USD -> INR 62.9
-
-		company = "_Test Company with perpetual inventory"
-		creditors_usd = create_account(
-			account_name="_Test Creditors USD",
-			parent_account="Accounts Payable - TCP1",
-			company=company,
-			account_type="Payable",
-			account_currency="USD",
-		)
-
-		pi = make_purchase_invoice(
-			company=company,
-			supplier="_Test Supplier USD",
-			currency="USD",
-			conversion_rate=62.9,
-			update_stock=1,
-			warehouse="Stores - TCP1",
-			supplier_warehouse="Work In Progress - TCP1",
-			cost_center="Main - TCP1",
-			expense_account="_Test Account Cost for Goods Sold - TCP1",
-			qty=10,
-			rate=100,
-			do_not_save=True,
-		)
-		pi.credit_to = creditors_usd
-		pi.save()
-		pi.submit()
-
-		create_landed_cost_voucher("Purchase Invoice", pi.name, pi.company, charges=100)
-
-		charge_gle = frappe.db.get_value(
-			"GL Entry",
-			{
-				"voucher_no": pi.name,
-				"account": get_expense_account(pi.company),
-				"credit": (">", 0),
-				"is_cancelled": 0,
-			},
-			["credit", "credit_in_transaction_currency"],
-			as_dict=True,
-		)
-
-		self.assertEqual(charge_gle.credit, 100.0)
-		self.assertEqual(charge_gle.credit_in_transaction_currency, flt(100 / 62.9, 2))
-		self.assertNotEqual(charge_gle.credit_in_transaction_currency, pi.items[0].net_amount)
-
 	def test_asset_lcv(self):
 		"Check if LCV for an Asset updates the Assets Net Purchase Amount correctly."
 		frappe.db.set_value(
@@ -1071,6 +1008,7 @@ class TestLandedCostVoucher(ERPNextTestSuite):
 
 	def test_do_not_validate_against_landed_cost_voucher_for_serial_for_legacy_pr(self):
 		from erpnext.stock.doctype.item.test_item import make_item
+		from erpnext.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import get_auto_batch_nos
 
 		frappe.flags.ignore_serial_batch_bundle_validation = True
 		frappe.flags.use_serial_and_batch_fields = True
@@ -1199,10 +1137,10 @@ class TestLandedCostVoucher(ERPNextTestSuite):
 			make_stock_transfer_entry,
 		)
 		from erpnext.manufacturing.doctype.production_plan.test_production_plan import make_bom
-		from erpnext.manufacturing.doctype.work_order.mapper import (
+		from erpnext.manufacturing.doctype.work_order.test_work_order import make_wo_order_test_record
+		from erpnext.manufacturing.doctype.work_order.work_order import (
 			make_stock_entry as make_stock_entry_for_wo,
 		)
-		from erpnext.manufacturing.doctype.work_order.test_work_order import make_wo_order_test_record
 		from erpnext.stock.doctype.item.test_item import make_item
 		from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 		from erpnext.subcontracting.doctype.subcontracting_order.subcontracting_order import (
@@ -1374,67 +1312,6 @@ class TestLandedCostVoucher(ERPNextTestSuite):
 
 			self.assertFalse(gl_entries)
 
-	@patch.dict(frappe.flags, {"dont_execute_stock_reposts": True})
-	def test_landed_cost_voucher_does_not_change_qty_across_stock_reco(self):
-		"""LCV cost updates must not change quantity after a batch stock reconciliation."""
-		from erpnext.stock.doctype.item.test_item import make_item
-		from erpnext.stock.doctype.stock_reconciliation.test_stock_reconciliation import (
-			create_stock_reconciliation,
-		)
-
-		company = "_Test Company with perpetual inventory"
-		warehouse = "Stores - TCP1"
-		item = make_item(
-			properties={"has_batch_no": 1, "create_new_batch": 1, "batch_number_series": "LCVRECO-.####"}
-		).name
-		first_batch = frappe.get_doc({"doctype": "Batch", "item": item}).insert().name
-		second_batch = frappe.get_doc({"doctype": "Batch", "item": item}).insert().name
-
-		receipt = make_purchase_receipt(
-			company=company,
-			warehouse=warehouse,
-			item_code=item,
-			qty=100,
-			rate=10,
-			use_serial_batch_fields=1,
-			batch_no=first_batch,
-			posting_date=add_days(today(), -30),
-		)
-		make_purchase_receipt(
-			company=company,
-			warehouse=warehouse,
-			item_code=item,
-			qty=60,
-			rate=10,
-			use_serial_batch_fields=1,
-			batch_no=second_batch,
-			posting_date=add_days(today(), -28),
-		)
-		create_stock_reconciliation(
-			company=company,
-			warehouse=warehouse,
-			item_code=item,
-			qty=55,
-			rate=10,
-			use_serial_batch_fields=1,
-			batch_no=second_batch,
-			posting_date=add_days(today(), -20),
-		)
-
-		def closing_balance():
-			return frappe.get_all(
-				"Stock Ledger Entry",
-				filters={"item_code": item, "warehouse": warehouse, "is_cancelled": 0},
-				fields=["qty_after_transaction"],
-				order_by="posting_datetime desc, creation desc",
-				limit=1,
-			)[0].qty_after_transaction
-
-		balance_before = closing_balance()
-		create_landed_cost_voucher("Purchase Receipt", receipt.name, company)
-
-		self.assertEqual(closing_balance(), balance_before)
-
 
 def make_landed_cost_voucher(**args):
 	args = frappe._dict(args)
@@ -1534,11 +1411,6 @@ def distribute_landed_cost_on_items(lcv):
 
 
 def ensure_dimension_fields_on_lcv_charges(dimensions):
-	"""Create the dimension custom fields the hooks entry and patch add on migrate.
-
-	Test sites are not guaranteed to have migrated since `Landed Cost Taxes and Charges`
-	joined `accounting_dimension_doctypes`.
-	"""
 	from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 		make_dimension_in_accounting_doctypes,
 	)
@@ -1567,14 +1439,6 @@ def create_branch(branch):
 
 
 class TestLandedCostVoucherAccountingDimensions(ERPNextTestSuite):
-	"""Dimensions set on a Landed Cost Voucher charge row must reach the GL entries.
-
-	The charges are posted into the *receipt document's* ledger, and their expense account
-	(`Expenses Included In Valuation`) is a Profit and Loss account. A dimension marked
-	mandatory for P&L accounts can therefore only be satisfied from the voucher - the
-	receipt was submitted before the voucher existed and knows nothing about it.
-	"""
-
 	def setUp(self):
 		self.company = "_Test Company with perpetual inventory"
 		self.warehouse = "Stores - TCP1"
@@ -1583,8 +1447,6 @@ class TestLandedCostVoucherAccountingDimensions(ERPNextTestSuite):
 		ensure_dimension_fields_on_lcv_charges(["Branch"])
 		self.branch_a = create_branch("_Test LCV Branch A")
 		self.branch_b = create_branch("_Test LCV Branch B")
-
-	# helpers
 
 	def make_lcv(self, pr, charges, do_not_submit=False):
 		lcv = frappe.new_doc("Landed Cost Voucher")
@@ -1634,24 +1496,37 @@ class TestLandedCostVoucherAccountingDimensions(ERPNextTestSuite):
 		)
 
 	def make_dimension_mandatory(self, name, mandatory_for_pl=0, mandatory_for_bs=0):
-		"""Flag a dimension mandatory for this company, restoring the record afterwards.
-
-		Leaving a dimension mandatory leaks into every later test in the run.
-		"""
 		dimension = frappe.get_doc("Accounting Dimension", name)
 		row = next((d for d in dimension.dimension_defaults if d.company == self.company), None)
 
-		if not row:
+		if row:
+			previous = (row.mandatory_for_pl, row.mandatory_for_bs)
+			self.addCleanup(self.restore_dimension_default, name, previous)
+		else:
 			row = dimension.append(
 				"dimension_defaults",
 				{"company": self.company, "reference_document": dimension.document_type},
 			)
+			self.addCleanup(self.remove_dimension_default, name)
 
 		row.mandatory_for_pl = mandatory_for_pl
 		row.mandatory_for_bs = mandatory_for_bs
 		dimension.save()
 
-	# tests
+	def restore_dimension_default(self, name, previous):
+		dimension = frappe.get_doc("Accounting Dimension", name)
+		for row in dimension.dimension_defaults:
+			if row.company == self.company:
+				row.mandatory_for_pl, row.mandatory_for_bs = previous
+		dimension.save()
+
+	def remove_dimension_default(self, name):
+		dimension = frappe.get_doc("Accounting Dimension", name)
+		dimension.set(
+			"dimension_defaults",
+			[d for d in dimension.dimension_defaults if d.company != self.company],
+		)
+		dimension.save()
 
 	def test_charge_row_dimension_reaches_gl_entry(self):
 		pr = make_purchase_receipt(company=self.company, warehouse=self.warehouse)
@@ -1662,7 +1537,6 @@ class TestLandedCostVoucherAccountingDimensions(ERPNextTestSuite):
 		self.assertEqual(charge_entries[0].credit, 100.0)
 		self.assertEqual(charge_entries[0].branch, self.branch_a)
 
-		# the stock leg is untouched - it keeps the receipt item's dimensions
 		stock_account = get_inventory_account(self.company, self.warehouse)
 		self.assertFalse(self.get_lcv_gl_entries(pr, stock_account)[0].branch)
 
@@ -1692,7 +1566,6 @@ class TestLandedCostVoucherAccountingDimensions(ERPNextTestSuite):
 		self.assertEqual(charge_entries[0].cost_center, cost_center)
 		self.assertEqual(charge_entries[0].project, project)
 
-		# the stock leg still uses the receipt item's cost center
 		stock_account = get_inventory_account(self.company, self.warehouse)
 		self.assertEqual(self.get_lcv_gl_entries(pr, stock_account)[0].cost_center, item_cost_center)
 
@@ -1706,7 +1579,6 @@ class TestLandedCostVoucherAccountingDimensions(ERPNextTestSuite):
 		self.assertFalse(charge_entries[0].branch)
 
 	def test_charge_rows_on_same_account_with_different_dimensions_stay_separate(self):
-		"""Two charges on one account used to merge, keeping only the first row's dimensions."""
 		pr = make_purchase_receipt(company=self.company, warehouse=self.warehouse)
 		self.make_lcv(
 			pr,

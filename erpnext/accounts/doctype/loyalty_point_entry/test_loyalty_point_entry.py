@@ -1,8 +1,8 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+import unittest
 
 import frappe
-from frappe.query_builder.functions import Sum
 from frappe.utils import today
 
 from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -64,9 +64,13 @@ class TestLoyaltyPointEntry(ERPNextTestSuite):
 		self.assertEqual(doc.loyalty_points, -7)
 
 		# Check balance
-		lpe = frappe.qb.DocType("Loyalty Point Entry")
-		balance = (
-			frappe.qb.from_(lpe).select(Sum(lpe.loyalty_points)).where(lpe.customer == self.customer_name)
-		).run()[0][0]
+		balance = frappe.db.sql(
+			"""
+			SELECT SUM(loyalty_points)
+			FROM `tabLoyalty Point Entry`
+			WHERE customer = %s
+		""",
+			(self.customer_name,),
+		)[0][0]
 
 		self.assertEqual(balance, 3)  # 10 added, 7 redeemed

@@ -10,7 +10,7 @@ from frappe.query_builder.functions import Sum
 from frappe.utils import flt, getdate
 
 from erpnext import get_company_currency
-from erpnext.accounts.services.taxes import validate_conversion_rate
+from erpnext.controllers.accounts_controller import validate_conversion_rate
 from erpnext.manufacturing.doctype.blanket_order import blanket_order_pricing
 from erpnext.stock.doctype.item.item import get_item_defaults
 
@@ -160,8 +160,8 @@ class BlanketOrder(Document):
 
 	def validate_item_qty(self):
 		for d in self.items:
-			if flt(d.qty) <= 0:
-				frappe.throw(_("Row {0}: Quantity must be greater than zero.").format(d.idx))
+			if flt(d.qty) < 0:
+				frappe.throw(_("Row {0}: Quantity cannot be negative.").format(d.idx))
 
 	def set_base_rates(self):
 		blanket_order_pricing.set_base_rates(self)
@@ -185,7 +185,7 @@ def apply_price_list(
 
 
 @frappe.whitelist()
-def make_order(source_name: str):
+def make_order(source_name):
 	doctype = frappe.flags.args.doctype
 
 	def update_doc(source_doc, target_doc, source_parent):
@@ -207,11 +207,7 @@ def make_order(source_name: str):
 		"Blanket Order",
 		source_name,
 		{
-			"Blanket Order": {
-				"doctype": doctype,
-				"field_no_map": ["naming_series"],
-				"postprocess": update_doc,
-			},
+			"Blanket Order": {"doctype": doctype, "postprocess": update_doc},
 			"Blanket Order Item": {
 				"doctype": doctype + " Item",
 				"field_map": {

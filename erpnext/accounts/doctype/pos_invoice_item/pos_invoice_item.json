@@ -10,8 +10,6 @@
   "barcode",
   "has_item_scanned",
   "item_code",
-  "is_product_bundle",
-  "product_bundle",
   "col_break1",
   "item_name",
   "customer_item_code",
@@ -89,8 +87,6 @@
   "item_tax_rate",
   "actual_batch_qty",
   "actual_qty",
-  "serial_batch_entries_section",
-  "serial_batch_entries_html",
   "section_break_tlhi",
   "serial_no",
   "column_break_ciit",
@@ -128,23 +124,6 @@
    "oldfieldtype": "Link",
    "options": "Item",
    "search_index": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_product_bundle",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Is Product Bundle",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.is_product_bundle",
-   "fieldname": "product_bundle",
-   "fieldtype": "Link",
-   "label": "Product Bundle",
-   "options": "Product Bundle",
-   "read_only_depends_on": "eval:doc.so_detail"
   },
   {
    "fieldname": "col_break1",
@@ -861,15 +840,6 @@
    "fieldname": "use_serial_batch_fields",
    "fieldtype": "Check",
    "label": "Use Serial No / Batch Fields"
-  },
-  {
-   "fieldname": "serial_batch_entries_section",
-   "fieldtype": "Section Break",
-   "label": "Serial / Batch Entries"
-  },
-  {
-   "fieldname": "serial_batch_entries_html",
-   "fieldtype": "HTML"
   },
   {
    "depends_on": "eval:doc.use_serial_batch_fields === 1",

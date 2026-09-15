@@ -2,7 +2,7 @@
 // License: GNU General Public License v3. See license.txt
 
 // Keep these in sync with QI_INCOMING_PURPOSES / QI_OUTGOING_PURPOSES /
-// stock_entry_row_requires_inspection in stock/services/quality_inspection_service.py.
+// stock_entry_row_requires_inspection in controllers/stock_controller.py.
 erpnext.stock = erpnext.stock || {};
 erpnext.stock.qi_incoming_purposes = [
 	"Material Receipt",
@@ -18,9 +18,9 @@ erpnext.stock.qi_outgoing_purposes = [
 	"Subcontracting Delivery",
 	"Disassemble",
 ];
-erpnext.stock.secondary_item_purposes = ["Manufacture", "Repack", "Disassemble"];
 erpnext.stock.is_incoming_qi_purpose = (purpose) =>
 	purpose === "Manufacture" || erpnext.stock.qi_incoming_purposes.includes(purpose);
+erpnext.stock.secondary_item_purposes = ["Manufacture", "Repack", "Disassemble"];
 erpnext.stock.row_requires_quality_inspection = (purpose, row) => {
 	if (
 		erpnext.stock.secondary_item_purposes.includes(purpose) &&
@@ -247,21 +247,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 					query: "erpnext.controllers.queries.get_item_uom_query",
 					filters: {
 						item_code: row.item_code,
-					},
-				};
-			});
-		}
-
-		if (this.frm.fields_dict["items"].grid.get_field("product_bundle")) {
-			// restrict the version picker to enabled, submitted Product Bundles of the row's item
-			this.frm.set_query("product_bundle", "items", function (doc, cdt, cdn) {
-				let row = locals[cdt][cdn];
-
-				return {
-					filters: {
-						new_item_code: row.item_code,
-						docstatus: 1,
-						disabled: 0,
 					},
 				};
 			});
@@ -661,10 +646,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 	refresh() {
 		erpnext.toggle_naming_series();
 		erpnext.hide_company(this.frm);
-		// Remember the currency the rendered document is denominated in, so that a
-		// real currency change can be told apart from a mere exchange rate refresh
-		// (e.g. triggered by a date change).
-		this._doc_currency = this.frm.doc.currency;
 		this.set_dynamic_labels();
 		this.setup_sms();
 		this.setup_quality_inspection();
@@ -785,7 +766,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 				args: {
 					item_idx: item.idx,
 					reset_item_details: true,
-					parentfield: item.parentfield,
 				},
 				callback: function (r) {
 					if (!r.exc) {
@@ -863,6 +843,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 							item_tax_template: item.item_tax_template,
 							child_doctype: item.doctype,
 							child_docname: item.name,
+							is_old_subcontracting_flow: me.frm.doc.is_old_subcontracting_flow,
 							use_serial_batch_fields: item.use_serial_batch_fields,
 							serial_and_batch_bundle: item.serial_and_batch_bundle,
 						},
@@ -1151,9 +1132,11 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		if (this.frm.doc.set_posting_time) return;
 		if (frappe.datetime.get_today() == this.frm.doc.posting_date) return;
 
-		const is_confirmation_reqd = await frappe.xcall(
-			"erpnext.accounts.doctype.accounts_settings.accounts_settings.get_posting_date_confirmation"
+		let is_confirmation_reqd = await frappe.db.get_single_value(
+			"Accounts Settings",
+			"confirm_before_resetting_posting_date"
 		);
+
 		if (!is_confirmation_reqd) return;
 
 		return new Promise((resolve, reject) => {
@@ -1438,17 +1421,17 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		) {
 			const to_clear = [];
 			if (doc.payment_terms_template) {
-				to_clear.push(frappe.meta.get_translated_label(cdt, "payment_terms_template"));
+				to_clear.push(__(frappe.meta.get_label(cdt, "payment_terms_template")));
 			}
 
 			if (doc.payment_schedule?.length) {
-				to_clear.push(frappe.meta.get_translated_label(cdt, "payment_schedule"));
+				to_clear.push(__(frappe.meta.get_label(cdt, "payment_schedule")));
 			}
 
 			frappe.confirm(
 				__(
 					"For the new {0} to take effect, would you like to clear the current {1}?",
-					[frappe.meta.get_translated_label(cdt, "due_date"), frappe.utils.comma_and(to_clear)],
+					[__(frappe.meta.get_label(cdt, "due_date")), frappe.utils.comma_and(to_clear)],
 					"Clear payment terms template and/or payment schedule when due date is changed"
 				),
 				() => {
@@ -1502,10 +1485,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		let me = this;
 		this.set_dynamic_labels();
 		let company_currency = this.get_company_currency();
-		// Currency the stored margins/actual charges are denominated in, captured
-		// before this trigger updates the tracker for the next one.
-		let previous_currency = this._doc_currency;
-		this._doc_currency = this.frm.doc.currency;
 		// Added `load_after_mapping` to determine if document is loading after mapping from another doc
 		if (
 			this.frm.doc.currency &&
@@ -1518,14 +1497,8 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 				company_currency,
 				function (exchange_rate) {
 					if (exchange_rate != me.frm.doc.conversion_rate) {
-						// Margins and actual charges are amounts in the transaction
-						// currency; convert them only when the currency itself changed,
-						// not when just the exchange rate was refreshed (e.g. by a date
-						// change), otherwise the entered margin keeps shrinking.
-						if (previous_currency !== me.frm.doc.currency) {
-							me.set_margin_amount_based_on_currency(exchange_rate);
-							me.set_actual_charges_based_on_currency(exchange_rate);
-						}
+						me.set_margin_amount_based_on_currency(exchange_rate);
+						me.set_actual_charges_based_on_currency(exchange_rate);
 						me.frm.set_value("conversion_rate", exchange_rate);
 					}
 				}
@@ -1892,7 +1865,6 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		this._last_party_account_currency = this.frm.doc.party_account_currency;
 		this._last_company_currency = company_currency;
 
-		this.toggle_base_currency_fields(company_currency);
 		this.change_form_labels(company_currency);
 		this.change_grid_labels(company_currency);
 		this.frm.refresh_fields();
@@ -1906,7 +1878,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		};
 	}
 
-	set_currency_labels_from_options(currency_options, parentfield, company_currency) {
+	set_currency_labels_from_options(currency_options, parentfield) {
 		const doctype = parentfield ? this.frm.fields_dict[parentfield].grid.doctype : this.frm.doc.doctype;
 		const docfields = frappe.meta.get_docfields(doctype);
 
@@ -1915,78 +1887,22 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 				.filter((df) => df.fieldtype === "Currency" && df.options === options)
 				.map((df) => df.fieldname);
 
-			if (this.frm.doc.currency == company_currency && currency == company_currency) {
-				this.frm.reset_currency_labels(
-					fields.filter((field) => !field.startsWith("base_")),
-					parentfield
-				);
-				return;
-			}
-
 			this.frm.set_currency_labels(fields, currency, parentfield);
 		});
-	}
-
-	toggle_base_currency_fields(company_currency) {
-		const show = this.frm.doc.currency != company_currency;
-		this._base_currency_field_visibility = this._base_currency_field_visibility || {};
-
-		const parent_fields = { show: [], hide: [] };
-		(frappe.meta.get_docfields(this.frm.doctype, this.frm.docname) || []).forEach((df) => {
-			if (df.fieldname?.startsWith("base_")) {
-				const field_key = `${this.frm.doctype}.${df.fieldname}`;
-				const field_list = this.should_show_base_currency_field(field_key, df, show)
-					? "show"
-					: "hide";
-				parent_fields[field_list].push(df.fieldname);
-			}
-		});
-
-		if (parent_fields.show.length) this.frm.toggle_display(parent_fields.show, true);
-		if (parent_fields.hide.length) this.frm.toggle_display(parent_fields.hide, false);
-
-		Object.values(this.frm.fields_dict).forEach((field) => {
-			if (!field.grid) return;
-
-			const grid_fields = { show: [], hide: [] };
-			(field.grid.docfields || []).forEach((df) => {
-				if (df.fieldname?.startsWith("base_")) {
-					const field_key =
-						`${this.frm.doctype}.${field.grid.df.fieldname}` +
-						`.${field.grid.doctype}.${df.fieldname}`;
-					const field_list = this.should_show_base_currency_field(field_key, df, show)
-						? "show"
-						: "hide";
-					grid_fields[field_list].push(df.fieldname);
-				}
-			});
-
-			if (grid_fields.show.length) field.grid.set_column_disp(grid_fields.show, true);
-			if (grid_fields.hide.length) field.grid.set_column_disp(grid_fields.hide, false);
-		});
-	}
-
-	should_show_base_currency_field(field_key, df, show) {
-		if (!Object.prototype.hasOwnProperty.call(this._base_currency_field_visibility, field_key)) {
-			this._base_currency_field_visibility[field_key] = {
-				originalHidden: cint(df.hidden) === 1,
-			};
-		}
-
-		return show && this._base_currency_field_visibility[field_key].originalHidden !== true;
 	}
 
 	change_form_labels(company_currency) {
 		let me = this;
 		const currency_options = this.get_currency_label_options(company_currency);
 
-		this.set_currency_labels_from_options(currency_options, null, company_currency);
-		if (this.frm.doc.currency == company_currency) {
-			this.frm.reset_currency_labels(["totals_section"]);
-		} else {
-			this.frm.set_currency_labels(["totals_section"], this.frm.doc.currency);
-		}
+		this.set_currency_labels_from_options(currency_options);
+		this.frm.set_currency_labels(["totals_section"], this.frm.doc.currency);
 		this.frm.set_currency_labels(["base_totals_section"], company_currency);
+
+		this.frm.set_currency_labels(
+			["outstanding_amount", "total_advance"],
+			this.frm.doc.party_account_currency
+		);
 
 		this.frm.set_df_property(
 			"conversion_rate",
@@ -2064,7 +1980,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		var me = this;
 		const currency_options = this.get_currency_label_options(company_currency);
 
-		this.toggle_item_grid_columns();
+		this.toggle_item_grid_columns(company_currency);
 
 		for (const child_table of [
 			"items",
@@ -2076,7 +1992,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			"sales_team",
 		]) {
 			if (this.frm.fields_dict[child_table]) {
-				this.set_currency_labels_from_options(currency_options, child_table, company_currency);
+				this.set_currency_labels_from_options(currency_options, child_table);
 			}
 		}
 
@@ -2125,7 +2041,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			frappe.call({
 				method: "erpnext.stock.get_item_details.get_batch_based_item_price",
 				args: {
-					ctx: params,
+					pctx: params,
 					item_code: row.item_code,
 				},
 				callback: function (r) {
@@ -2140,10 +2056,17 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		}
 	}
 
-	toggle_item_grid_columns() {
+	toggle_item_grid_columns(company_currency) {
+		const me = this;
 		// toggle columns
 		var item_grid = this.frm.fields_dict["items"].grid;
-		var me = this;
+		$.each(
+			["base_rate", "base_price_list_rate", "base_amount", "base_rate_with_margin"],
+			function (i, fname) {
+				if (frappe.meta.get_docfield(item_grid.doctype, fname))
+					item_grid.set_column_disp(fname, me.frm.doc.currency != company_currency);
+			}
+		);
 
 		var show =
 			cint(this.frm.doc.discount_amount) ||
@@ -2155,10 +2078,9 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			if (frappe.meta.get_docfield(item_grid.doctype, fname)) item_grid.set_column_disp(fname, show);
 		});
 
-		var show_base = show && me.frm.doc.currency != me.get_company_currency();
 		$.each(["base_net_rate", "base_net_amount"], function (i, fname) {
 			if (frappe.meta.get_docfield(item_grid.doctype, fname))
-				item_grid.set_column_disp(fname, show_base);
+				item_grid.set_column_disp(fname, show && me.frm.doc.currency != company_currency);
 		});
 	}
 
@@ -2645,9 +2567,11 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 			) {
 				if (!me.frm.doc[fieldname]) {
 					frappe.msgprint(
-						__("Please specify {0}. It is needed to fetch Item Details.", [
-							frappe.meta.get_translated_label(me.frm.doc.doctype, fieldname, me.frm.doc.name),
-						])
+						__("Please specify") +
+							": " +
+							__(frappe.meta.get_label(me.frm.doc.doctype, fieldname, me.frm.doc.name)) +
+							". " +
+							__("It is needed to fetch Item Details.")
 					);
 					valid = false;
 				}
@@ -2873,17 +2797,9 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		}
 	}
 
-	async make_mapped_payment_entry(args) {
+	make_mapped_payment_entry(args) {
 		var me = this;
 		args = args || { dt: this.frm.doc.doctype, dn: this.frm.doc.name };
-		// get_method_for_payment bypasses open_mapped_doc, so run the draft guard explicitly
-		let via_journal_entry = this.frm.doc.__onload && this.frm.doc.__onload.make_payment_via_journal_entry;
-		if (
-			!via_journal_entry &&
-			!(await erpnext.utils.confirm_if_drafts_exist(this.frm.doc, "Payment Entry"))
-		) {
-			return;
-		}
 		return frappe.call({
 			method: me.get_method_for_payment(),
 			args: args,
@@ -3118,9 +3034,11 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 		let method = "erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry";
 		if (this.frm.doc.__onload && this.frm.doc.__onload.make_payment_via_journal_entry) {
 			if (["Sales Invoice", "Purchase Invoice"].includes(this.frm.doc.doctype)) {
-				method = "erpnext.accounts.doctype.journal_entry.mapper.get_payment_entry_against_invoice";
+				method =
+					"erpnext.accounts.doctype.journal_entry.journal_entry.get_payment_entry_against_invoice";
 			} else {
-				method = "erpnext.accounts.doctype.journal_entry.mapper.get_payment_entry_against_order";
+				method =
+					"erpnext.accounts.doctype.journal_entry.journal_entry.get_payment_entry_against_order";
 			}
 		}
 

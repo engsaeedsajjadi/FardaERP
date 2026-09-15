@@ -84,7 +84,7 @@ class SubcontractingBOM(Document):
 
 
 @frappe.whitelist()
-def get_subcontracting_boms_for_finished_goods(fg_items: str | list):
+def get_subcontracting_boms_for_finished_goods(fg_items: str | list) -> dict:
 	if fg_items:
 		filters = {"is_active": 1}
 

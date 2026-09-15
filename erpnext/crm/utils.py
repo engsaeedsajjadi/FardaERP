@@ -149,7 +149,7 @@ def link_open_events(ref_doctype, ref_docname, doc):
 
 
 @frappe.whitelist()
-def get_open_activities(ref_doctype: str, ref_docname: str):
+def get_open_activities(ref_doctype, ref_docname):
 	tasks = get_open_todos(ref_doctype, ref_docname)
 	events = get_open_events(ref_doctype, ref_docname)
 	tasks_history = get_closed_todos(ref_doctype, ref_docname)
@@ -249,7 +249,7 @@ def open_leads_opportunities_based_on_todays_event():
 
 class CRMNote(Document):
 	@frappe.whitelist()
-	def add_note(self, note: str):
+	def add_note(self, note):
 		self.append("notes", {"note": note, "added_by": frappe.session.user, "added_on": now()})
 		self.save()
 		notify_mentions(self.doctype, self.name, note)
@@ -265,7 +265,7 @@ class CRMNote(Document):
 				d.db_update()
 
 	@frappe.whitelist()
-	def delete_note(self, row_id: str):
+	def delete_note(self, row_id):
 		for d in self.notes:
 			if cstr(d.name) == row_id:
 				self.remove(d)

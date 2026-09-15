@@ -13,7 +13,6 @@ from erpnext.accounts.doctype.financial_report_template.financial_report_engine 
 from erpnext.accounts.report.financial_statements import (
 	accumulate_values_into_parents,
 	add_total_row,
-	build_period_list,
 	calculate_values,
 	compute_growth_view_data,
 	filter_accounts,
@@ -24,7 +23,7 @@ from erpnext.accounts.report.financial_statements import (
 	get_columns,
 	get_data,
 	get_filtered_list_for_consolidated_report,
-	get_period_keys_for_total,
+	get_period_list,
 	prepare_data,
 )
 
@@ -33,10 +32,15 @@ def execute(filters=None):
 	if filters and filters.report_template:
 		return FinancialReportEngine().execute(filters)
 
-	period_list = build_period_list(filters)
-
-	if not period_list:
-		return
+	period_list = get_period_list(
+		filters.from_fiscal_year,
+		filters.to_fiscal_year,
+		filters.period_start_date,
+		filters.period_end_date,
+		filters.filter_based_on,
+		filters.periodicity,
+		company=filters.company,
+	)
 
 	filters.period_start_date = period_list[0]["year_start_date"]
 
@@ -75,13 +79,7 @@ def execute(filters=None):
 	)
 
 	provisional_profit_loss, total_credit = get_provisional_profit_loss(
-		asset,
-		liability,
-		equity,
-		period_list,
-		filters.company,
-		currency,
-		accumulated_values=filters.accumulated_values,
+		asset, liability, equity, period_list, filters.company, currency
 	)
 
 	message, opening_balance = check_opening_balance(asset, liability, equity)
@@ -111,11 +109,7 @@ def execute(filters=None):
 		data.append(total_credit)
 
 	columns = get_columns(
-		filters.periodicity,
-		period_list,
-		filters.accumulated_values,
-		company=filters.company,
-		selected_view=filters.get("selected_view"),
+		filters.periodicity, period_list, filters.accumulated_values, company=filters.company
 	)
 
 	chart = get_chart_data(filters, period_list, asset, liability, equity, currency)
@@ -131,18 +125,12 @@ def execute(filters=None):
 
 
 def get_provisional_profit_loss(
-	asset,
-	liability,
-	equity,
-	period_list,
-	company,
-	currency=None,
-	consolidated=False,
-	accumulated_values=False,
+	asset, liability, equity, period_list, company, currency=None, consolidated=False
 ):
 	provisional_profit_loss = {}
 	total_row = {}
 	if asset:
+		total = total_row_total = 0
 		currency = currency or frappe.get_cached_value("Company", company, "default_currency")
 		total_row = {
 			"account_name": "'" + _("Total (Credit)") + "'",
@@ -168,9 +156,11 @@ def get_provisional_profit_loss(
 			if provisional_profit_loss[key]:
 				has_value = True
 
-		total_keys = get_period_keys_for_total(period_list, accumulated_values, consolidated)
-		provisional_profit_loss["total"] = flt(sum(provisional_profit_loss.get(k, 0.0) for k in total_keys))
-		total_row["total"] = flt(sum(total_row.get(k, 0.0) for k in total_keys))
+			total += flt(provisional_profit_loss[key])
+			provisional_profit_loss["total"] = total
+
+			total_row_total += flt(total_row[key])
+			total_row["total"] = total_row_total
 
 		if has_value:
 			provisional_profit_loss.update(
@@ -214,24 +204,23 @@ def get_report_summary(
 ):
 	net_asset, net_liability, net_equity, net_provisional_profit_loss = 0.0, 0.0, 0.0, 0.0
 
+	if filters.get("accumulated_values"):
+		period_list = [period_list[-1]]
+
 	# from consolidated financial statement
 	if filters.get("accumulated_in_group_company"):
 		period_list = get_filtered_list_for_consolidated_report(filters, period_list)
-		keys = [period if consolidated else period.key for period in period_list]
-	else:
-		keys = get_period_keys_for_total(period_list, filters.accumulated_values, consolidated)
 
-	# get_data() output: [...account rows..., total_row, {}]  →  [-2] = total row, [-1] = blank separator
-	# [-1] == {} guards against missing total row (e.g. empty liability/equity data)
-	for key in keys:
+	for period in period_list:
+		key = period if consolidated else period.key
 		if asset:
-			net_asset += flt(asset[-2].get(key))
+			net_asset += asset[-2].get(key)
 		if liability and liability[-1] == {}:
-			net_liability += flt(liability[-2].get(key))
+			net_liability += liability[-2].get(key)
 		if equity and equity[-1] == {}:
-			net_equity += flt(equity[-2].get(key))
+			net_equity += equity[-2].get(key)
 		if provisional_profit_loss:
-			net_provisional_profit_loss += flt(provisional_profit_loss.get(key))
+			net_provisional_profit_loss += provisional_profit_loss.get(key)
 
 	return [
 		{"value": net_asset, "label": _("Total Asset"), "datatype": "Currency", "currency": currency},
@@ -294,7 +283,15 @@ def execute_snapshot_report(filters):
 	if not (conn := get_latest_sync("GL Entry")):
 		frappe.throw(_("Balance Sheet requires {0} to be synced to DuckDB").format(frappe.bold("GL Entry")))
 
-	period_list = build_period_list(filters)
+	period_list = get_period_list(
+		filters.from_fiscal_year,
+		filters.to_fiscal_year,
+		filters.period_start_date,
+		filters.period_end_date,
+		filters.filter_based_on,
+		filters.periodicity,
+		company=filters.company,
+	)
 	filters.period_start_date = period_list[0]["year_start_date"]
 
 	currency = filters.presentation_currency or frappe.get_cached_value(

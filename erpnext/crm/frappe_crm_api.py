@@ -27,7 +27,6 @@ def create_prospect_against_crm_deal():
 			prospect.insert()
 			prospect_name = prospect.name
 	except Exception:
-		frappe.db.rollback()
 		frappe.log_error(
 			frappe.get_traceback(),
 			f"Error while creating prospect against CRM Deal: {frappe.form_dict.get('crm_deal_id')}",
@@ -35,7 +34,7 @@ def create_prospect_against_crm_deal():
 		pass
 
 	if doc.contacts and len(doc.contacts):
-		create_contacts(frappe.parse_json(doc.contacts), prospect.company_name, "Prospect", prospect_name)
+		create_contacts(json.loads(doc.contacts), prospect.company_name, "Prospect", prospect_name)
 
 	create_address("Prospect", prospect_name, doc.address)
 	frappe.response["message"] = prospect_name
@@ -71,8 +70,8 @@ def create_contacts(contacts, organization=None, link_doctype=None, link_docname
 def create_address(doctype, docname, address):
 	if not address:
 		return
-	address = frappe.parse_json(address)
-	frappe.db.savepoint("crm_create_address")
+	if isinstance(address, str):
+		address = json.loads(address)
 	try:
 		_address = frappe.db.exists("Address", address.get("name"))
 		if not _address:
@@ -100,7 +99,6 @@ def create_address(doctype, docname, address):
 			address.save(ignore_permissions=True)
 			return address.name
 	except Exception:
-		frappe.db.rollback(save_point="crm_create_address")
 		frappe.log_error(frappe.get_traceback(), f"Error while creating address for {docname}")
 
 
@@ -140,7 +138,7 @@ CUSTOMER_ALLOWED_FIELDS = {
 
 
 @frappe.whitelist()
-def create_customer(customer_data: dict | None = None):
+def create_customer(customer_data=None):
 	validate_frappe_crm_sync()
 
 	if not customer_data:
@@ -157,26 +155,14 @@ def create_customer(customer_data: dict | None = None):
 			# If CRM is installed on the site, User Permission cannot be ignored while saving Customer Records.
 			customer.insert(ignore_permissions=not is_crm_installed())
 			customer_name = customer.name
-	except Exception:
-		frappe.db.rollback()
-		frappe.log_error(frappe.get_traceback(), "Error while creating customer against Frappe CRM Deal")
-		return
 
-	# Link contacts/address under a savepoint so a failure here does NOT discard the Customer just
-	# created (a full rollback would; MariaDB kept it pre-migration). Linking is best-effort.
-	frappe.db.savepoint("crm_customer_links")
-	try:
-		contacts = frappe.parse_json(customer_data.get("contacts"))
+		contacts = json.loads(customer_data.get("contacts"))
 		create_contacts(contacts, customer_name, "Customer", customer_name)
 		create_address("Customer", customer_name, customer_data.get("address"))
+		return customer_name
 	except Exception:
-		frappe.db.rollback(save_point="crm_customer_links")
-		frappe.log_error(frappe.get_traceback(), "Error while linking contacts/address to new Customer")
-		# keep the Customer, but preserve the pre-existing contract of returning None on a linking failure
-		# so CRM callers still see the failure signal
-		return
-
-	return customer_name
+		frappe.log_error(frappe.get_traceback(), "Error while creating customer against Frappe CRM Deal")
+		pass
 
 
 def validate_frappe_crm_sync():

@@ -76,7 +76,6 @@
   "base_totals_section",
   "base_grand_total",
   "base_in_words",
-  "column_break_ydwe",
   "base_rounding_adjustment",
   "base_rounded_total",
   "section_break_49",
@@ -105,10 +104,6 @@
   "shipping_address_section",
   "shipping_address_name",
   "shipping_address",
-  "shipping_contact_person",
-  "shipping_contact_display",
-  "shipping_contact_mobile",
-  "shipping_contact_email",
   "column_break_95",
   "dispatch_address_name",
   "dispatch_address",
@@ -358,38 +353,6 @@
    "fieldname": "shipping_address",
    "fieldtype": "Text Editor",
    "label": "Shipping Address",
-   "read_only": 1
-  },
-  {
-   "fieldname": "shipping_contact_person",
-   "fieldtype": "Link",
-   "label": "Shipping Contact Person",
-   "options": "Contact",
-   "print_hide": 1
-  },
-  {
-   "fetch_from": "shipping_contact_person.full_name",
-   "fieldname": "shipping_contact_display",
-   "fieldtype": "Small Text",
-   "label": "Shipping Contact",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "shipping_contact_person.mobile_no",
-   "fieldname": "shipping_contact_mobile",
-   "fieldtype": "Small Text",
-   "label": "Shipping Contact Mobile No",
-   "options": "Phone",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "shipping_contact_person.email_id",
-   "fieldname": "shipping_contact_email",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Shipping Contact Email",
-   "options": "Email",
-   "print_hide": 1,
    "read_only": 1
   },
   {
@@ -1191,13 +1154,11 @@
    "width": "50%"
   },
   {
-   "depends_on": "eval:doc.sales_partner",
    "fetch_from": "sales_partner.commission_rate",
    "fetch_if_empty": 1,
    "fieldname": "commission_rate",
    "fieldtype": "Float",
    "label": "Commission Rate (%)",
-   "no_copy": 1,
    "oldfieldname": "commission_rate",
    "oldfieldtype": "Currency",
    "print_hide": 1,
@@ -1205,11 +1166,9 @@
    "width": "100px"
   },
   {
-   "depends_on": "eval:doc.sales_partner",
    "fieldname": "total_commission",
    "fieldtype": "Currency",
    "label": "Total Commission",
-   "no_copy": 1,
    "oldfieldname": "total_commission",
    "oldfieldtype": "Currency",
    "options": "Company:company:default_currency",
@@ -1303,11 +1262,9 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.sales_partner",
    "fieldname": "amount_eligible_for_commission",
    "fieldtype": "Currency",
    "label": "Amount Eligible for Commission",
-   "no_copy": 1,
    "options": "Company:company:default_currency",
    "read_only": 1
   },
@@ -1465,16 +1422,6 @@
    "print_hide": 1
   },
   {
-   "collapsible": 1,
-   "fieldname": "utm_analytics_section",
-   "fieldtype": "Section Break",
-   "label": "UTM Analytics"
-  },
-  {
-   "fieldname": "column_break_neoj",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "totals_section",
    "fieldtype": "Section Break",
    "label": "Totals",
@@ -1488,7 +1435,13 @@
    "options": "Company:company:default_currency"
   },
   {
-   "fieldname": "column_break_ydwe",
+   "collapsible": 1,
+   "fieldname": "utm_analytics_section",
+   "fieldtype": "Section Break",
+   "label": "UTM Analytics"
+  },
+  {
+   "fieldname": "column_break_neoj",
    "fieldtype": "Column Break"
   },
   {
@@ -1509,7 +1462,7 @@
  "idx": 146,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-14 12:43:19.480555",
+ "modified": "2026-08-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Delivery Note",

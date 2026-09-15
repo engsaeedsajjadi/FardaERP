@@ -5,11 +5,14 @@ import frappe
 from frappe.utils import flt
 
 from erpnext.accounts.doctype.financial_report_template.financial_report_engine import (
+	AccountData,
+	DataCollector,
 	DependencyResolver,
 	FilterExpressionParser,
 	FinancialQueryBuilder,
 	FinancialReportEngine,
 	FormulaCalculator,
+	PeriodValue,
 )
 from erpnext.accounts.doctype.financial_report_template.test_financial_report_template import (
 	FinancialReportTemplateTestCase,

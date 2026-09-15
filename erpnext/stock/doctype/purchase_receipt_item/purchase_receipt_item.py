@@ -28,8 +28,8 @@ class PurchaseReceiptItem(Document):
 		base_rate_with_margin: DF.Currency
 		batch_no: DF.Link | None
 		billed_amt: DF.Currency
+		bom: DF.Link | None
 		brand: DF.Link | None
-		closed: DF.Check
 		conversion_factor: DF.Float
 		cost_center: DF.Link | None
 		delivery_note_item: DF.Data | None
@@ -41,6 +41,7 @@ class PurchaseReceiptItem(Document):
 		from_warehouse: DF.Link | None
 		has_item_scanned: DF.Check
 		image: DF.Attach | None
+		include_exploded_items: DF.Check
 		is_fixed_asset: DF.Check
 		is_free_item: DF.Check
 		item_code: DF.Link

@@ -28,34 +28,37 @@ def get_data(report_filters):
 
 def get_subcontracted_orders(report_filters):
 	fields = [
-		"`tabSubcontracting Order Item`.`parent` as order_id",
-		"`tabSubcontracting Order Item`.`item_code`",
-		"`tabSubcontracting Order Item`.`item_name`",
-		"`tabSubcontracting Order Item`.`qty`",
-		"`tabSubcontracting Order Item`.`name`",
-		"`tabSubcontracting Order Item`.`received_qty`",
-		"`tabSubcontracting Order`.`status`",
+		f"`tab{report_filters.order_type} Item`.`parent` as order_id",
+		f"`tab{report_filters.order_type} Item`.`item_code`",
+		f"`tab{report_filters.order_type} Item`.`item_name`",
+		f"`tab{report_filters.order_type} Item`.`qty`",
+		f"`tab{report_filters.order_type} Item`.`name`",
+		f"`tab{report_filters.order_type} Item`.`received_qty`",
+		f"`tab{report_filters.order_type}`.`status`",
 	]
 
 	filters = get_filters(report_filters)
 
-	return frappe.get_all("Subcontracting Order", fields=fields, filters=filters) or []
+	return frappe.get_all(report_filters.order_type, fields=fields, filters=filters) or []
 
 
 def get_filters(report_filters):
 	filters = [
-		["Subcontracting Order", "docstatus", "=", 1],
+		[report_filters.order_type, "docstatus", "=", 1],
 		[
-			"Subcontracting Order",
+			report_filters.order_type,
 			"transaction_date",
 			"between",
 			(report_filters.from_date, report_filters.to_date),
 		],
 	]
 
+	if report_filters.order_type == "Purchase Order":
+		filters.append(["Purchase Order", "is_old_subcontracting_flow", "=", 1])
+
 	for field in ["name", "company"]:
 		if report_filters.get(field):
-			filters.append(["Subcontracting Order", field, "=", report_filters.get(field)])
+			filters.append([report_filters.order_type, field, "=", report_filters.get(field)])
 
 	return filters
 
@@ -79,7 +82,12 @@ def get_supplied_items(orders, report_filters):
 	filters = {"parent": ("in", [d.order_id for d in orders]), "docstatus": 1}
 
 	supplied_items = {}
-	for row in frappe.get_all("Subcontracting Order Supplied Item", fields=fields, filters=filters):
+	supplied_items_table = (
+		"Purchase Order Item Supplied"
+		if report_filters.order_type == "Purchase Order"
+		else "Subcontracting Order Supplied Item"
+	)
+	for row in frappe.get_all(supplied_items_table, fields=fields, filters=filters):
 		new_key = (row.parent, row.reference_name, row.main_item_code)
 
 		supplied_items.setdefault(new_key, []).append(row)
@@ -120,7 +128,7 @@ def get_columns(filters):
 			"label": _("Subcontract Order"),
 			"fieldname": "order_id",
 			"fieldtype": "Link",
-			"options": "Subcontracting Order",
+			"options": filters.order_type,
 			"width": 100,
 		},
 		{"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 80},

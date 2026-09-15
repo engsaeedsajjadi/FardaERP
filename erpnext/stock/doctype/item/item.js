@@ -6,26 +6,6 @@ frappe.provide("erpnext.item");
 const SALES_DOCTYPES = ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice"];
 const PURCHASE_DOCTYPES = ["Purchase Order", "Purchase Receipt", "Purchase Invoice"];
 
-const virtual_field_map = {
-	default_warehouse: "vf_default_warehouse",
-	default_price_list: "vf_default_price_list",
-	default_discount_account: "vf_default_discount_account",
-	default_inventory_account: "vf_default_inventory_account",
-	buying_cost_center: "vf_buying_cost_center",
-	default_supplier: "vf_default_supplier",
-	expense_account: "vf_expense_account",
-	default_provisional_account: "vf_default_provisional_account",
-	purchase_expense_account: "vf_purchase_expense_account",
-	purchase_expense_contra_account: "vf_purchase_expense_contra_account",
-	expenses_added_to_stock_account: "vf_expenses_added_to_stock_account",
-	expenses_added_to_stock_contra_account: "vf_expenses_added_to_stock_contra_account",
-	selling_cost_center: "vf_selling_cost_center",
-	income_account: "vf_income_account",
-	default_cogs_account: "vf_default_cogs_account",
-	deferred_expense_account: "vf_deferred_expense_account",
-	deferred_revenue_account: "vf_deferred_revenue_account",
-};
-
 frappe.ui.form.on("Item", {
 	stock_uom(frm) {
 		// Each factor is relative to Stock UOM and becomes invalid when it changes.
@@ -62,21 +42,7 @@ frappe.ui.form.on("Item", {
 		}
 	},
 
-	allow_negative_stock(frm) {
-		erpnext.utils.confirm_negative_stock(frm);
-	},
-
-	restrict_to_companies(frm) {
-		if (!frm.doc.restrict_to_companies) {
-			frm.set_value("allowed_companies", []);
-		}
-	},
-
 	setup: function (frm) {
-		frm.set_query("item_group", () => ({ filters: { is_group: 0 } }));
-		frm.set_query("allowed_companies", () => ({
-			query: "erpnext.stock.doctype.company_restriction.company_restriction.company_query",
-		}));
 		frm.add_fetch("attribute", "numeric_values", "numeric_values");
 		frm.add_fetch("attribute", "from_range", "from_range");
 		frm.add_fetch("attribute", "to_range", "to_range");
@@ -215,18 +181,10 @@ frappe.ui.form.on("Item", {
 				__("View")
 			);
 
-			const can_create_stock_entry =
-				frappe.model.can_create("Stock Entry") && frappe.model.can_write("Stock Entry");
-
-			const has_existing_stock = frm.doc.__onload && frm.doc.__onload.stock_exists ? 1 : 0;
-
-			if (can_create_stock_entry && !has_existing_stock) {
-				frm.add_custom_button(
-					__("Set Opening Stock"),
-					() => erpnext.item.show_opening_stock_dialog(frm),
-					__("Actions")
-				);
-			}
+			frm.toggle_display(
+				["opening_stock"],
+				frappe.model.can_create("Stock Entry") && frappe.model.can_write("Stock Entry")
+			);
 		}
 
 		if (frm.doc.is_fixed_asset) {
@@ -397,53 +355,6 @@ frappe.ui.form.on("Item", {
 	},
 });
 
-frappe.ui.form.on("Item Default", {
-	form_render: function (frm, cdt, cdn) {
-		if (!frm.fields_dict["item_defaults"]) return;
-
-		const row = locals[cdt][cdn];
-		if (!row || !row.company) {
-			Object.values(virtual_field_map).forEach((vf) => frappe.model.set_value(cdt, cdn, vf, ""));
-			return;
-		}
-
-		const $grid_row = frm.fields_dict["item_defaults"].grid.wrapper.find(`.grid-row[data-name="${cdn}"]`);
-
-		if (!$grid_row.find(".item-defaults-desc").length) {
-			$grid_row.find(".grid-form-body").prepend(`
-				<div class="row">
-					<div class="col-xs-12">
-						<div class="item-defaults-desc" style="
-							background: var(--control-bg);
-							border-radius: var(--border-radius-sm);
-							padding: 6px 6px 8px 14px;
-							color: var(--text-muted);
-
-						">
-							${__(
-								"Left column shows inherited defaults (Item Group → Company / Stock Settings). Right column is where you set overrides for this item only."
-							)}
-						</div>
-					</div>
-				</div>
-			`);
-		}
-
-		erpnext.item.populate_virtual_fields(frm, cdt, cdn, row);
-	},
-
-	company: function (frm, cdt, cdn) {
-		if (!frm.fields_dict["item_defaults"]) return;
-
-		const row = locals[cdt][cdn];
-		if (!row || !row.company) {
-			Object.values(virtual_field_map).forEach((vf) => frappe.model.set_value(cdt, cdn, vf, ""));
-			return;
-		}
-		erpnext.item.populate_virtual_fields(frm, cdt, cdn, row);
-	},
-});
-
 frappe.ui.form.on("Item Reorder", {
 	reorder_levels_add: function (frm, cdt, cdn) {
 		var row = frappe.get_doc(cdt, cdn);
@@ -500,7 +411,7 @@ function render_serial_batch_banner(wrapper) {
 	let banner_html = `
 		<div class="custom-serial-batch-banner ${hiddenClass}">
 			<div class="banner-content">
-				<span class="banner-icon">${frappe.utils.icon("triangle-alert", "lg", "", "padding-bottom:2px")}</span>
+				<span class="banner-icon">${frappe.utils.icon("solid-warning", "lg", "", "padding-bottom:2px")}</span>
 				<span class="banner-text">
 					${__("To use Serial / Batch feature, enable {0} in {1}.", [
 						`<b>${__("Activate Serial / Batch No for Item")}</b>`,
@@ -547,93 +458,6 @@ function render_serial_batch_banner(wrapper) {
 }
 
 $.extend(erpnext.item, {
-	populate_virtual_fields: function (frm, cdt, cdn, row) {
-		if (!frm.doc.item_group || !row.company) {
-			Object.values(virtual_field_map).forEach((vf) => frappe.model.set_value(cdt, cdn, vf, ""));
-			return;
-		}
-
-		const company = row.company;
-		const item_group = frm.doc.item_group;
-
-		frappe.call({
-			method: "frappe.client.get",
-			args: { doctype: "Item Group", name: frm.doc.item_group },
-			freeze: false,
-			callback: function (r) {
-				if (!r.message) return;
-
-				const current_row = locals[cdt][cdn];
-				if (!current_row || current_row.company !== company || frm.doc.item_group !== item_group)
-					return;
-
-				const group_defaults =
-					(r.message.item_group_defaults || []).find((d) => d.company === company) || {};
-
-				// Set Item Group values immediately; collect fields that need company fallback
-				const needs_company_fallback = [];
-				Object.entries(virtual_field_map).forEach(([real_field, vf_field]) => {
-					if (group_defaults[real_field]) {
-						frappe.model.set_value(cdt, cdn, vf_field, group_defaults[real_field]);
-					} else {
-						frappe.model.set_value(cdt, cdn, vf_field, "");
-						needs_company_fallback.push(real_field);
-					}
-				});
-
-				if (!needs_company_fallback.length) {
-					setTimeout(() => erpnext.item.update_vf_labels(frm, cdn, {}), 50);
-					return;
-				}
-				frappe.call({
-					method: "erpnext.setup.doctype.item_group.item_group.get_company_resolved_defaults",
-					args: { company: company },
-					freeze: false,
-					callback: function (cr) {
-						const current_row = locals[cdt][cdn];
-						if (
-							!current_row ||
-							current_row.company !== company ||
-							frm.doc.item_group !== item_group
-						)
-							return;
-
-						const company_defaults = cr.message || {};
-						const from_company = {};
-
-						needs_company_fallback.forEach((real_field) => {
-							const val = company_defaults[real_field] || "";
-							if (val) from_company[real_field] = val;
-							frappe.model.set_value(cdt, cdn, virtual_field_map[real_field], val || "—");
-						});
-
-						setTimeout(() => erpnext.item.update_vf_labels(frm, cdn, from_company), 50);
-					},
-				});
-			},
-		});
-	},
-
-	update_vf_labels: function (frm, cdn, from_company) {
-		const $grid_row = frm.fields_dict["item_defaults"].grid.wrapper.find(`.grid-row[data-name="${cdn}"]`);
-		if (!$grid_row.length) return;
-
-		Object.entries(virtual_field_map).forEach(([real_field, vf_field]) => {
-			const $label = $grid_row
-				.find(`[data-fieldname="${vf_field}"]`)
-				.find(".control-label, label")
-				.first();
-			if (!$label.length) return;
-
-			if (!$label.data("base-label")) {
-				$label.data("base-label", $label.text().trim());
-			}
-			const base = $label.data("base-label");
-
-			$label.text(from_company[real_field] ? `${base} (Company)` : `${base} (Item Group)`);
-		});
-	},
-
 	setup_queries: function (frm) {
 		frm.fields_dict["item_defaults"].grid.get_field("expense_account").get_query = function (
 			doc,
@@ -808,9 +632,9 @@ $.extend(erpnext.item, {
 		let fields = [
 			"purchase_expense_account",
 			"purchase_expense_contra_account",
-			"default_cogs_account",
 			"expenses_added_to_stock_account",
 			"expenses_added_to_stock_contra_account",
+			"default_cogs_account",
 		];
 
 		fields.forEach((field) => {
@@ -866,244 +690,57 @@ $.extend(erpnext.item, {
 		}
 		frm.toggle_display("prices_html", true);
 
-		frappe.require("embedded_list.bundle.js", () => erpnext.item.build_prices_list(frm));
-	},
+		const requested_item = frm.doc.name;
+		const container = frm.fields_dict["prices_html"].$wrapper;
 
-	build_prices_list: function (frm) {
-		const item_code = frm.doc.name;
-		const container = frm.fields_dict["prices_html"].$wrapper.empty();
+		container.html(
+			`<div class="text-muted text-center" style="padding: 20px;">${__("Loading...")}</div>`
+		);
 
-		const list = new frappe.ui.EmbeddedList({
-			wrapper: $("<div></div>").appendTo(container),
-			description: __("All active prices for this item across buying and selling price lists."),
-			show_index: true,
-			show_search: false,
-			empty_icon: "tag",
-			empty_message: __("No active item prices found."),
-			add_button: {
-				label: __("Add Price"),
-				action: () => erpnext.item.new_item_price(frm),
-			},
-			on_row_click: (row) => frappe.set_route("Form", "Item Price", row.name),
-			get_data() {
-				return frappe
-					.xcall("erpnext.stock.doctype.item.item.get_item_prices", { item_code })
-					.then((r) => {
-						this._has_more = r.has_more;
-						return r.prices;
-					});
-			},
-			before_render() {
-				this._all_data.forEach((row) => {
-					row.price_type =
-						row.buying && row.selling
-							? __("Buy & Sell")
-							: row.buying
-							? __("Buying")
-							: __("Selling");
+		frappe.call({
+			method: "erpnext.stock.doctype.item.item.get_item_prices",
+			args: { item_code: requested_item },
+
+			callback: function (r) {
+				if (requested_item !== frm.doc.name) return;
+
+				if (!r.message) return;
+
+				const { prices, has_more } = r.message;
+
+				const html = frappe.render_template("item_prices", {
+					prices,
+					has_more,
+					item_code: requested_item,
+					stock_uom: frm.doc.stock_uom,
 				});
-			},
-			columns: [
-				{ label: __("Price List"), fieldname: "price_list" },
-				{
-					label: __("Type"),
-					type: "badge",
-					fieldname: "price_type",
-				},
-				{
-					label: __("Party"),
-					type: "link",
-					text: (row) => row.customer || row.supplier || "",
-					route: (row) => [
-						"Form",
-						row.customer ? "Customer" : "Supplier",
-						row.customer || row.supplier,
-					],
-				},
-				{
-					label: __("Rate"),
-					fieldname: "price_list_rate",
-					render: (row) => format_currency(row.price_list_rate, row.currency),
-				},
-				{
-					label: __("UOM"),
-					fieldname: "uom",
-					render: (row) => frappe.utils.escape_html(row.uom || frm.doc.stock_uom || ""),
-				},
-				{
-					label: __("Valid Upto"),
-					fieldname: "valid_upto",
-					render: (row) => (row.valid_upto ? frappe.datetime.str_to_user(row.valid_upto) : ""),
-				},
-			],
-		});
 
-		list.refresh().then(() => {
-			if (!list._has_more) return;
-			frappe.ui
-				.button({
-					label: __("View All Prices"),
-					variant: "subtle",
-					size: "sm",
-					onclick: () => {
-						frappe.route_options = { item_code };
-						frappe.set_route("List", "Item Price");
-					},
-				})
-				.appendTo(
-					$('<div class="flex justify-end" style="margin-bottom: 8px;"></div>').appendTo(container)
-				);
-		});
-	},
+				container.html(html);
 
-	new_item_price: function (frm) {
-		const filters = {};
-		if (frm.doc.is_sales_item && !frm.doc.is_purchase_item) {
-			filters.selling = 1;
-		} else if (frm.doc.is_purchase_item && !frm.doc.is_sales_item) {
-			filters.buying = 1;
-		}
-		frappe.new_doc("Item Price", { item_code: frm.doc.name, uom: frm.doc.stock_uom }, (dialog) => {
-			if (Object.keys(filters).length) {
-				dialog.fields_dict.price_list.get_query = () => ({ filters });
-			}
-		});
-	},
-
-	show_opening_stock_dialog: function (frm) {
-		const has_serial = cint(frm.doc.has_serial_no);
-		const has_batch = cint(frm.doc.has_batch_no);
-
-		if (has_serial || has_batch) {
-			const default_company = frappe.defaults.get_default("company");
-			const row = (frm.doc.item_defaults || []).find((d) => d.company === default_company);
-			const default_warehouse = (row && row.default_warehouse) || "";
-
-			frappe.route_options = {
-				purpose: "Opening Stock",
-				company: default_company,
-			};
-
-			frappe.new_doc("Stock Reconciliation", null, (doc) => {
-				const child = doc.items[0];
-				frappe.model.set_value(child.doctype, child.name, "item_code", frm.doc.name);
-				if (default_warehouse) {
-					frappe.model.set_value(child.doctype, child.name, "warehouse", default_warehouse);
-				}
-			});
-			return;
-		}
-
-		const companies = (frm.doc.item_defaults || []).map((d) => d.company).filter(Boolean);
-
-		if (!companies.length) {
-			frappe.msgprint({
-				title: __("No Company Found"),
-				message: __(
-					"Please add at least one row in Item Defaults with a Company before setting opening stock."
-				),
-				indicator: "orange",
-			});
-			return;
-		}
-
-		const get_warehouse_for_company = (company) => {
-			const row = (frm.doc.item_defaults || []).find((d) => d.company === company);
-			return (row && row.default_warehouse) || "";
-		};
-
-		const fields = [
-			{
-				label: __("Company"),
-				fieldname: "company",
-				fieldtype: "Select",
-				options: companies.join("\n"),
-				default: companies[0],
-				reqd: 1,
-				onchange: function () {
-					const warehouse = get_warehouse_for_company(dialog.get_value("company"));
-					dialog.set_value("warehouse", warehouse);
-					dialog.set_df_property(
-						"warehouse",
-						"description",
-						warehouse
-							? __("Default warehouse from Item Defaults.")
-							: __(
-									"No default warehouse set for this company. Entry will use Stock Settings default."
-							  )
-					);
-				},
-			},
-			{
-				label: __("Default Warehouse"),
-				fieldname: "warehouse",
-				fieldtype: "Data",
-				read_only: 1,
-				description: __("Default warehouse from Item Defaults."),
-			},
-			{ fieldtype: "Column Break" },
-			{
-				label: __("Opening Stock"),
-				fieldname: "qty",
-				fieldtype: "Float",
-				default: frm.doc.opening_stock || 1,
-				reqd: 1,
-			},
-			{
-				label: __("Valuation Rate"),
-				fieldname: "valuation_rate",
-				fieldtype: "Currency",
-				default: frm.doc.valuation_rate || 0,
-				description: __("Leave as 0 to allow zero valuation rate."),
-			},
-		];
-
-		const dialog = new frappe.ui.Dialog({
-			title: __("Add Opening Stock"),
-			fields: fields,
-			primary_action_label: __("Save"),
-			primary_action: function (values) {
-				frappe.call({
-					method: "erpnext.stock.doctype.item.item.make_opening_stock_entry",
-					args: {
-						item_code: frm.doc.name,
-						company: values.company,
-						qty: values.qty,
-						valuation_rate: values.valuation_rate || 0,
-						warehouse: values.warehouse || null,
-					},
-					freeze: true,
-					freeze_message: __("Creating Opening Stock Entry..."),
-					callback: function (r) {
-						if (!r.exc && r.message) {
-							dialog.hide();
-							frm.reload_doc();
+				container.find(".add-price-btn").on("click", () => {
+					const filters = {};
+					if (frm.doc.is_sales_item && !frm.doc.is_purchase_item) {
+						filters.selling = 1;
+					} else if (frm.doc.is_purchase_item && !frm.doc.is_sales_item) {
+						filters.buying = 1;
+					}
+					frappe.new_doc(
+						"Item Price",
+						{ item_code: requested_item, uom: frm.doc.stock_uom },
+						(dialog) => {
+							if (Object.keys(filters).length) {
+								dialog.fields_dict.price_list.get_query = () => ({ filters });
+							}
 						}
-					},
+					);
+				});
+
+				container.find(".price-row").on("click", function (e) {
+					if ($(e.target).is("a")) return;
+
+					frappe.set_route("Form", "Item Price", $(this).data("name"));
 				});
 			},
-		});
-
-		dialog.set_value("warehouse", get_warehouse_for_company(companies[0]));
-		dialog.show();
-		dialog.add_custom_action(__("Edit Full Form"), function () {
-			const default_company = frappe.defaults.get_default("company");
-			const row = (frm.doc.item_defaults || []).find((d) => d.company === default_company);
-
-			frappe.route_options = {
-				purpose: "Opening Stock",
-				company: default_company,
-			};
-
-			frappe.new_doc("Stock Reconciliation", null, (doc) => {
-				const child = doc.items[0];
-				frappe.model.set_value(child.doctype, child.name, "item_code", frm.doc.name);
-				if (row && row.default_warehouse) {
-					frappe.model.set_value(child.doctype, child.name, "warehouse", row.default_warehouse);
-				}
-			});
-
-			dialog.hide();
 		});
 	},
 

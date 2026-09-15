@@ -91,14 +91,12 @@ def get_stock_ledger_data(report_filters, filters):
 		"Stock Ledger Entry",
 		filters=filters,
 		fields=[
-			# name is arbitrary per grouped voucher (many SLEs); posting_date/posting_time are constant
-			# per voucher -> MAX() keeps the GROUP BY valid on postgres with the same values MySQL picked.
-			{"MAX": "name", "as": "name"},
+			"name",
 			"voucher_type",
 			"voucher_no",
 			{"SUM": "stock_value_difference", "as": "stock_value"},
-			{"MAX": "posting_date", "as": "posting_date"},
-			{"MAX": "posting_time", "as": "posting_time"},
+			"posting_date",
+			"posting_time",
 		],
 		group_by="voucher_type, voucher_no",
 		order_by="posting_date ASC, posting_time ASC",
@@ -120,12 +118,10 @@ def get_gl_data(report_filters, filters):
 		"GL Entry",
 		filters=filters,
 		fields=[
-			# name is arbitrary per grouped voucher (many GL entries); posting_date is constant per
-			# voucher -> MAX() keeps the GROUP BY valid on postgres with the same values MySQL picked.
-			{"MAX": "name", "as": "name"},
+			"name",
 			"voucher_type",
 			"voucher_no",
-			{"MAX": "posting_date", "as": "posting_date"},
+			"posting_date",
 			{
 				"SUB": [{"SUM": "debit_in_account_currency"}, {"SUM": "credit_in_account_currency"}],
 				"as": "account_value",
@@ -182,7 +178,7 @@ def get_columns(filters):
 	]
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist()
 def create_reposting_entries(rows: str | list, company: str):
 	if isinstance(rows, str):
 		rows = parse_json(rows)
@@ -207,7 +203,6 @@ def create_reposting_entries(rows: str | list, company: str):
 
 	for key, sle in item_wh.items():
 		item_code, warehouse = key
-		frappe.db.savepoint("repost_value_comparison")
 		try:
 			doc = frappe.get_doc(
 				{
@@ -225,7 +220,7 @@ def create_reposting_entries(rows: str | list, company: str):
 
 			entries.append(get_link_to_form("Repost Item Valuation", doc.name))
 		except frappe.DuplicateEntryError:
-			frappe.db.rollback(save_point="repost_value_comparison")
+			pass
 
 	if entries:
 		entries = ", ".join(entries)

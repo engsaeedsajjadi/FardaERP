@@ -12,9 +12,8 @@ from typing import Any, Union
 import frappe
 from frappe import _
 from frappe.database.operator_map import OPERATOR_MAP
-from frappe.model import numeric_fieldtypes
 from frappe.query_builder import Case
-from frappe.query_builder.functions import Cast_, Sum
+from frappe.query_builder.functions import Sum
 from frappe.utils import cstr, date_diff, flt, getdate
 from frappe.utils.xlsxutils import XLSXMetadata, XLSXStyleBuilder
 from pypika.terms import Bracket, LiteralValue
@@ -256,27 +255,16 @@ class FinancialReportEngine:
 
 		if filters.get("presentation_currency"):
 			frappe.msgprint(
+				title=_("Unsupported Feature"),
+				msg=_("Currency filters are currently unsupported in Custom Financial Report."),
 				indicator="orange",
-				title=_("Not Supported"),
-				msg=_("Currency filters are currently unsupported in Custom Financial Report"),
 			)
 
 		# Margin view is dependent on first row being an income account. Hence not supported.
 		# Way to implement this would be using calculated rows with formulas.
 		supported_views = ("Report", "Growth")
 		if (view := filters.get("selected_view")) and view not in supported_views:
-			frappe.msgprint(
-				indicator="orange",
-				title=_("Not Supported"),
-				msg=_("{0} view is currently unsupported in Custom Financial Report").format(view),
-			)
-
-		if filters.get("group_by_dimension"):
-			frappe.msgprint(
-				indicator="orange",
-				title=_("Not Supported"),
-				msg=_("Dimension-based grouping is currently unsupported in Custom Financial Report"),
-			)
+			frappe.msgprint(_("{0} view is currently unsupported in Custom Financial Report.").format(view))
 
 	def _initialize_context(self, filters: dict[str, Any]) -> ReportContext:
 		template_name = filters.get("report_template")
@@ -885,15 +873,8 @@ class FilterExpressionParser:
 		field = getattr(table, field_name, None)
 		operator_fn = OPERATOR_MAP.get(operator.casefold())
 
-		if "like" in operator.casefold():
-			if "%" not in value:
-				value = f"%{value}%"
-			# Postgres has no LIKE/ILIKE operator for non-text columns; MariaDB implicitly casts
-			# the numeric column to text. Cast a numeric/Check Account field to varchar so the
-			# match runs on both engines and reproduces MariaDB's result.
-			meta_field = frappe.get_meta("Account").get_field(field_name)
-			if meta_field and meta_field.fieldtype in numeric_fieldtypes:
-				field = Cast_(field, "varchar")
+		if "like" in operator.casefold() and "%" not in value:
+			value = f"%{value}%"
 
 		return operator_fn(field, value)
 
@@ -1056,7 +1037,8 @@ def get_filtered_accounts(company: str, account_rows: str | list):
 	frappe.has_permission("Financial Report Template", ptype="read", throw=True)
 	frappe.has_permission("Company", doc=company, throw=True)
 
-	account_rows = [frappe._dict(row) for row in frappe.parse_json(account_rows)]
+	if isinstance(account_rows, str):
+		account_rows = json.loads(account_rows, object_hook=frappe._dict)
 
 	return DataCollector.get_filtered_accounts(company, account_rows)
 

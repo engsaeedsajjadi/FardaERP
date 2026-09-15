@@ -22,6 +22,7 @@ def get_columns(filters):
 			"label": _("Subcontract Order"),
 			"fieldtype": "Link",
 			"fieldname": "subcontract_order",
+			"options": filters.order_type,
 			"width": 200,
 		},
 		{"label": _("Date"), "fieldtype": "Date", "fieldname": "date", "width": 150},
@@ -60,18 +61,25 @@ def get_data(filters):
 
 
 def get_order_items_to_supply(filters):
-	supplied_items_table = "Subcontracting Order Supplied Item"
+	supplied_items_table = (
+		"Purchase Order Item Supplied"
+		if filters.order_type == "Purchase Order"
+		else "Subcontracting Order Supplied Item"
+	)
 
 	record_filters = [
-		["Subcontracting Order", "per_received", "<", "100"],
-		["Subcontracting Order", "supplier", "=", filters.supplier],
-		["Subcontracting Order", "transaction_date", "<=", filters.to_date],
-		["Subcontracting Order", "transaction_date", ">=", filters.from_date],
-		["Subcontracting Order", "docstatus", "=", 1],
+		[filters.order_type, "per_received", "<", "100"],
+		[filters.order_type, "supplier", "=", filters.supplier],
+		[filters.order_type, "transaction_date", "<=", filters.to_date],
+		[filters.order_type, "transaction_date", ">=", filters.from_date],
+		[filters.order_type, "docstatus", "=", 1],
 	]
 
+	if filters.order_type == "Purchase Order":
+		record_filters.append([filters.order_type, "is_old_subcontracting_flow", "=", 1])
+
 	return frappe.db.get_all(
-		"Subcontracting Order",
+		filters.order_type,
 		fields=[
 			"name as subcontract_order",
 			"transaction_date as date",

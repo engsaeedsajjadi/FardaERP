@@ -5,13 +5,14 @@ import frappe
 from frappe import _
 from frappe.query_builder import DocType
 from frappe.query_builder.functions import Sum
-from frappe.utils import DateTimeLikeObject, cint, flt, get_link_to_form, getdate, time_diff_in_hours
+from frappe.utils import cint, flt, get_link_to_form, getdate, time_diff_in_hours
 
 import erpnext
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
 )
 from erpnext.accounts.general_ledger import make_gl_entries
+from erpnext.assets.doctype.asset.asset import get_asset_account
 from erpnext.assets.doctype.asset_activity.asset_activity import add_asset_activity
 from erpnext.assets.doctype.asset_depreciation_schedule.asset_depreciation_schedule import (
 	reschedule_depreciation,
@@ -219,10 +220,9 @@ class AssetRepair(AccountsController):
 				doc = frappe.get_doc("Serial and Batch Bundle", sabb)
 				doc.cancel()
 
-	def on_cancel(self):  # nosemgrep
+	def on_cancel(self):
+		self.asset_doc = frappe.get_doc("Asset", self.asset)
 		if self.get("capitalize_repair_cost"):
-			self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry")
-			self.asset_doc = frappe.get_lazy_doc("Asset", self.asset)
 			self.update_asset_value()
 			self.make_gl_entries(cancel=True)
 			self.set_increase_in_asset_life()
@@ -304,8 +304,8 @@ class AssetRepair(AccountsController):
 		if not stock_item.serial_and_batch_bundle and frappe.get_cached_value(
 			"Item", stock_item.item_code, "has_serial_no"
 		):
-			msg = _("Serial No Bundle is mandatory for Item {0}").format(stock_item.item_code)
-			frappe.throw(msg, title=_("Missing Serial No Bundle"))
+			msg = f"Serial No Bundle is mandatory for Item {stock_item.item_code}"
+			frappe.throw(_(msg), title=_("Missing Serial No Bundle"))
 
 		if stock_item.serial_and_batch_bundle:
 			values_to_update = {
@@ -318,14 +318,121 @@ class AssetRepair(AccountsController):
 			)
 
 	def make_gl_entries(self, cancel=False):
+		if cancel:
+			self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry")
+
 		if flt(self.total_repair_cost) > 0:
 			gl_entries = self.get_gl_entries()
 			make_gl_entries(gl_entries, cancel)
 
 	def get_gl_entries(self):
-		from erpnext.assets.doctype.asset_repair.services.gl_composer import AssetRepairGLComposer
+		gl_entries = []
 
-		return AssetRepairGLComposer(self).compose()
+		fixed_asset_account = get_asset_account("fixed_asset_account", asset=self.asset, company=self.company)
+		self.get_gl_entries_for_repair_cost(gl_entries, fixed_asset_account)
+		self.get_gl_entries_for_consumed_items(gl_entries, fixed_asset_account)
+
+		return gl_entries
+
+	def get_gl_entries_for_repair_cost(self, gl_entries, fixed_asset_account):
+		if flt(self.repair_cost) <= 0:
+			return
+
+		debit_against_account = set()
+
+		for pi in self.invoices:
+			debit_against_account.add(pi.expense_account)
+			gl_entries.append(
+				self.get_gl_dict(
+					{
+						"account": pi.expense_account,
+						"credit": pi.repair_cost,
+						"credit_in_account_currency": pi.repair_cost,
+						"against": fixed_asset_account,
+						"voucher_type": self.doctype,
+						"voucher_no": self.name,
+						"cost_center": self.cost_center,
+						"posting_date": self.completion_date,
+						"company": self.company,
+					},
+					item=self,
+				)
+			)
+		debit_against_account = ", ".join(debit_against_account)
+		gl_entries.append(
+			self.get_gl_dict(
+				{
+					"account": fixed_asset_account,
+					"debit": self.repair_cost,
+					"debit_in_account_currency": self.repair_cost,
+					"against": debit_against_account,
+					"voucher_type": self.doctype,
+					"voucher_no": self.name,
+					"cost_center": self.cost_center,
+					"posting_date": self.completion_date,
+					"against_voucher_type": "Asset",
+					"against_voucher": self.asset,
+					"company": self.company,
+				},
+				item=self,
+			)
+		)
+
+	def get_gl_entries_for_consumed_items(self, gl_entries, fixed_asset_account):
+		if not self.get("stock_items"):
+			return
+
+		# creating GL Entries for each row in Stock Items based on the Stock Entry created for it
+		stock_entry_name = frappe.db.get_value("Stock Entry", {"asset_repair": self.name}, "name")
+		stock_entry_items = frappe.get_all(
+			"Stock Entry Detail", filters={"parent": stock_entry_name}, fields=["expense_account", "amount"]
+		)
+
+		default_expense_account = None
+		if not erpnext.is_perpetual_inventory_enabled(self.company):
+			default_expense_account = frappe.get_cached_value(
+				"Company", self.company, "default_expense_account"
+			)
+			if not default_expense_account:
+				frappe.throw(_("Please set default Expense Account in Company {0}").format(self.company))
+
+		for item in stock_entry_items:
+			if flt(item.amount) > 0:
+				gl_entries.append(
+					self.get_gl_dict(
+						{
+							"account": item.expense_account or default_expense_account,
+							"credit": item.amount,
+							"credit_in_account_currency": item.amount,
+							"against": fixed_asset_account,
+							"voucher_type": self.doctype,
+							"voucher_no": self.name,
+							"cost_center": self.cost_center,
+							"posting_date": self.completion_date,
+							"company": self.company,
+						},
+						item=self,
+					)
+				)
+
+				gl_entries.append(
+					self.get_gl_dict(
+						{
+							"account": fixed_asset_account,
+							"debit": item.amount,
+							"debit_in_account_currency": item.amount,
+							"against": item.expense_account or default_expense_account,
+							"voucher_type": self.doctype,
+							"voucher_no": self.name,
+							"cost_center": self.cost_center,
+							"posting_date": self.completion_date,
+							"against_voucher_type": "Stock Entry",
+							"against_voucher": stock_entry_name,
+							"company": self.company,
+						},
+						item=self,
+					)
+				)
 
 	def set_increase_in_asset_life(self):
 		if self.asset_doc.calculate_depreciation and cint(self.increase_in_asset_life) > 0:
@@ -352,21 +459,14 @@ class AssetRepair(AccountsController):
 
 
 @frappe.whitelist()
-def get_downtime(failure_date: DateTimeLikeObject, completion_date: DateTimeLikeObject):
+def get_downtime(failure_date, completion_date):
 	downtime = time_diff_in_hours(completion_date, failure_date)
 	return round(downtime, 2)
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_purchase_invoice(
-	doctype: str,
-	txt: str,
-	searchfield: str,
-	start: int,
-	page_len: int,
-	filters: dict,
-):
+def get_purchase_invoice(doctype, txt, searchfield, start, page_len, filters):
 	"""
 	Get Purchase Invoices that have expense accounts for non-stock items.
 	Only returns invoices with at least one non-stock, non-fixed-asset item with an expense account.
@@ -401,14 +501,7 @@ def get_purchase_invoice(
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_expense_accounts(
-	doctype: str,
-	txt: str,
-	searchfield: str,
-	start: int,
-	page_len: int,
-	filters: dict,
-):
+def get_expense_accounts(doctype, txt, searchfield, start, page_len, filters):
 	"""
 	Get expense accounts for non-stock (service) items from the purchase invoice.
 	Used as a query function for link fields.
@@ -466,7 +559,7 @@ def _get_expense_accounts_for_purchase_invoice(purchase_invoice: str) -> list[st
 @frappe.whitelist()
 def get_unallocated_repair_cost(
 	purchase_invoice: str, expense_account: str, exclude_asset_repair: str | None = None
-):
+) -> float:
 	"""
 	Calculate the unused repair cost for a purchase invoice and expense account.
 	"""

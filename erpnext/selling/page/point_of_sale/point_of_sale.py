@@ -122,7 +122,7 @@ def filter_result_items(result, pos_profile):
 
 
 @frappe.whitelist()
-def get_parent_item_group(pos_profile: str):
+def get_parent_item_group(pos_profile):
 	item_groups = get_item_groups(pos_profile)
 
 	if not item_groups:
@@ -132,14 +132,7 @@ def get_parent_item_group(pos_profile: str):
 
 
 @frappe.whitelist()
-def get_items(
-	start: str | int,
-	page_length: str | int,
-	price_list: str | None,
-	item_group: str,
-	pos_profile: str,
-	search_term: str = "",
-):
+def get_items(start, page_length, price_list, item_group, pos_profile, search_term=""):
 	warehouse, hide_unavailable_items = frappe.db.get_value(
 		"POS Profile", pos_profile, ["warehouse", "hide_unavailable_items"]
 	)
@@ -231,7 +224,6 @@ def get_items(
 			.where(ItemPrice.selling == 1)
 			.where((ItemPrice.valid_from <= current_date) | (ItemPrice.valid_from.isnull()))
 			.where((ItemPrice.valid_upto >= current_date) | (ItemPrice.valid_upto.isnull()))
-			.orderby(ItemPrice.valid_from.isnull(), order=Order.asc)
 			.orderby(ItemPrice.valid_from, order=Order.desc)
 		).run(as_dict=True)
 
@@ -314,7 +306,7 @@ def get_item_group_condition(pos_profile, item=None):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def item_group_query(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
+def item_group_query(doctype, txt, searchfield, start, page_len, filters):
 	pos_profile = filters.get("pos_profile")
 
 	item_filters = [["name", "like", f"%{txt}%"]]
@@ -336,7 +328,7 @@ def item_group_query(doctype: str, txt: str, searchfield: str, start: int, page_
 
 
 @frappe.whitelist()
-def check_opening_entry(user: str):
+def check_opening_entry(user):
 	open_vouchers = frappe.db.get_all(
 		"POS Opening Entry",
 		filters={"user": user, "pos_closing_entry": ["in", ["", None]], "docstatus": 1},
@@ -347,9 +339,9 @@ def check_opening_entry(user: str):
 	return open_vouchers
 
 
-@frappe.whitelist(methods=["POST"])
-def create_opening_voucher(pos_profile: str, company: str, balance_details: str | list):
-	balance_details = frappe.parse_json(balance_details)
+@frappe.whitelist()
+def create_opening_voucher(pos_profile, company, balance_details):
+	balance_details = json.loads(balance_details)
 
 	new_pos_opening = frappe.get_doc(
 		{
@@ -368,7 +360,7 @@ def create_opening_voucher(pos_profile: str, company: str, balance_details: str 
 
 
 @frappe.whitelist()
-def get_past_order_list(search_term: str, status: str, limit: int = 20):
+def get_past_order_list(search_term, status, limit=20):
 	fields = ["name", "grand_total", "currency", "customer", "customer_name", "posting_time", "posting_date"]
 	invoice_list = []
 
@@ -438,8 +430,8 @@ def get_past_order_list(search_term: str, status: str, limit: int = 20):
 	return invoice_list
 
 
-@frappe.whitelist(methods=["POST"])
-def set_customer_info(fieldname: str, customer: str, value: str = ""):
+@frappe.whitelist()
+def set_customer_info(fieldname, customer, value=""):
 	customer_doc = frappe.get_doc("Customer", customer)
 	customer_doc.check_permission("write")
 
@@ -464,9 +456,6 @@ def set_customer_info(fieldname: str, customer: str, value: str = ""):
 					& (DynamicLink.link_doctype == "Customer")
 				)
 				.orderby(Contact.is_primary_contact, order=Order.desc)
-				# tiebreaker: contacts tie on is_primary_contact (the common no-primary case) ->
-				# pick the same one on MariaDB and Postgres
-				.orderby(DynamicLink.parent, order=Order.asc)
 			)
 
 			contacts = query.run(pluck=DynamicLink.parent)
@@ -520,7 +509,7 @@ def set_customer_info(fieldname: str, customer: str, value: str = ""):
 
 
 @frappe.whitelist()
-def get_pos_profile_data(pos_profile: str):
+def get_pos_profile_data(pos_profile):
 	pos_profile = frappe.get_doc("POS Profile", pos_profile)
 	pos_profile = pos_profile.as_dict()
 
@@ -582,7 +571,7 @@ def get_invoice_filters(doctype, status, name=None):
 
 
 @frappe.whitelist()
-def get_customer_recent_transactions(customer: str):
+def get_customer_recent_transactions(customer):
 	sales_invoices = frappe.db.get_list(
 		"Sales Invoice",
 		filters={

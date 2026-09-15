@@ -28,7 +28,6 @@ frappe.ui.form.on("Request for Quotation", {
 				is_group: 0,
 			},
 		}));
-		frm.set_query("supplier", "suppliers", () => erpnext.queries.supplier(frm.doc));
 
 		frm.set_indicator_formatter("item_code", function (doc) {
 			return !doc.qty && frm.doc.has_unit_price_items ? "yellow" : "";
@@ -210,7 +209,7 @@ frappe.ui.form.on("Request for Quotation", {
 
 				return frappe.call({
 					type: "GET",
-					method: "erpnext.buying.doctype.request_for_quotation.mapper.make_supplier_quotation_from_rfq",
+					method: "erpnext.buying.doctype.request_for_quotation.request_for_quotation.make_supplier_quotation_from_rfq",
 					args: {
 						source_name: doc.name,
 						for_supplier: args.supplier,
@@ -340,7 +339,6 @@ frappe.ui.form.on("Request for Quotation Supplier", {
 			args: {
 				party: d.supplier,
 				party_type: "Supplier",
-				company: frm.doc.company,
 			},
 			callback: function (r) {
 				if (r.message) {
@@ -363,7 +361,7 @@ erpnext.buying.RequestforQuotationController = class RequestforQuotationControll
 				__("Material Request"),
 				function () {
 					erpnext.utils.map_current_doc({
-						method: "erpnext.stock.doctype.material_request.mapper.make_request_for_quotation",
+						method: "erpnext.stock.doctype.material_request.material_request.make_request_for_quotation",
 						source_doctype: "Material Request",
 						target: me.frm,
 						setters: {
@@ -387,7 +385,7 @@ erpnext.buying.RequestforQuotationController = class RequestforQuotationControll
 				__("Opportunity"),
 				function () {
 					erpnext.utils.map_current_doc({
-						method: "erpnext.crm.doctype.opportunity.mapper.make_request_for_quotation",
+						method: "erpnext.crm.doctype.opportunity.opportunity.make_request_for_quotation",
 						source_doctype: "Opportunity",
 						target: me.frm,
 						setters: {
@@ -427,7 +425,7 @@ erpnext.buying.RequestforQuotationController = class RequestforQuotationControll
 							dialog.hide();
 
 							erpnext.utils.map_current_doc({
-								method: "erpnext.buying.doctype.request_for_quotation.mapper.get_item_from_material_requests_based_on_supplier",
+								method: "erpnext.buying.doctype.request_for_quotation.request_for_quotation.get_item_from_material_requests_based_on_supplier",
 								source_name: args.supplier,
 								target: me.frm,
 								setters: {

@@ -3,6 +3,7 @@
 
 import frappe
 import plaid
+import requests
 from frappe import _
 from plaid.errors import APIError, InvalidRequestError, ItemError
 

@@ -1,23 +1,103 @@
-# Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and Contributors
-# See license.txt
+# Copyright (c) 2026, Frappe Technologies Pvt. Ltd. and contributors
+# For license information, please see license.txt
 
 import frappe
 from frappe.utils import add_days, today
 
+from erpnext.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
+from erpnext.controllers.stock_controller import (
+	show_accounting_ledger_preview,
+	show_stock_ledger_preview,
+)
+from erpnext.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
 from erpnext.tests.utils import ERPNextTestSuite
 
 
+class TestLedgerPreviewPermission(ERPNextTestSuite):
+	def test_accounting_ledger_preview_requires_read_permission(self):
+		company = "_Test Company"
+		je = make_journal_entry("_Test Cash - _TC", "_Test Bank - _TC", 100, submit=True)
+
+		email = "ledger_preview_no_role@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": email,
+					"first_name": "No Role",
+					"user_type": "Website User",
+					"send_welcome_email": 0,
+				}
+			).insert(ignore_permissions=True)
+
+		try:
+			frappe.set_user(email)
+			self.assertRaises(
+				frappe.PermissionError,
+				show_accounting_ledger_preview,
+				company,
+				"Journal Entry",
+				je.name,
+			)
+		finally:
+			frappe.set_user("Administrator")
+
+		# a permitted user is still able to read the preview
+		accounting_ledger_result = show_accounting_ledger_preview(company, "Journal Entry", je.name)
+		self.assertTrue(accounting_ledger_result.get("gl_data"))
+
+	def test_stock_ledger_preview_requires_read_permission(self):
+		company = "_Test Company"
+		pr = make_purchase_receipt()
+
+		email = "ledger_preview_no_role@example.com"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": email,
+					"first_name": "No Role",
+					"user_type": "Website User",
+					"send_welcome_email": 0,
+				}
+			).insert(ignore_permissions=True)
+
+		try:
+			frappe.set_user(email)
+			self.assertRaises(
+				frappe.PermissionError,
+				show_stock_ledger_preview,
+				company,
+				"Purchase Receipt",
+				pr.name,
+			)
+		finally:
+			frappe.set_user("Administrator")
+
+		stock_ledger_result = show_stock_ledger_preview(company, "Purchase Receipt", pr.name)
+		self.assertTrue(stock_ledger_result.get("sl_data"))
+
+
 class TestStockControllerConversions(ERPNextTestSuite):
+	@staticmethod
+	def _cancel_and_delete(doctype, name):
+		if not frappe.db.exists(doctype, name):
+			return
+		doc = frappe.get_doc(doctype, name)
+		if doc.docstatus == 1:
+			doc.cancel()
+		frappe.delete_doc(doctype, name, force=1)
+
 	def test_future_sle_exists_detects_later_entries(self):
-		# future_sle_exists / get_conditions_to_validate_future_sle were converted to query builder
-		# (Count + Criterion.any). A later SLE for the same item+warehouse must be detected, which
-		# exercises the converted GROUP BY query on both engines.
+		# A later SLE for the same item+warehouse must be reported as a future entry, which
+		# exercises the GROUP BY query in future_sle_exists on both engines.
 		from erpnext.controllers.stock_controller import future_sle_exists
 		from erpnext.stock.doctype.item.test_item import make_item
 		from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
 		item = make_item("_Test Future SLE Item", {"is_stock_item": 1}).name
-		make_stock_entry(item_code=item, target="_Test Warehouse - _TC", qty=10, basic_rate=100)
+		se = make_stock_entry(item_code=item, target="_Test Warehouse - _TC", qty=10, basic_rate=100)
+		self.addCleanup(self._cancel_and_delete, "Stock Entry", se.name)
 
 		# Pretend a different voucher posts a day earlier for the same item/warehouse: the existing
 		# (later) SLE must be reported as a future entry.
@@ -42,6 +122,7 @@ class TestStockControllerConversions(ERPNextTestSuite):
 			posting_date=add_days(today(), -5),
 			posting_time="01:00:00",
 		)
+		self.addCleanup(self._cancel_and_delete, "Stock Entry", opening.name)
 
 		return opening
 
@@ -95,6 +176,7 @@ class TestStockControllerConversions(ERPNextTestSuite):
 		finally:
 			stock_ledger.make_entry = original_make_entry
 
+		self.addCleanup(self._cancel_and_delete, "Stock Entry", entry.name)
 		if inject is not None:
 			self.assertTrue(injected, "the later SL Entry was not written during the submit")
 
@@ -114,6 +196,9 @@ class TestStockControllerConversions(ERPNextTestSuite):
 				pluck="name",
 			)
 		)
+		for name in names:
+			self.addCleanup(frappe.delete_doc, "Repost Item Valuation", name, force=1)
+
 		return names
 
 	def test_repost_queued_for_entry_backdated_while_its_sl_entries_were_written(self):

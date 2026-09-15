@@ -29,7 +29,6 @@ class PurchaseOrderItem(Document):
 		blanket_order_rate: DF.Currency
 		bom: DF.Link | None
 		brand: DF.Link | None
-		closed: DF.Check
 		company_total_stock: DF.Float
 		conversion_factor: DF.Float
 		cost_center: DF.Link | None
@@ -44,6 +43,7 @@ class PurchaseOrderItem(Document):
 		fg_item_qty: DF.Float
 		from_warehouse: DF.Link | None
 		image: DF.Attach | None
+		include_exploded_items: DF.Check
 		is_fixed_asset: DF.Check
 		is_free_item: DF.Check
 		item_code: DF.Link

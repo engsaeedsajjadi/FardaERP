@@ -14,12 +14,9 @@ from erpnext.selling.doctype.customer.customer import (
 	get_customer_outstanding,
 	get_customer_overdue_amount,
 	get_overdue_billing_threshold,
-)
-from erpnext.selling.doctype.customer.mapper import (
 	make_quotation,
 	parse_full_name,
 )
-from erpnext.setup.utils import get_exchange_rate
 from erpnext.tests.utils import ERPNextTestSuite
 
 
@@ -29,59 +26,47 @@ class TestCustomer(ERPNextTestSuite):
 		company_currency = frappe.get_cached_value("Company", company, "default_currency")
 		foreign_currency = "USD" if company_currency != "USD" else "EUR"
 
-		original_company = frappe.defaults.get_user_default("company")
 		frappe.defaults.set_user_default("company", company)
-		try:
-			# Master data seeds a current-dated exchange rate, so make_quotation should
-			# resolve that rate instead of falling back to the default conversion rate of 1.0.
-			expected_rate = get_exchange_rate(foreign_currency, company_currency, nowdate())
+		self.addCleanup(frappe.defaults.clear_user_default, "company")
 
-			customer = frappe.get_doc(
+		# Seed a deterministic rate so the test does not depend on the live exchange-rate API.
+		rate = 83.0
+		exchange_filters = {
+			"date": nowdate(),
+			"from_currency": foreign_currency,
+			"to_currency": company_currency,
+		}
+		existing = frappe.db.exists("Currency Exchange", exchange_filters)
+		if existing:
+			frappe.db.set_value("Currency Exchange", existing, "exchange_rate", rate)
+		else:
+			exchange = frappe.get_doc(
 				{
-					"doctype": "Customer",
-					"customer_name": "_Test Customer FX Quotation",
-					"customer_type": "Company",
-					"default_currency": foreign_currency,
+					"doctype": "Currency Exchange",
+					**exchange_filters,
+					"exchange_rate": rate,
+					"for_selling": 1,
+					"for_buying": 1,
 				}
 			).insert()
+			self.addCleanup(frappe.delete_doc, "Currency Exchange", exchange.name, force=1)
 
-			quotation = make_quotation(customer.name)
+		customer = frappe.get_doc(
+			{
+				"doctype": "Customer",
+				"customer_name": "_Test Customer FX Quotation",
+				"customer_type": "Company",
+				"default_currency": foreign_currency,
+			}
+		).insert()
+		self.addCleanup(frappe.delete_doc, "Customer", customer.name, force=1)
 
-			self.assertEqual(quotation.currency, foreign_currency)
-			self.assertNotEqual(flt(quotation.conversion_rate), 1.0)
-			self.assertNotEqual(flt(quotation.conversion_rate), 0.0)
-			self.assertEqual(flt(quotation.conversion_rate), flt(expected_rate))
-		finally:
-			frappe.defaults.set_user_default("company", original_company)
+		quotation = make_quotation(customer.name)
 
-	def test_get_customer_name_dedupes_with_numeric_suffix(self):
-		# When a customer name already exists, get_customer_name appends "- <max suffix + 1>". The
-		# Postgres branch extracts the suffix with regexp_replace/NULLIF/CAST (pypika's Substring cannot
-		# do regex extraction); this exercises that path on both engines.
-		base = "_Test PG Dedup Customer"
-		for nm in (base, f"{base} - 3"):
-			if not frappe.db.exists("Customer", nm):
-				frappe.get_doc(
-					{"doctype": "Customer", "customer_name": nm, "customer_type": "Individual"}
-				).insert()
-
-		doc = frappe.get_doc({"doctype": "Customer", "customer_name": base, "customer_type": "Individual"})
-		self.assertEqual(doc.get_customer_name(), f"{base} - 4")
-
-	def test_get_customer_name_dedupe_handles_mixed_suffix(self):
-		# The suffix extractor must read the LEADING digits of the last whitespace-token, like MariaDB's
-		# CAST(SUBSTRING_INDEX(name, ' ', -1) AS UNSIGNED): "<base> - 3a" -> 3, so the next name is
-		# "<base> - 4". The earlier Postgres regex read pure-trailing digits, yielding 0 for "3a" and
-		# diverging from MariaDB (which would have produced "<base> - 1"). Asserts engine parity.
-		base = "_Test PG Dedup Mixed"
-		for nm in (base, f"{base} - 3a"):
-			if not frappe.db.exists("Customer", nm):
-				frappe.get_doc(
-					{"doctype": "Customer", "customer_name": nm, "customer_type": "Individual"}
-				).insert()
-
-		doc = frappe.get_doc({"doctype": "Customer", "customer_name": base, "customer_type": "Individual"})
-		self.assertEqual(doc.get_customer_name(), f"{base} - 4")
+		self.assertEqual(quotation.currency, foreign_currency)
+		self.assertNotEqual(flt(quotation.conversion_rate), 1.0)
+		self.assertNotEqual(flt(quotation.conversion_rate), 0.0)
+		self.assertEqual(flt(quotation.conversion_rate), rate)
 
 	def test_get_customer_group_details(self):
 		doc = frappe.new_doc("Customer Group")
@@ -509,7 +494,6 @@ class TestCustomer(ERPNextTestSuite):
 	def test_overdue_billing_threshold_falls_back_to_customer_group(self):
 		customer_group = frappe.get_cached_value("Customer", "_Test Customer", "customer_group")
 		group = frappe.get_doc("Customer Group", customer_group)
-
 		group.credit_limits = []
 		group.append("credit_limits", {"company": "_Test Company", "overdue_billing_threshold": 5000})
 		group.save()
@@ -584,15 +568,6 @@ class TestCustomer(ERPNextTestSuite):
 		self.assertEqual(first, "John")
 		self.assertEqual(middle, "Michael")
 		self.assertEqual(last, "Doe")
-
-	def test_get_notification_email(self):
-		admin_email = frappe.db.get_value("User", "Administrator", "email")
-		customer = frappe.new_doc("Customer")
-		customer.account_manager = "Administrator"
-		self.assertEqual(customer.get_notification_email(), admin_email)
-
-		customer.account_manager = None
-		self.assertIsNone(customer.get_notification_email())
 
 	def test_portal_user_contact_link(self):
 		user_email = frappe.generate_hash() + "@example.com"

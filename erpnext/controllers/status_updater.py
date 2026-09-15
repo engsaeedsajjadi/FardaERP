@@ -5,10 +5,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.query_builder.functions import Sum
 from frappe.utils import comma_or, flt, get_link_to_form, getdate, now, nowdate, safe_div
-
-from erpnext.controllers.item_close import closed_rows_settle, has_closable_items
 
 
 class OverAllowanceError(frappe.ValidationError):
@@ -38,14 +35,6 @@ status_map = {
 		["Draft", None],
 		["Open", "eval:self.docstatus==1"],
 		["Lost", "eval:self.status=='Lost'"],
-		["Partially Ordered", "is_partially_ordered"],
-		["Ordered", "is_fully_ordered"],
-		["Cancelled", "eval:self.docstatus==2"],
-	],
-	"Supplier Quotation": [
-		["Draft", None],
-		["Submitted", "eval:self.docstatus==1"],
-		["Stopped", "eval:self.status=='Stopped'"],
 		["Partially Ordered", "is_partially_ordered"],
 		["Ordered", "is_fully_ordered"],
 		["Cancelled", "eval:self.docstatus==2"],
@@ -202,59 +191,8 @@ class StatusUpdater(Document):
 			self.db_set("status", "Cancelled")
 
 	def update_prevdoc_status(self):
-		self.validate_closed_source_items()
 		self.update_qty()
 		self.validate_qty()
-
-	def get_closed_source_links(self):
-		"""Row links that must not point at a closed source row.
-
-		`status_updater` covers documents whose progress it already tracks.
-		Delivery Note and Purchase Receipt are billed through their own services
-		instead, so their invoices declare the link in `closed_source_links`.
-		"""
-		links = [
-			(args["source_dt"], args["join_field"], args["target_dt"], args["target_parent_dt"])
-			for args in self.status_updater
-			if args.get("target_dt")
-			and args.get("target_parent_dt")
-			and has_closable_items(args["target_parent_dt"])
-		]
-
-		return links + list(getattr(self, "closed_source_links", []))
-
-	def validate_closed_source_items(self):
-		"""Block submitting against rows that were closed on the source document."""
-		if self.docstatus != 1:
-			return
-
-		for source_dt, join_field, target_dt, target_parent_dt in self.get_closed_source_links():
-			if not frappe.get_meta(target_dt).has_field("closed"):
-				continue
-
-			row_idx = {}
-			for d in self.get_all_children(source_dt):
-				if d.get(join_field):
-					row_idx[d.get(join_field)] = d.idx
-
-			if not row_idx:
-				continue
-
-			closed_rows = frappe.get_all(
-				target_dt,
-				filters={"name": ("in", list(row_idx)), "closed": 1},
-				fields=["name", "item_code", "parent"],
-			)
-
-			for row in closed_rows:
-				frappe.throw(
-					_("Row #{0}: Item {1} is closed in {2} {3} and cannot be processed further").format(
-						row_idx[row.name],
-						frappe.bold(row.item_code),
-						_(target_parent_dt),
-						frappe.bold(row.parent),
-					)
-				)
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		if self.is_new():
@@ -351,10 +289,10 @@ class StatusUpdater(Document):
 			# get unique transactions to update
 			for d in self.get_all_children():
 				if hasattr(d, "qty") and flt(d.qty) < 0 and not self.get("is_return"):
-					frappe.throw(_("For an item {0}, quantity must be a positive number").format(d.item_code))
+					frappe.throw(_("For an item {0}, quantity must be positive number").format(d.item_code))
 
 				if hasattr(d, "qty") and flt(d.qty) > 0 and self.get("is_return"):
-					frappe.throw(_("For an item {0}, quantity must be a negative number").format(d.item_code))
+					frappe.throw(_("For an item {0}, quantity must be negative number").format(d.item_code))
 
 				if (not selling_negative_rate_allowed and self.doctype in selling_doctypes) or (
 					not buying_negative_rate_allowed and self.doctype in buying_doctypes
@@ -362,7 +300,7 @@ class StatusUpdater(Document):
 					if hasattr(d, "item_code") and hasattr(d, "rate") and flt(d.rate) < 0:
 						frappe.throw(
 							_(
-								"For item {0}, rate must be a positive number. To allow negative rates, enable {1} in {2}"
+								"For item {0}, rate must be a positive number. To Allow negative rates, enable {1} in {2}"
 							).format(
 								frappe.bold(d.item_code),
 								frappe.bold(_("`Allow Negative rates for Items`")),
@@ -545,7 +483,6 @@ class StatusUpdater(Document):
 
 		if args["source_dt"] != "Pick List Item" and args["target_dt"] not in [
 			"Quotation Item",
-			"Supplier Quotation Item",
 			"Packed Item",
 		]:
 			if args.get("target_dt") == "Material Request Item":
@@ -631,7 +568,7 @@ class StatusUpdater(Document):
 					args["second_source_extra_cond"] = ""
 
 				args["second_source_condition"] = frappe.db.sql(
-					""" select coalesce((select sum({second_source_field})
+					""" select ifnull((select sum({second_source_field})
 					from `tab{second_source_dt}`
 					where `{second_join_field}`=%(detail_id)s
 					and (`tab{second_source_dt}`.docstatus=1)
@@ -646,7 +583,7 @@ class StatusUpdater(Document):
 				args["source_dt_value"] = (
 					frappe.db.sql(
 						"""
-						(select coalesce(sum({source_field}), 0)
+						(select ifnull(sum({source_field}), 0)
 							from `tab{source_dt}` where `{join_field}`=%(detail_id)s
 							and (docstatus=1 {cond}) {extra_cond})
 				""".format(**args),
@@ -667,49 +604,24 @@ class StatusUpdater(Document):
 
 	@staticmethod
 	def _calculate_target_parent_percentage(
-		name,
-		target_parent_dt,
-		target_dt,
-		target_ref_field,
-		target_field,
-		target_parent_field=None,
-		exclude_field=None,
+		name, target_parent_dt, target_dt, target_ref_field, target_field
 	):
-		filters = {"parent": name, "parenttype": target_parent_dt}
-		if exclude_field:
-			filters[exclude_field] = 0
-
-		tracks_closed_rows = closed_rows_settle(target_parent_dt, target_dt, target_parent_field)
-
-		fields = [target_ref_field, target_field]
-		if tracks_closed_rows:
-			fields.append("closed")
-
 		child_records = frappe.get_all(
 			target_dt,
-			filters=filters,
-			fields=fields,
+			filters={"parent": name, "parenttype": target_parent_dt},
+			fields=[target_ref_field, target_field],
 		)
-
-		if exclude_field and not child_records:
-			return 100
 
 		# For operator dicts, the alias is in the "as" key; for strings, use the field name directly
 		ref_key = target_ref_field.get("as") if isinstance(target_ref_field, dict) else target_ref_field
 
-		# A closed row is written off, so it leaves the denominator rather than
-		# counting as done. The percentage stays a true measure of what was
-		# actually received, delivered or billed against what is still expected.
-		# Once every row is written off there is nothing left to measure against,
-		# so fall back to the whole table and report what actually happened.
-		open_records = [r for r in child_records if not (tracks_closed_rows and r["closed"])]
-		basis = open_records or child_records
-
-		sum_ref = sum(abs(record[ref_key]) for record in basis)
+		sum_ref = sum(abs(record[ref_key]) for record in child_records)
 
 		if sum_ref > 0:
 			percentage = round(
-				sum(min(abs(record[target_field]), abs(record[ref_key])) for record in basis) / sum_ref * 100,
+				sum(min(abs(record[target_field]), abs(record[ref_key])) for record in child_records)
+				/ sum_ref
+				* 100,
 				6,
 			)
 		else:
@@ -749,18 +661,13 @@ class StatusUpdater(Document):
 		update_data = {}
 
 		if args.get("target_parent_field"):
-			if args.get("billing_percentage") is not None:
-				update_data[args.get("target_parent_field")] = args["billing_percentage"]
-			else:
-				update_data[args.get("target_parent_field")] = self._calculate_target_parent_percentage(
-					args["name"],
-					args["target_parent_dt"],
-					args["target_dt"],
-					args["target_ref_field"],
-					args["target_field"],
-					args["target_parent_field"],
-					args.get("exclude_field"),
-				)
+			update_data[args.get("target_parent_field")] = self._calculate_target_parent_percentage(
+				args["name"],
+				args["target_parent_dt"],
+				args["target_dt"],
+				args["target_ref_field"],
+				args["target_field"],
+			)
 			# update field
 			if args.get("status_field"):
 				update_data[args.get("status_field")] = self._determine_status(
@@ -791,10 +698,18 @@ class StatusUpdater(Document):
 		if not ref_docs:
 			return
 
-		zero_amount_refdocs = frappe.get_all(
-			ref_dt,
-			filters={"docstatus": 1, "base_net_total": 0, "name": ["in", ref_docs]},
-			pluck="name",
+		zero_amount_refdocs = frappe.db.sql_list(
+			f"""
+			SELECT
+				name
+			from
+				`tab{ref_dt}`
+			where
+				docstatus = 1
+				and base_net_total = 0
+				and name in %(ref_docs)s
+		""",
+			{"ref_docs": ref_docs},
 		)
 
 		if zero_amount_refdocs:
@@ -802,20 +717,20 @@ class StatusUpdater(Document):
 
 	def update_billing_status(self, zero_amount_refdoc, ref_dt, ref_fieldname):
 		for ref_dn in zero_amount_refdoc:
-			ref_item = frappe.qb.DocType(f"{ref_dt} Item")
 			ref_doc_qty = flt(
-				frappe.qb.from_(ref_item)
-				.select(Sum(ref_item.qty))
-				.where(ref_item.parent == ref_dn)
-				.run()[0][0]
+				frappe.db.sql(
+					"""select ifnull(sum(qty), 0) from `tab{} Item`
+				where parent={}""".format(ref_dt, "%s"),
+					(ref_dn),
+				)[0][0]
 			)
 
-			doc_item = frappe.qb.DocType(f"{self.doctype} Item")
 			billed_qty = flt(
-				frappe.qb.from_(doc_item)
-				.select(Sum(doc_item.qty))
-				.where((doc_item[ref_fieldname] == ref_dn) & (doc_item.docstatus == 1))
-				.run()[0][0]
+				frappe.db.sql(
+					"""select ifnull(sum(qty), 0)
+				from `tab{} Item` where {}={} and docstatus=1""".format(self.doctype, ref_fieldname, "%s"),
+					(ref_dn),
+				)[0][0]
 			)
 
 			per_billed = safe_div(min(ref_doc_qty, billed_qty), ref_doc_qty) * 100

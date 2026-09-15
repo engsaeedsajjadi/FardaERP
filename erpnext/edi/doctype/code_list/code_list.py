@@ -163,7 +163,7 @@ def get_docnames_for(code_list: str, doctype: str, code: str) -> tuple[str]:
 			& (CommonCode.code_list == code_list)
 		)
 		.distinct()
-		.orderby(DynamicLink.link_name)
+		.orderby(DynamicLink.idx)
 	).run()
 
 	return tuple(d[0] for d in docnames) if docnames else ()

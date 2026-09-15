@@ -84,10 +84,10 @@ class CostCenter(NestedSet):
 		return frappe.db.get_value("GL Entry", {"cost_center": self.name})
 
 	def check_if_child_exists(self):
-		return frappe.get_all(
-			"Cost Center",
-			filters={"parent_cost_center": self.name, "docstatus": ["!=", 2]},
-			pluck="name",
+		return frappe.db.sql(
+			"select name from `tabCost Center` where \
+			parent_cost_center = %s and docstatus != 2",
+			self.name,
 		)
 
 	def if_allocation_exists_against_cost_center(self):

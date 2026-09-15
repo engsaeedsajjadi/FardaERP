@@ -23,7 +23,7 @@ def get_context(context):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_help_results_sections(text: str):
+def get_help_results_sections(text):
 	out = []
 	settings = frappe.get_doc("Support Settings", "Support Settings")
 

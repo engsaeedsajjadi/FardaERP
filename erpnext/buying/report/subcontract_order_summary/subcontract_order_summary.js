@@ -26,6 +26,13 @@ frappe.query_reports["Subcontract Order Summary"] = {
 			reqd: 1,
 		},
 		{
+			label: __("Order Type"),
+			fieldname: "order_type",
+			fieldtype: "Select",
+			options: ["Purchase Order", "Subcontracting Order"],
+			default: "Subcontracting Order",
+		},
+		{
 			label: __("Subcontract Order"),
 			fieldname: "name",
 			fieldtype: "Data",

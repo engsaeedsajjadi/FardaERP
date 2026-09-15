@@ -2,14 +2,16 @@
 # See license.txt
 
 import json
-from unittest.mock import patch
+import time
 from uuid import uuid4
 
 import frappe
 from frappe.core.page.permission_manager.permission_manager import reset
-from frappe.query_builder.functions import CombineDatetime
+from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+from frappe.query_builder.functions import Timestamp
 from frappe.utils import add_days, add_to_date, flt, today
 
+from erpnext.accounts.doctype.gl_entry.gl_entry import rename_gle_sle_docs
 from erpnext.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 from erpnext.stock.doctype.item.test_item import make_item
 from erpnext.stock.doctype.landed_cost_voucher.test_landed_cost_voucher import (
@@ -33,69 +35,6 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 	def setUp(self):
 		create_items()
 		reset("Stock Entry")
-
-	def test_stock_write_takes_sle_advisory_gate(self):
-		if frappe.db.db_type != "postgres":
-			self.skipTest("advisory locks are a PostgreSQL feature")
-
-		item = make_item(properties={"is_stock_item": 1}).name
-
-		def held_advisory_locks():
-			return frappe.db.sql(
-				"SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
-			)[0][0]
-
-		before = held_advisory_locks()
-		make_stock_entry(item_code=item, target="_Test Warehouse - _TC", qty=1, rate=10)
-		self.assertGreater(held_advisory_locks(), before)
-
-	def test_incoming_value_for_transferred_serial_no_is_deterministic(self):
-		"""get_incoming_value_for_serial_nos picks the latest SLE (posting_date desc, limit 1) for a
-		serial transferred to another company. posting_date alone is non-total, so two same-date SLEs
-		with different incoming_rate could be resolved differently on MariaDB vs Postgres. creation/name
-		tie-breaks make the latest SLE win identically on both engines."""
-		from erpnext.stock.stock_ledger import update_entries_after
-
-		item = "_Test Serialized Item"
-		serial = "_Test SN Tie 9"
-		company_a, company_b = "_Test Company", "_Test Company 1"
-		if frappe.db.exists("Serial No", serial):
-			frappe.delete_doc("Serial No", serial, force=1)
-		frappe.get_doc(
-			{"doctype": "Serial No", "serial_no": serial, "item_code": item, "company": company_b}
-		).insert(ignore_permissions=True)
-
-		def mk_sle(name, rate):
-			if frappe.db.exists("Stock Ledger Entry", name):
-				frappe.delete_doc("Stock Ledger Entry", name, force=1)
-			doc = frappe.get_doc(
-				{
-					"doctype": "Stock Ledger Entry",
-					"item_code": item,
-					"warehouse": "_Test Warehouse - _TC",
-					"company": company_a,
-					"posting_date": "2026-06-01",
-					"posting_time": "10:00:00",
-					"actual_qty": 1,
-					"incoming_rate": rate,
-					"is_cancelled": 0,
-					"serial_no": serial,
-					"voucher_type": "Stock Entry",
-					"voucher_no": "TEST-TIE",
-				}
-			)
-			doc.name = name
-			doc.flags.name_set = True
-			doc.db_insert()
-
-		mk_sle("MAT-SLE-TIE-A", 100)
-		mk_sle("MAT-SLE-TIE-B", 200)  # later/larger name -> deterministic winner
-
-		value = update_entries_after.get_incoming_value_for_serial_nos(
-			frappe._dict(company=company_a), [serial]
-		)
-		# the latest (creation/name desc) same-date SLE wins -> 200 on both engines
-		self.assertEqual(value, 200.0)
 
 	def test_item_cost_reposting(self):
 		company = "_Test Company"
@@ -1129,9 +1068,11 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 		# original amount
 		self.assertEqual(50, _get_stock_credit(final_consumption))
 
-	@patch.dict(frappe.flags, {"dont_execute_stock_reposts": True})
 	def test_tie_breaking(self):
 		from erpnext.stock.doctype.repost_item_valuation.repost_item_valuation import repost_entries
+
+		frappe.flags.dont_execute_stock_reposts = True
+		self.addCleanup(frappe.flags.pop, "dont_execute_stock_reposts")
 
 		item = make_item().name
 		warehouse = "_Test Warehouse - _TC"
@@ -1235,6 +1176,8 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 			posting_time="02:00:00",
 		)
 
+		time.sleep(3)
+
 		reciept2 = make_stock_entry(
 			item_code=item,
 			to_warehouse=warehouse,
@@ -1272,6 +1215,8 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 			rate=10,
 			posting_time="02:00:00",
 		)
+
+		time.sleep(3)
 
 		# backdated entry with same timestamp but different ms part
 		reciept2 = make_stock_entry(
@@ -1317,6 +1262,7 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 			posting_date="2021-01-01",
 			posting_time="02:00:00",
 		)
+		time.sleep(1)
 		receipt2 = make_purchase_receipt(
 			item_code=item,
 			warehouse=warehouse,
@@ -1357,6 +1303,47 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 		self.assertEqual(frappe.db.get_value("Stock Ledger Entry", sle2.name, "qty_after_transaction"), 35)
 		self.assertEqual(frappe.db.get_value("Stock Ledger Entry", sle1.name, "qty_after_transaction"), 10)
 
+	def test_cancel_first_of_two_same_timestamp_entries(self):
+		# Two receipts of the same item+warehouse at the exact same posting timestamp: balances 10 -> 20.
+		# Cancelling the first must leave the second standing alone on a zero base (qty 10), not
+		# double-decremented. The same-timestamp sibling is corrected by the cancellation reprocessing,
+		# so update_qty_in_future_sle must not shift it again.
+		item = make_item().name
+		warehouse = "_Test Warehouse - _TC"
+
+		receipt1 = make_purchase_receipt(
+			item_code=item,
+			warehouse=warehouse,
+			qty=10,
+			rate=10,
+			posting_date="2026-06-01",
+			posting_time="10:00:00",
+		)
+		time.sleep(1)
+		receipt2 = make_purchase_receipt(
+			item_code=item,
+			warehouse=warehouse,
+			qty=10,
+			rate=10,
+			posting_date="2026-06-01",
+			posting_time="10:00:00",  # identical timestamp, later creation
+		)
+
+		def qty_after(voucher):
+			return frappe.db.get_value(
+				"Stock Ledger Entry",
+				{"voucher_no": voucher.name, "is_cancelled": 0},
+				"qty_after_transaction",
+			)
+
+		self.assertEqual(qty_after(receipt1), 10)
+		self.assertEqual(qty_after(receipt2), 20)
+
+		receipt1.cancel()
+
+		# receipt2 now sits on a zero base -> 10 (not 0 from a double shift, nor a negative-stock error).
+		self.assertEqual(qty_after(receipt2), 10)
+
 	def test_cancel_shifts_same_timestamp_delivery_notes(self):
 		item = make_item().name
 		warehouse = "_Test Warehouse - _TC"
@@ -1384,6 +1371,8 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 					posting_time=posting_time,
 				)
 			)
+			time.sleep(1)
+
 		dn = dns[2]
 		dn.cancel()
 
@@ -1471,7 +1460,7 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 			.where(sle.voucher_no == transfer.name)
 			.where(sle.voucher_type == transfer.doctype)
 			.where(sle.is_cancelled == 0)
-			.orderby(CombineDatetime(sle.posting_date, sle.posting_time))
+			.orderby(Timestamp(sle.posting_date, sle.posting_time))
 			.orderby(sle.creation)
 			.run(as_dict=True)
 		)
@@ -1564,32 +1553,6 @@ class TestStockLedgerEntry(ERPNextTestSuite, StockTestMixin):
 			item_code=item_code, source=warehouse, qty=470.84, rate=100, posting_date=add_days(today(), -1)
 		)
 
-	def test_zero_qty_row_is_skipped(self):
-		"""A zero-qty non-reconciliation row must be skipped entirely: no SLE,
-		no crash, no reprocessing of the previous row's entry."""
-		from erpnext.stock.stock_ledger import make_sl_entries
-
-		item = make_item(properties={"is_stock_item": 1})
-		voucher_no = f"zero-qty-{uuid4()}"
-
-		make_sl_entries(
-			[
-				frappe._dict(
-					item_code=item.name,
-					warehouse="_Test Warehouse - _TC",
-					company="_Test Company",
-					posting_date=today(),
-					posting_time="12:00:00",
-					voucher_type="Stock Entry",
-					voucher_no=voucher_no,
-					actual_qty=0,
-					stock_uom=item.stock_uom,
-				)
-			]
-		)
-
-		self.assertFalse(frappe.db.exists("Stock Ledger Entry", {"voucher_no": voucher_no}))
-
 
 def create_repack_entry(**args):
 	args = frappe._dict(args)
@@ -1638,17 +1601,14 @@ def create_repack_entry(**args):
 
 
 def create_product_bundle_item(new_item_code, packed_items):
-	from erpnext.selling.doctype.product_bundle.product_bundle import get_active_product_bundle
-
-	if not get_active_product_bundle(new_item_code):
+	if not frappe.db.exists("Product Bundle", new_item_code):
 		item = frappe.new_doc("Product Bundle")
 		item.new_item_code = new_item_code
 
 		for d in packed_items:
 			item.append("items", {"item_code": d[0], "qty": d[1]})
 
-		item.insert()
-		item.submit()
+		item.save()
 
 
 def create_items(items=None, uoms=None):
@@ -1719,7 +1679,7 @@ def create_purchase_receipt_entries_for_batchwise_item_valuation_test(pr_entry_l
 
 
 def create_delivery_note_entries_for_batchwise_item_valuation_test(dn_entry_list):
-	from erpnext.selling.doctype.sales_order.mapper import make_delivery_note
+	from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 	from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 	dns = []
@@ -1752,12 +1712,17 @@ def create_delivery_note_entries_for_batchwise_item_valuation_test(dn_entry_list
 
 
 def fetch_sle_details_for_doc_list(doc_list, columns, as_dict=1):
-	return frappe.get_all(
-		"Stock Ledger Entry",
-		filters={"voucher_no": ["in", [doc.name for doc in doc_list]], "docstatus": 1},
-		fields=columns,
-		order_by="posting_datetime asc, creation asc",
-		as_list=not as_dict,
+	return frappe.db.sql(
+		f"""
+		SELECT { ', '.join(columns)}
+		FROM `tabStock Ledger Entry`
+		WHERE
+			voucher_no IN %(voucher_nos)s
+			and docstatus = 1
+		ORDER BY timestamp(posting_date, posting_time) ASC, CREATION ASC
+	""",
+		dict(voucher_nos=[doc.name for doc in doc_list]),
+		as_dict=as_dict,
 	)
 
 

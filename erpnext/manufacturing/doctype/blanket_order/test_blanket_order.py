@@ -30,7 +30,6 @@ class TestBlanketOrder(ERPNextTestSuite):
 		so.submit()
 
 		self.assertEqual(so.doctype, "Sales Order")
-		self.assertNotEqual(so.naming_series, bo.naming_series)
 		self.assertEqual(len(so.get("items")), len(bo.get("items")))
 
 		# check the rate, quantity and updation for the ordered quantity
@@ -56,7 +55,6 @@ class TestBlanketOrder(ERPNextTestSuite):
 		po.submit()
 
 		self.assertEqual(po.doctype, "Purchase Order")
-		self.assertNotEqual(po.naming_series, bo.naming_series)
 		self.assertEqual(len(po.get("items")), len(bo.get("items")))
 
 		# check the rate, quantity and updation for the ordered quantity
@@ -124,29 +122,6 @@ class TestBlanketOrder(ERPNextTestSuite):
 				order.flags.ignore_permissions = True
 				self.assertRaises(frappe.ValidationError, order.submit)
 
-	def test_blanket_order_over_order_aggregated_across_rows(self):
-		# the over-order check should sum the same item across multiple order rows
-		frappe.db.set_single_value("Selling Settings", "blanket_order_allowance", 0)
-		bo = make_blanket_order(blanket_order_type="Selling", quantity=100)
-
-		frappe.flags.args.doctype = "Sales Order"
-		so = make_order(bo.name)
-		so.currency = get_company_currency(so.company)
-		so.delivery_date = today()
-		so.items[0].qty = 60
-		so.append(
-			"items",
-			{
-				"item_code": so.items[0].item_code,
-				"qty": 50,  # 60 + 50 = 110 > 100 blanket qty
-				"rate": so.items[0].rate,
-				"delivery_date": today(),
-				"against_blanket_order": 1,
-				"blanket_order": bo.name,
-			},
-		)
-		self.assertRaises(frappe.ValidationError, so.submit)
-
 	def test_party_item_code(self):
 		item_doc = make_item("_Test Item 1 for Blanket Order")
 		item_code = item_doc.name
@@ -168,26 +143,6 @@ class TestBlanketOrder(ERPNextTestSuite):
 
 		bo = make_blanket_order(blanket_order_type="Purchasing", supplier=supplier, item_code=item_code)
 		self.assertEqual(bo.items[0].party_item_code, "SUPP-PART-1")
-
-	def test_blanket_order_zero_quantity(self):
-		bo = frappe.new_doc("Blanket Order")
-		bo.blanket_order_type = "Selling"
-		bo.company = "_Test Company"
-		bo.customer = "_Test Customer"
-		bo.from_date = today()
-		bo.to_date = add_months(today(), 12)
-
-		bo.append(
-			"items",
-			{
-				"item_code": "_Test Item",
-				"qty": 0,
-				"rate": 100,
-			},
-		)
-
-		with self.assertRaises(frappe.ValidationError):
-			bo.insert()
 
 	def test_multicurrency_blanket_order(self):
 		company_currency = get_company_currency("_Test Company")
@@ -293,28 +248,28 @@ class TestBlanketOrder(ERPNextTestSuite):
 		self.assertEqual(item.price_list_rate, price_list_rate)
 		self.assertEqual(item.rate, price_list_rate)
 
-	def test_price_list_rates_fetch_item_uoms_once(self):
+	def test_price_list_rates_fetch_item_prices_once(self):
 		blanket_order = new_blanket_order("Selling")
 		blanket_order.selling_price_list = "_Test Price List"
 		for item_code in ("ITEM-1", "ITEM-2"):
 			blanket_order.append("items", {"item_code": item_code, "qty": 1})
 
-		with (
-			patch.object(
-				blanket_order_pricing.frappe,
-				"get_all",
-				return_value=[["ITEM-1", "Nos"], ["ITEM-2", "Nos"]],
-			) as get_all,
-			patch.object(blanket_order_pricing, "get_price_list_rate_for", return_value=None),
-		):
+		with patch.object(
+			blanket_order_pricing, "get_item_prices_for_stock_uom", return_value={}
+		) as get_item_prices:
 			rates = blanket_order_pricing.get_price_list_rates(blanket_order)
 
 		self.assertEqual(len(rates), 2)
-		get_all.assert_called_once_with(
-			"Item",
-			filters={"name": ("in", ["ITEM-1", "ITEM-2"])},
-			fields=["name", "stock_uom"],
-			as_list=True,
+		get_item_prices.assert_called_once_with(
+			frappe._dict(
+				{
+					"price_list": "_Test Price List",
+					"customer": "_Test Customer",
+					"supplier": None,
+					"transaction_date": blanket_order.from_date,
+				}
+			),
+			["ITEM-1", "ITEM-2"],
 		)
 
 	def test_price_list_conversion_uses_currency_precision(self):

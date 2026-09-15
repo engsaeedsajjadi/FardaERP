@@ -179,7 +179,6 @@ def get_columns(filters: Filters) -> list[dict]:
 			"fieldtype": "Link",
 			"options": "Item",
 			"width": 100,
-			"sticky": "True",
 		},
 		{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 100},
 		{"label": _("Description"), "fieldname": "description", "fieldtype": "Data", "width": 200},
@@ -207,7 +206,6 @@ def get_columns(filters: Filters) -> list[dict]:
 				"fieldtype": "Link",
 				"options": "Warehouse",
 				"width": 100,
-				"sticky": "True",
 			}
 		]
 
@@ -316,26 +314,15 @@ class FIFOSlots:
 			self._prefetch_batchwise_valuations()
 			self._prefetch_valuation_methods()
 
-			if frappe.db.db_type == "postgres":
-				# postgres server-side cursors can't run nested queries mid-iteration; _get_stock_ledger_entries
-				# returns a buffered result there, so process it directly (no unbuffered cursor).
-				for row in self._get_stock_ledger_entries():
-					self._process_stock_ledger_entry(row, bundle_wise_serial_nos, bundle_wise_batch_nos)
-			else:
-				with frappe.db.unbuffered_cursor():
-					stock_ledger_entries = self._get_stock_ledger_entries()
+		with frappe.db.unbuffered_cursor():
+			if stock_ledger_entries is None:
+				stock_ledger_entries = self._get_stock_ledger_entries()
 
-					for row in stock_ledger_entries:
-						self._process_stock_ledger_entry(row, bundle_wise_serial_nos, bundle_wise_batch_nos)
-
-					# Note that stock_ledger_entries is an iterator, you can not reuse it like a list
-					del stock_ledger_entries
-		else:
-			# entries passed in directly as a list: no streaming cursor is opened, so the batchwise
-			# valuation flags can be resolved lazily — a nested get_value here is safe on postgres too
-			# (running it inside an unbuffered/named cursor would raise on postgres).
 			for row in stock_ledger_entries:
 				self._process_stock_ledger_entry(row, bundle_wise_serial_nos, bundle_wise_batch_nos)
+
+			# Note that stock_ledger_entries is an iterator, you can not reuse it like a list
+			del stock_ledger_entries
 
 		self._recompute_moving_average_slots()
 		self._rebalance_batch_slots()
@@ -629,7 +616,7 @@ class FIFOSlots:
 	def _add_serial_fifo_slots(self, row: dict, fifo_queue: list, serial_nos: list) -> None:
 		valuation = row.stock_value_difference / row.actual_qty
 		for serial_no in serial_nos:
-			posting_date = self.serial_no_details.setdefault((serial_no, row.warehouse), row.posting_date)
+			posting_date = self.serial_no_details.setdefault(serial_no, row.posting_date)
 			fifo_queue.append([serial_no, posting_date, valuation])
 
 	def _add_batch_fifo_slots(self, row: dict, fifo_queue: list, batch_nos: list) -> None:
@@ -641,7 +628,7 @@ class FIFOSlots:
 			if not qty:
 				continue
 
-			posting_date = self.batch_no_details.setdefault((batch_no, row.warehouse), row.posting_date)
+			posting_date = self.batch_no_details.setdefault(batch_no, row.posting_date)
 			fifo_queue.append([batch_no, use_batchwise_valuation, qty, posting_date, stock_value_difference])
 
 	def _neutralize_negative_batch_stock(
@@ -717,7 +704,7 @@ class FIFOSlots:
 		if serial_nos:
 			self._consume_serial_fifo_slots(fifo_queue, serial_nos)
 		elif batch_nos:
-			self._consume_batch_fifo_slots(row, fifo_queue, transfer_key, batch_nos, from_end)
+			self._consume_batch_fifo_slots(row, fifo_queue, transfer_key, batch_nos)
 		else:
 			self._consume_fifo_slots(row, fifo_queue, transfer_key, from_end)
 
@@ -725,16 +712,12 @@ class FIFOSlots:
 		fifo_queue[:] = [slot for slot in fifo_queue if slot[FIFO_QTY_INDEX] not in serial_nos]
 
 	def _consume_batch_fifo_slots(
-		self, row: dict, fifo_queue: list, transfer_key: tuple, batch_nos: list, from_end: bool = False
+		self, row: dict, fifo_queue: list, transfer_key: tuple, batch_nos: list
 	) -> None:
-		"""LIFO consumes the most recent inward first, so walk the queue from the tail.
-		Slots of one batch valued batchwise share a date and the walk cannot tell them
-		apart, but slots pooled across batches carry the date of the batch that filled
-		them."""
 		for batch_no, use_batchwise_valuation, qty, stock_value_difference in batch_nos:
 			items_to_remove = []
 
-			for slot in reversed(fifo_queue) if from_end else fifo_queue:
+			for slot in fifo_queue:
 				if not self._can_consume_batch_slot(slot, batch_no, use_batchwise_valuation):
 					continue
 
@@ -856,25 +839,13 @@ class FIFOSlots:
 				transfer_qty_to_pop -= transfer_qty
 				stock_value -= transfer_value
 				self._add_incoming_transfer_slots(
-					fifo_queue,
-					row.warehouse,
-					batch_nos,
-					transfer_qty,
-					transfer_date,
-					transfer_value,
-					serial_nos,
+					fifo_queue, batch_nos, transfer_qty, transfer_date, transfer_value, serial_nos
 				)
 				transfer_data.pop(0)
 			elif not transfer_data:
 				# transfer bucket is empty, extra incoming qty
 				self._add_incoming_transfer_slots(
-					fifo_queue,
-					row.warehouse,
-					batch_nos,
-					transfer_qty_to_pop,
-					row.posting_date,
-					stock_value,
-					serial_nos,
+					fifo_queue, batch_nos, transfer_qty_to_pop, row.posting_date, stock_value, serial_nos
 				)
 				transfer_qty_to_pop = 0
 				stock_value = 0
@@ -884,7 +855,6 @@ class FIFOSlots:
 				transfer_data[0][FIFO_VALUE_INDEX] -= stock_value
 				self._add_incoming_transfer_slots(
 					fifo_queue,
-					row.warehouse,
 					batch_nos,
 					transfer_qty_to_pop,
 					transfer_data[0][FIFO_DATE_INDEX],
@@ -897,21 +867,17 @@ class FIFOSlots:
 	def _add_incoming_transfer_slots(
 		self,
 		fifo_queue: list,
-		warehouse: str,
 		batch_nos: list,
 		qty: float,
 		posting_date: str,
 		value: float,
 		serial_nos: list | None = None,
 	) -> None:
-		for slot in self._get_incoming_transfer_slots(
-			warehouse, batch_nos, qty, posting_date, value, serial_nos
-		):
+		for slot in self._get_incoming_transfer_slots(batch_nos, qty, posting_date, value, serial_nos):
 			self._add_transfer_slot_to_fifo_queue(fifo_queue, slot)
 
 	def _get_incoming_transfer_slots(
 		self,
-		warehouse: str,
 		batch_nos: list,
 		qty: float,
 		posting_date: str,
@@ -919,7 +885,7 @@ class FIFOSlots:
 		serial_nos: list | None = None,
 	) -> list:
 		if serial_nos:
-			return self._get_serial_incoming_transfer_slots(serial_nos, warehouse, qty, posting_date, value)
+			return self._get_serial_incoming_transfer_slots(serial_nos, qty, posting_date, value)
 
 		if not batch_nos:
 			return [[qty, posting_date, value]]
@@ -953,7 +919,7 @@ class FIFOSlots:
 		return incoming_slots
 
 	def _get_serial_incoming_transfer_slots(
-		self, serial_nos: list, warehouse: str, qty: float, posting_date: str, value: float
+		self, serial_nos: list, qty: float, posting_date: str, value: float
 	) -> list:
 		incoming_slots = []
 		remaining_value = flt(value)
@@ -962,7 +928,7 @@ class FIFOSlots:
 		for index in range(serial_count):
 			serial_no = serial_nos.pop(0)
 			serial_value = remaining_value if index == serial_count - 1 else flt(value / serial_count)
-			serial_posting_date = self.serial_no_details.setdefault((serial_no, warehouse), posting_date)
+			serial_posting_date = self.serial_no_details.setdefault(serial_no, posting_date)
 
 			incoming_slots.append([serial_no, serial_posting_date, serial_value])
 			remaining_value = flt(remaining_value - serial_value)
@@ -1102,9 +1068,7 @@ class FIFOSlots:
 
 		sle_query = sle_query.orderby(sle.posting_datetime, sle.creation)
 
-		# postgres server-side (named) cursors can't run nested queries mid-iteration, which
-		# _process_stock_ledger_entry needs; fall back to a buffered fetch there. MariaDB streams.
-		return sle_query.run(as_dict=True, as_iterator=frappe.db.db_type != "postgres")
+		return sle_query.run(as_dict=True, as_iterator=True)
 
 	def _get_bundle_wise_serial_nos(self) -> dict:
 		bundle = frappe.qb.DocType("Serial and Batch Bundle")

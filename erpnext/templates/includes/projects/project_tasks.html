@@ -5,7 +5,7 @@
       href="/tasks/{{ task.name | urlencode }}">
       {% if task.parent_task %}
         <span class="">
-          <svg class="icon icon-xs"><use href="#icon-corner-down-right"></use></svg>
+          <i class="fa fa-level-up fa-rotate-90"></i>
         </span>
       {% endif %}
       {{ task.subject | e }}</a>

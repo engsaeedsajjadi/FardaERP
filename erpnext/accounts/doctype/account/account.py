@@ -65,7 +65,6 @@ class Account(NestedSet):
 			"Stock",
 			"Stock Adjustment",
 			"Stock Received But Not Billed",
-			"Stock Delivered But Not Billed",
 			"Service Received But Not Billed",
 			"Tax",
 			"Temporary",
@@ -176,19 +175,16 @@ class Account(NestedSet):
 		if cint(self.is_group):
 			db_value = self.get_doc_before_save()
 			if db_value:
-				Account = frappe.qb.DocType("Account")
-				query = frappe.qb.update(Account).where((Account.lft > self.lft) & (Account.rgt < self.rgt))
-
-				updated = False
 				if self.report_type != db_value.report_type:
-					query = query.set(Account.report_type, self.report_type)
-					updated = True
+					frappe.db.sql(
+						"update `tabAccount` set report_type=%s where lft > %s and rgt < %s",
+						(self.report_type, self.lft, self.rgt),
+					)
 				if self.root_type != db_value.root_type:
-					query = query.set(Account.root_type, self.root_type)
-					updated = True
-
-				if updated:
-					query.run()
+					frappe.db.sql(
+						"update `tabAccount` set root_type=%s where lft > %s and rgt < %s",
+						(self.root_type, self.lft, self.rgt),
+					)
 
 		if self.root_type and not self.report_type:
 			self.report_type = (
@@ -265,7 +261,7 @@ class Account(NestedSet):
 			if not frappe.db.get_value(
 				"Account", {"account_name": self.account_name, "company": ancestors[0]}, "name"
 			):
-				frappe.throw(_("Please add the account to root level Company - {0}").format(ancestors[0]))
+				frappe.throw(_("Please add the account to root level Company - {}").format(ancestors[0]))
 		elif self.parent_account:
 			descendants = get_descendants_of("Company", self.company)
 			if not descendants:
@@ -483,7 +479,11 @@ class Account(NestedSet):
 		return frappe.db.get_value("GL Entry", {"account": self.name})
 
 	def check_if_child_exists(self):
-		return frappe.db.exists("Account", {"parent_account": self.name, "docstatus": ["!=", 2]})
+		return frappe.db.sql(
+			"""select name from `tabAccount` where parent_account = %s
+			and docstatus != 2""",
+			self.name,
+		)
 
 	def validate_mandatory(self):
 		if not self.root_type:
@@ -502,24 +502,14 @@ class Account(NestedSet):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_parent_account(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
-	Account = frappe.qb.DocType("Account")
-
-	search_field_obj = getattr(Account, searchfield)
-
-	query = (
-		frappe.qb.from_(Account)
-		.select(Account.name)
-		.where(Account.is_group == 1)
-		.where(Account.docstatus != 2)
-		.where(Account.company == filters["company"])
-		.where(search_field_obj.like(f"%{txt}%"))
-		.order_by(Account.name)
-		.limit(page_len)
-		.offset(start)
+def get_parent_account(doctype, txt, searchfield, start, page_len, filters):
+	return frappe.db.sql(
+		"""select name from tabAccount
+		where is_group = 1 and docstatus != 2 and company = {}
+		and {} like {} order by name limit {} offset {}""".format("%s", searchfield, "%s", "%s", "%s"),
+		(filters["company"], "%%%s%%" % txt, page_len, start),
+		as_list=1,
 	)
-
-	return query.run(as_list=1)
 
 
 def get_account_currency(account):
@@ -556,9 +546,7 @@ def get_account_autoname(account_number, account_name, company):
 
 
 @frappe.whitelist()
-def update_account_number(
-	name: str, account_name: str, account_number: str | None = None, from_descendant: bool = False
-):
+def update_account_number(name, account_name, account_number=None, from_descendant=False):
 	_ensure_idle_system()
 	account = frappe.get_cached_doc("Account", name)
 	account.check_permission("write")
@@ -621,7 +609,7 @@ def update_account_number(
 
 
 @frappe.whitelist()
-def merge_account(old: str, new: str):
+def merge_account(old, new):
 	_ensure_idle_system()
 	new_account = frappe.get_cached_doc("Account", new)
 	old_account = frappe.get_cached_doc("Account", old)
@@ -660,7 +648,7 @@ def merge_account(old: str, new: str):
 
 
 @frappe.whitelist()
-def get_root_company(company: str):
+def get_root_company(company):
 	# return the topmost company in the hierarchy
 	ancestors = get_ancestors_of("Company", company, "lft asc")
 	return [ancestors[0]] if ancestors else []
@@ -690,15 +678,8 @@ def _ensure_idle_system():
 
 	last_gl_update = None
 	try:
-		if frappe.db.db_type == "postgres":
-			# The MariaDB branch blocks new GL inserts via the gap lock its for_update read takes;
-			# a postgres row lock never blocks inserts, so take an EXCLUSIVE table lock instead --
-			# writers block until the rename commits, readers don't. NOWAIT mirrors wait=False.
-			frappe.db.sql("LOCK TABLE `tabGL Entry` IN EXCLUSIVE MODE NOWAIT")
-			last_gl_update = frappe.db.get_value("GL Entry", {}, "modified")
-		else:
-			# We also lock inserts to GL entry table with for_update here.
-			last_gl_update = frappe.db.get_value("GL Entry", {}, "modified", for_update=True, wait=False)
+		# We also lock inserts to GL entry table with for_update here.
+		last_gl_update = frappe.db.get_value("GL Entry", {}, "modified", for_update=True, wait=False)
 	except frappe.QueryTimeoutError:
 		# wait=False fails immediately if there's an active transaction.
 		last_gl_update = add_to_date(None, seconds=-1)
@@ -709,7 +690,7 @@ def _ensure_idle_system():
 	if last_gl_update > add_to_date(None, minutes=-5):
 		frappe.throw(
 			_(
-				"Last GL Entry update was done {0}. This operation is not allowed while system is actively being used. Please wait for 5 minutes before retrying."
+				"Last GL Entry update was done {}. This operation is not allowed while system is actively being used. Please wait for 5 minutes before retrying."
 			).format(pretty_date(last_gl_update)),
 			title=_("System In Use"),
 		)
@@ -724,15 +705,11 @@ def get_company_default_account_fields():
 		"default_expense_account": "Default Expense Account",
 		"default_income_account": "Default Income Account",
 		"stock_received_but_not_billed": "Stock Received But Not Billed Account",
-		"stock_delivered_but_not_billed": "Stock Delivered But Not Billed Account",
 		"stock_adjustment_account": "Stock Adjustment Account",
 		"write_off_account": "Write Off Account",
-		"bank_charges_account": "Bank Charges Account",
 		"default_discount_account": "Default Payment Discount Account",
 		"unrealized_profit_loss_account": "Unrealized Profit / Loss Account",
 		"exchange_gain_loss_account": "Exchange Gain / Loss Account",
-		"exchange_gain_account": "Exchange Gain Account",
-		"exchange_loss_account": "Exchange Loss Account",
 		"unrealized_exchange_gain_loss_account": "Unrealized Exchange Gain / Loss Account",
 		"round_off_account": "Round Off Account",
 		"default_deferred_revenue_account": "Default Deferred Revenue Account",

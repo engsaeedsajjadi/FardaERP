@@ -13,7 +13,6 @@
   "column_break_ztxc",
   "quantity",
   "uom",
-  "set_qty_based_on_percentage",
   "cost_allocation__process_loss_section",
   "cost_allocation_per",
   "cost_allocation",
@@ -143,15 +142,6 @@
    "label": "Unit Of Measure",
    "options": "UOM",
    "read_only": 1
-  },
-  {
-   "default": "0",
-   "depends_on": "item",
-   "description": "Component quantities are derived from their percentage of the Output Qty. One component row can be marked as Balance Item to absorb the remaining percentage.",
-   "fieldname": "set_qty_based_on_percentage",
-   "fieldtype": "Check",
-   "label": "Set Component Quantities Based On Percentage",
-   "show_description_on_click": 1
   },
   {
    "default": "1",
@@ -771,7 +761,7 @@
  "image_field": "image",
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-06 20:45:00.000000",
+ "modified": "2026-08-23 15:20:11.032436",
  "modified_by": "Administrator",
  "module": "Manufacturing",
  "name": "BOM",
@@ -802,34 +792,6 @@
    "share": 1,
    "submit": 1,
    "write": 1
-  },
-  {
-   "role": "Maintenance User",
-   "select": 1
-  },
-  {
-   "read": 1,
-   "role": "Purchase Manager"
-  },
-  {
-   "read": 1,
-   "role": "Purchase User"
-  },
-  {
-   "role": "Sales Manager",
-   "select": 1
-  },
-  {
-   "role": "Sales User",
-   "select": 1
-  },
-  {
-   "read": 1,
-   "role": "Stock Manager"
-  },
-  {
-   "read": 1,
-   "role": "Stock User"
   }
  ],
  "row_format": "Dynamic",

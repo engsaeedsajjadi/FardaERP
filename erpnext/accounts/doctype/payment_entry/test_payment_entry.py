@@ -196,7 +196,7 @@ class TestPaymentEntry(ERPNextTestSuite):
 		self.assertEqual(outstanding_amount, 100)
 
 	def test_reference_outstanding_amount_on_advance_pull(self):
-		from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
+		from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 
 		so = make_sales_order(qty=1, rate=1000)
 		pe = get_payment_entry("Sales Order", so.name, bank_account="_Test Cash - _TC")
@@ -245,62 +245,6 @@ class TestPaymentEntry(ERPNextTestSuite):
 
 		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", pi.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
-
-	def test_pay_multiple_purchase_invoices_in_one_entry(self):
-		pi1 = make_purchase_invoice()  # outstanding 250
-		pi2 = make_purchase_invoice()  # outstanding 250
-
-		pe = get_payment_entry("Purchase Invoice", pi1.name, bank_account="_Test Cash - _TC")
-		pe.append(
-			"references",
-			{
-				"reference_doctype": "Purchase Invoice",
-				"reference_name": pi2.name,
-				"total_amount": pi2.grand_total,
-				"outstanding_amount": pi2.outstanding_amount,
-				"allocated_amount": pi2.outstanding_amount,
-			},
-		)
-		pe.paid_amount = pe.received_amount = (
-			pe.references[0].allocated_amount + pe.references[1].allocated_amount
-		)
-		pe.insert()
-		pe.submit()
-
-		self.assertEqual(pe.total_allocated_amount, 500)
-		self.assertEqual(frappe.db.get_value("Purchase Invoice", pi1.name, "outstanding_amount"), 0)
-		self.assertEqual(frappe.db.get_value("Purchase Invoice", pi2.name, "outstanding_amount"), 0)
-
-	def test_unallocated_amount_on_overpaid_purchase_payment(self):
-		pi = make_purchase_invoice()  # outstanding 250
-
-		pe = get_payment_entry("Purchase Invoice", pi.name, bank_account="_Test Cash - _TC")
-		pe.paid_amount = pe.references[0].allocated_amount + 200  # overpay -> 200 advance
-		pe.received_amount = pe.paid_amount
-		pe.insert()
-		pe.submit()
-
-		self.assertEqual(pe.docstatus, 1)
-		self.assertEqual(pe.unallocated_amount, 200)
-
-		# end-to-end: submitting posts a balanced GL for the full paid amount (250
-		# settling the invoice + 200 advance)
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_no": pe.name, "is_cancelled": 0},
-			fields=["debit", "credit"],
-		)
-		self.assertTrue(gl_entries, "Submitted payment produced no GL entries")
-		self.assertEqual(flt(sum(e.debit for e in gl_entries)), flt(sum(e.credit for e in gl_entries)))
-		self.assertEqual(flt(sum(e.debit for e in gl_entries)), 450)
-
-	def test_overallocation_against_purchase_invoice_throws(self):
-		pi = make_purchase_invoice()  # outstanding 250
-
-		pe = get_payment_entry("Purchase Invoice", pi.name, bank_account="_Test Cash - _TC")
-		pe.references[0].allocated_amount += 100  # 350 > 250 outstanding
-		pe.paid_amount = pe.received_amount = pe.references[0].allocated_amount
-		self.assertRaises(frappe.ValidationError, pe.insert)
 
 	def test_payment_against_sales_invoice_to_check_status(self):
 		si = create_sales_invoice(
@@ -799,150 +743,6 @@ class TestPaymentEntry(ERPNextTestSuite):
 			pe.insert,
 		)
 
-	def test_bank_charges_deduction(self):
-		bank_charges_account = create_account(
-			parent_account="Indirect Expenses - _TC",
-			account_name="_Test Bank Charges",
-			company="_Test Company",
-		)
-		frappe.db.set_value("Company", "_Test Company", "bank_charges_account", bank_charges_account)
-
-		pe = frappe.new_doc("Payment Entry")
-		pe.payment_type = "Internal Transfer"
-		pe.company = "_Test Company"
-		pe.paid_from = "_Test Bank - _TC"
-		pe.paid_to = "_Test Cash - _TC"
-		pe.paid_amount = 1000
-		pe.received_amount = 990
-		pe.reference_no = "4"
-		pe.reference_date = nowdate()
-
-		pe.setup_party_account_field()
-		pe.set_missing_values()
-		pe.set_exchange_rate()
-		pe.set_amounts()
-
-		self.assertEqual(pe.deductions[0].account, bank_charges_account)
-		self.assertEqual(pe.deductions[0].amount, 10)
-		pe.deductions[0].cost_center = "_Test Cost Center - _TC"
-
-		pe.insert()
-		pe.submit()
-
-		expected_gle = dict(
-			(d[0], d)
-			for d in [
-				["_Test Bank - _TC", 0, 1000, None],
-				["_Test Cash - _TC", 990, 0, None],
-				[bank_charges_account, 10, 0, None],
-			]
-		)
-
-		self.validate_gl_entries(pe.name, expected_gle)
-
-	def test_cross_currency_transfer_ignores_bank_charges_account(self):
-		exchange_gain_loss_account = frappe.db.get_value(
-			"Company", "_Test Company", "exchange_gain_loss_account"
-		)
-		bank_charges_account = create_account(
-			parent_account="Indirect Expenses - _TC",
-			account_name="_Test Bank Charges",
-			company="_Test Company",
-		)
-		frappe.db.set_value("Company", "_Test Company", "bank_charges_account", bank_charges_account)
-
-		pe = frappe.new_doc("Payment Entry")
-		pe.payment_type = "Internal Transfer"
-		pe.company = "_Test Company"
-		pe.paid_from = "_Test Bank USD - _TC"
-		pe.paid_to = "_Test Bank - _TC"
-		pe.paid_amount = 100
-		pe.source_exchange_rate = 50
-		pe.received_amount = 4500
-		pe.reference_no = "5"
-		pe.reference_date = nowdate()
-
-		pe.setup_party_account_field()
-		pe.set_missing_values()
-		pe.set_exchange_rate()
-		pe.set_amounts()
-
-		self.assertEqual(pe.deductions[0].account, exchange_gain_loss_account)
-		self.assertEqual(pe.deductions[0].amount, 500)
-		pe.deductions[0].cost_center = "_Test Cost Center - _TC"
-
-		pe.insert()
-		pe.submit()
-
-		expected_gle = dict(
-			(d[0], d)
-			for d in [
-				["_Test Bank USD - _TC", 0, 5000, None],
-				["_Test Bank - _TC", 4500, 0, None],
-				[exchange_gain_loss_account, 500.0, 0, None],
-			]
-		)
-
-		self.validate_gl_entries(pe.name, expected_gle)
-
-	def test_cross_currency_transfer_splits_bank_charge_and_exchange_gain_loss(self):
-		exchange_gain_loss_account = frappe.db.get_value(
-			"Company", "_Test Company", "exchange_gain_loss_account"
-		)
-		bank_charges_account = create_account(
-			parent_account="Indirect Expenses - _TC",
-			account_name="_Test Bank Charges",
-			company="_Test Company",
-		)
-
-		pe = frappe.new_doc("Payment Entry")
-		pe.payment_type = "Internal Transfer"
-		pe.company = "_Test Company"
-		pe.paid_from = "_Test Bank USD - _TC"
-		pe.paid_to = "_Test Bank - _TC"
-		pe.paid_amount = 100
-		pe.source_exchange_rate = 50
-		pe.received_amount = 4500
-		pe.reference_no = "6"
-		pe.reference_date = nowdate()
-		pe.append(
-			"deductions",
-			{
-				"account": bank_charges_account,
-				"cost_center": "_Test Cost Center - _TC",
-				"amount": 100,
-			},
-		)
-
-		pe.setup_party_account_field()
-		pe.set_missing_values()
-		pe.set_exchange_rate()
-		pe.set_amounts()
-
-		deductions = {d.account: d for d in pe.deductions}
-		self.assertEqual(deductions[bank_charges_account].amount, 100)
-		self.assertEqual(deductions[exchange_gain_loss_account].amount, 400)
-		self.assertTrue(deductions[exchange_gain_loss_account].is_exchange_gain_loss)
-		self.assertEqual(pe.difference_amount, 0)
-
-		for d in pe.deductions:
-			d.cost_center = "_Test Cost Center - _TC"
-
-		pe.insert()
-		pe.submit()
-
-		expected_gle = dict(
-			(d[0], d)
-			for d in [
-				["_Test Bank USD - _TC", 0, 5000, None],
-				["_Test Bank - _TC", 4500, 0, None],
-				[exchange_gain_loss_account, 400.0, 0, None],
-				[bank_charges_account, 100.0, 0, None],
-			]
-		)
-
-		self.validate_gl_entries(pe.name, expected_gle)
-
 	def test_payment_against_negative_sales_invoice(self):
 		si1 = create_sales_invoice()
 
@@ -1035,11 +835,12 @@ class TestPaymentEntry(ERPNextTestSuite):
 			self.assertEqual(expected_gle[gle.account][3], gle.against_voucher)
 
 	def get_gle(self, voucher_no):
-		return frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Payment Entry", "voucher_no": voucher_no},
-			fields=["account", "debit", "credit", "against_voucher"],
-			order_by="account asc",
+		return frappe.db.sql(
+			"""select account, debit, credit, against_voucher
+			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
+			order by account asc""",
+			voucher_no,
+			as_dict=1,
 		)
 
 	def test_payment_entry_write_off_difference(self):
@@ -1111,59 +912,6 @@ class TestPaymentEntry(ERPNextTestSuite):
 		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
-	def test_exchange_gain_loss_split_accounts(self):
-		gain_account = create_account(
-			account_name="_Test Exchange Gain",
-			parent_account="Indirect Expenses - _TC",
-			company="_Test Company",
-		)
-		loss_account = create_account(
-			account_name="_Test Exchange Loss",
-			parent_account="Indirect Expenses - _TC",
-			company="_Test Company",
-		)
-		frappe.db.set_value("Company", "_Test Company", "exchange_gain_account", gain_account)
-		frappe.db.set_value("Company", "_Test Company", "exchange_loss_account", loss_account)
-
-		si_gain = create_sales_invoice(
-			customer="_Test Customer USD",
-			debit_to="_Test Receivable USD - _TC",
-			currency="USD",
-			conversion_rate=50,
-		)
-		pe_gain = get_payment_entry("Sales Invoice", si_gain.name, bank_account="_Test Bank USD - _TC")
-		pe_gain.reference_no = "1"
-		pe_gain.reference_date = "2016-01-01"
-		pe_gain.source_exchange_rate = 55
-		pe_gain.save()
-		self.assertEqual(pe_gain.references[0].exchange_gain_loss, 500)
-		pe_gain.submit()
-
-		self.assertEqual(self.get_gain_loss_journal_account(pe_gain.name), gain_account)
-
-		si_loss = create_sales_invoice(
-			customer="_Test Customer USD",
-			debit_to="_Test Receivable USD - _TC",
-			currency="USD",
-			conversion_rate=55,
-		)
-		pe_loss = get_payment_entry("Sales Invoice", si_loss.name, bank_account="_Test Bank USD - _TC")
-		pe_loss.reference_no = "2"
-		pe_loss.reference_date = "2016-01-01"
-		pe_loss.source_exchange_rate = 50
-		pe_loss.save()
-		self.assertEqual(pe_loss.references[0].exchange_gain_loss, -500)
-		pe_loss.submit()
-
-		self.assertEqual(self.get_gain_loss_journal_account(pe_loss.name), loss_account)
-
-	def get_gain_loss_journal_account(self, payment_entry_name: str) -> str | None:
-		return frappe.db.get_value(
-			"Journal Entry Account",
-			{"reference_type": "Payment Entry", "reference_name": payment_entry_name, "docstatus": 1},
-			"account",
-		)
-
 	def test_payment_entry_against_sales_invoice_with_cost_centre(self):
 		from erpnext.accounts.doctype.cost_center.test_cost_center import create_cost_center
 
@@ -1187,19 +935,13 @@ class TestPaymentEntry(ERPNextTestSuite):
 			"Debtors - _TC": {"cost_center": cost_center},
 		}
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Payment Entry", "voucher_no": pe.name},
-			fields=[
-				"account",
-				"cost_center",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, cost_center, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
+			order by account asc""",
+			pe.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1230,19 +972,13 @@ class TestPaymentEntry(ERPNextTestSuite):
 			"Creditors - _TC": {"cost_center": cost_center},
 		}
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Payment Entry", "voucher_no": pe.name},
-			fields=[
-				"account",
-				"cost_center",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, cost_center, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
+			order by account asc""",
+			pe.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1428,7 +1164,7 @@ class TestPaymentEntry(ERPNextTestSuite):
 		with self.assertRaises(frappe.ValidationError) as err:
 			pe.save()
 
-		self.assertIn("is on hold", str(err.exception).lower())
+		self.assertTrue("is on hold" in str(err.exception).lower())
 
 	def test_payment_entry_for_employee(self):
 		employee = make_employee("test_payment_entry@salary.com", company="_Test Company")
@@ -1876,7 +1612,7 @@ class TestPaymentEntry(ERPNextTestSuite):
 		self.check_pl_entries()
 
 	def test_advance_as_liability_against_order(self):
-		from erpnext.buying.doctype.purchase_order.mapper import (
+		from erpnext.buying.doctype.purchase_order.purchase_order import (
 			make_purchase_invoice as _make_purchase_invoice,
 		)
 		from erpnext.buying.doctype.purchase_order.test_purchase_order import create_purchase_order
@@ -2051,18 +1787,9 @@ class TestPaymentEntry(ERPNextTestSuite):
 			.where((gle.voucher_no == self.voucher_no) & (gle.is_cancelled == 0))
 			.orderby(gle.account, gle.debit, gle.credit, order=frappe.qb.desc)
 		).run(as_dict=True)
-		# MariaDB and Postgres collate `account` differently, so the DB ordering isn't portable;
-		# sort both sides identically before the positional comparison.
-		fields = ["account", "debit", "credit"]
-
-		def _key(row):
-			return tuple(str(row[f]) for f in fields)
-
-		gl_entries = sorted(gl_entries, key=_key)
-		expected_gle = sorted(self.expected_gle, key=_key)
-		for row in range(len(expected_gle)):
-			for field in fields:
-				self.assertEqual(expected_gle[row][field], gl_entries[row][field])
+		for row in range(len(self.expected_gle)):
+			for field in ["account", "debit", "credit"]:
+				self.assertEqual(self.expected_gle[row][field], gl_entries[row][field])
 
 	def test_reverse_payment_reconciliation(self):
 		customer = create_customer(frappe.generate_hash(length=10), "INR")
@@ -2353,8 +2080,8 @@ class TestPaymentEntry(ERPNextTestSuite):
 
 		# check cancellation of payment entry and journal entry
 		pe.cancel()
-		self.assertEqual(pe.docstatus, 2)
-		self.assertEqual(frappe.db.get_value("Journal Entry", {"name": jv[0]}, "docstatus"), 2)
+		self.assertTrue(pe.docstatus == 2)
+		self.assertTrue(frappe.db.get_value("Journal Entry", {"name": jv[0]}, "docstatus") == 2)
 
 		# check deletion of payment entry and journal entry
 		pe.delete()
@@ -2587,65 +2314,3 @@ def create_customer(name="_Test Customer 2 USD", currency="USD"):
 		customer.save()
 		customer = customer.name
 	return customer
-
-
-class TestPaymentEntryValidation(ERPNextTestSuite):
-	"""Field-level validations invoked on the document directly, covering branches the
-	integration suite above doesn't reach (no GL / reconciliation setup needed)."""
-
-	def make_pe(self, **fields):
-		doc = frappe.new_doc("Payment Entry")
-		doc.update(fields)
-		return doc
-
-	def test_payment_type_must_be_a_known_value(self):
-		self.assertRaises(frappe.ValidationError, self.make_pe(payment_type="Foo").validate_payment_type)
-		self.make_pe(payment_type="Receive").validate_payment_type()  # valid value passes
-
-	def test_nonexistent_party_is_rejected(self):
-		doc = self.make_pe(party_type="Customer", party="__No Such Customer__")
-		self.assertRaises(frappe.ValidationError, doc.validate_party_details)
-
-	def test_amount_and_exchange_rate_fields_are_mandatory(self):
-		# every field but target_exchange_rate is set, so that missing one raises
-		doc = self.make_pe(
-			paid_amount=100, received_amount=100, source_exchange_rate=1, target_exchange_rate=0
-		)
-		self.assertRaises(frappe.ValidationError, doc.validate_mandatory)
-
-	def test_received_amount_cannot_exceed_paid_in_same_currency(self):
-		doc = self.make_pe(
-			paid_from_account_currency="INR",
-			paid_to_account_currency="INR",
-			paid_amount=100,
-			received_amount=150,
-		)
-		self.assertRaises(frappe.ValidationError, doc.validate_received_amount)
-		# received <= paid is fine
-		doc.received_amount = 50
-		doc.validate_received_amount()
-
-	def test_duplicate_reference_rows_are_rejected(self):
-		doc = self.make_pe()
-		for _ in range(2):
-			doc.append(
-				"references",
-				{"reference_doctype": "Sales Invoice", "reference_name": "SI-X", "allocated_amount": 100},
-			)
-		self.assertRaises(frappe.ValidationError, doc.validate_duplicate_entry)
-
-	def test_receive_from_customer_against_negative_outstanding_is_rejected(self):
-		doc = self.make_pe(party_type="Customer", payment_type="Receive")
-		doc.append(
-			"references",
-			{"reference_doctype": "Sales Invoice", "reference_name": "SI-Y", "allocated_amount": -100},
-		)
-		self.assertRaises(frappe.ValidationError, doc.validate_payment_type_with_outstanding)
-
-	def test_bank_transaction_requires_a_reference_number(self):
-		doc = self.make_pe(payment_type="Pay", paid_from="_Test Bank - _TC")
-		self.assertRaises(frappe.ValidationError, doc.validate_transaction_reference)
-		# supplying the reference details clears the requirement
-		doc.reference_no = "TXN-1"
-		doc.reference_date = "2026-06-15"
-		doc.validate_transaction_reference()

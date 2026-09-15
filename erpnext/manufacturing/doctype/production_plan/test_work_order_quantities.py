@@ -7,20 +7,20 @@ from unittest.mock import patch
 import frappe
 
 from erpnext.manufacturing.doctype.operation.test_operation import make_operation
-from erpnext.manufacturing.doctype.production_plan.services.work_order_quantities import (
-	ProductionPlanWorkOrderQuantities,
-)
 from erpnext.manufacturing.doctype.production_plan.test_production_plan import (
 	create_production_plan,
 	make_bom,
 )
-from erpnext.manufacturing.doctype.work_order.mapper import make_stock_entry as make_se_from_wo
+from erpnext.manufacturing.doctype.production_plan.work_order_quantities import (
+	ProductionPlanWorkOrderQuantities,
+)
 from erpnext.manufacturing.doctype.work_order.work_order import (
 	OverProductionError,
 	StockOverProductionError,
 	close_work_order,
 	stop_unstop,
 )
+from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry as make_se_from_wo
 from erpnext.manufacturing.doctype.workstation.test_workstation import make_workstation
 from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 from erpnext.stock.doctype.item.test_item import make_item
@@ -41,7 +41,9 @@ class TestProductionPlanWorkOrderQuantities(ERPNextTestSuite):
 			(self.sub_assembly, self.raw_material),
 			(self.finished_good, self.sub_assembly),
 		):
-			make_bom(item=item, raw_materials=[material], process_loss_percentage=10)
+			bom = make_bom(item=item, raw_materials=[material], do_not_save=True)
+			bom.process_loss_percentage = 10
+			bom.insert().submit()
 		frappe.db.set_single_value("Manufacturing Settings", "overproduction_percentage_for_work_order", 0)
 
 	def test_quantity_limit_on_submit(self):

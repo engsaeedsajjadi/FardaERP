@@ -1,5 +1,6 @@
 # Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+import unittest
 
 import frappe
 from frappe.utils import random_string
@@ -50,15 +51,6 @@ class TestProspect(ERPNextTestSuite):
 
 		customer.company = "_Test Company"
 		customer.insert()
-
-	def test_get_notification_email(self):
-		admin_email = frappe.db.get_value("User", "Administrator", "email")
-		prospect = frappe.new_doc("Prospect")
-		prospect.prospect_owner = "Administrator"
-		self.assertEqual(prospect.get_notification_email(), admin_email)
-
-		prospect.prospect_owner = None
-		self.assertIsNone(prospect.get_notification_email())
 
 
 def make_prospect(**args):

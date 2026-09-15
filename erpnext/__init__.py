@@ -3,8 +3,10 @@ import inspect
 from typing import TypeVar
 
 import frappe
+from frappe.model.document import Document
+from frappe.utils.user import is_website_user
 
-__version__ = "17.0.0-dev"
+__version__ = "16.34.2"
 
 
 def get_default_company(user=None):
@@ -153,8 +155,6 @@ def allow_regional(fn):
 
 
 def check_app_permission():
-	from frappe.utils.user import is_website_user
-
 	if frappe.session.user == "Administrator":
 		return True
 
@@ -174,8 +174,6 @@ def normalize_ctx_input(T: type) -> callable:
 	- Parsing JSON strings
 	- Casting the result to the specified type T
 	"""
-
-	from frappe.model.document import Document
 
 	def decorator(func: callable):
 		# conserve annotations for frappe.utils.typing_validations

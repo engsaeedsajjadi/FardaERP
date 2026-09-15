@@ -62,11 +62,6 @@ def get():
 						"account_number": "1410",
 						"account_category": "Stock Assets",
 					},
-					_("Stock Delivered But Not Billed"): {
-						"account_type": "Stock Delivered But Not Billed",
-						"account_number": "1420",
-						"account_category": "Stock Assets",
-					},
 					"account_type": "Stock",
 					"account_number": "1400",
 					"account_category": "Stock Assets",
@@ -233,7 +228,6 @@ def get():
 				},
 				_("Impairment"): {"account_number": "5224", "account_category": "Operating Expenses"},
 				_("Tax Expense"): {"account_number": "5225", "account_category": "Tax Expense"},
-				_("Exchange Loss"): {"account_number": "5226", "account_category": "Operating Expenses"},
 				"account_number": "5200",
 			},
 			"root_type": "Expense",
@@ -250,10 +244,6 @@ def get():
 				_("Interest on Fixed Deposits"): {
 					"account_number": "4220",
 					"account_category": "Investment Income",
-				},
-				_("Exchange Gain"): {
-					"account_number": "4230",
-					"account_category": "Other Operating Income",
 				},
 				"is_group": 1,
 				"account_number": "4200",

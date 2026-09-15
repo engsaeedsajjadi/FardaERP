@@ -91,9 +91,9 @@
   "column_break_xjag",
   "base_rounding_adjustment",
   "base_rounded_total",
-  "section_break_vacb",
+  "section_break_pxwz",
   "total_advance",
-  "column_break_rdks",
+  "column_break_iaso",
   "outstanding_amount",
   "section_tax_withholding_entry",
   "tax_withholding_group",
@@ -170,10 +170,6 @@
   "shipping_address_section",
   "shipping_address_name",
   "shipping_address",
-  "shipping_contact_person",
-  "shipping_contact_display",
-  "shipping_contact_mobile",
-  "shipping_contact_email",
   "shipping_addr_col_break",
   "dispatch_address_name",
   "dispatch_address",
@@ -203,6 +199,7 @@
   "unrealized_profit_loss_account",
   "against_income_account",
   "commission_section",
+  "column_break_rdiw",
   "sales_partner",
   "amount_eligible_for_commission",
   "column_break10",
@@ -225,6 +222,7 @@
   "auto_repeat",
   "update_auto_repeat_reference",
   "utm_analytics_section",
+  "column_break_rdke",
   "utm_source",
   "utm_medium",
   "column_break_ixxw",
@@ -301,6 +299,7 @@
    "hide_days": 1,
    "hide_seconds": 1,
    "label": "Tax Id",
+   "print_hide": 1,
    "read_only": 1
   },
   {
@@ -590,46 +589,6 @@
    "hide_days": 1,
    "hide_seconds": 1,
    "label": "Shipping Address",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "shipping_contact_person",
-   "fieldtype": "Link",
-   "hide_days": 1,
-   "hide_seconds": 1,
-   "label": "Shipping Contact Person",
-   "options": "Contact",
-   "print_hide": 1
-  },
-  {
-   "fetch_from": "shipping_contact_person.full_name",
-   "fieldname": "shipping_contact_display",
-   "fieldtype": "Small Text",
-   "hide_days": 1,
-   "hide_seconds": 1,
-   "label": "Shipping Contact",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "shipping_contact_person.mobile_no",
-   "fieldname": "shipping_contact_mobile",
-   "fieldtype": "Small Text",
-   "hide_days": 1,
-   "hide_seconds": 1,
-   "label": "Shipping Contact Mobile No",
-   "options": "Phone",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "shipping_contact_person.email_id",
-   "fieldname": "shipping_contact_email",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "hide_days": 1,
-   "hide_seconds": 1,
-   "label": "Shipping Contact Email",
-   "options": "Email",
    "print_hide": 1,
    "read_only": 1
   },
@@ -1179,7 +1138,7 @@
    "fieldtype": "Currency",
    "hide_days": 1,
    "hide_seconds": 1,
-   "label": "Grand Total",
+   "label": "Grand Total (Company Currency",
    "oldfieldname": "grand_total",
    "oldfieldtype": "Currency",
    "options": "Company:company:default_currency",
@@ -1791,7 +1750,6 @@
    "width": "50%"
   },
   {
-   "depends_on": "eval:doc.sales_partner",
    "fetch_from": "sales_partner.commission_rate",
    "fetch_if_empty": 1,
    "fieldname": "commission_rate",
@@ -1799,19 +1757,16 @@
    "hide_days": 1,
    "hide_seconds": 1,
    "label": "Commission Rate (%)",
-   "no_copy": 1,
    "oldfieldname": "commission_rate",
    "oldfieldtype": "Currency",
    "print_hide": 1
   },
   {
-   "depends_on": "eval:doc.sales_partner",
    "fieldname": "total_commission",
    "fieldtype": "Currency",
    "hide_days": 1,
    "hide_seconds": 1,
    "label": "Total Commission",
-   "no_copy": 1,
    "oldfieldname": "total_commission",
    "oldfieldtype": "Currency",
    "options": "Company:company:default_currency",
@@ -1984,7 +1939,6 @@
    "allow_on_submit": 1,
    "fieldname": "additional_discount_account",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Discount Account",
    "options": "Account"
   },
@@ -2019,11 +1973,9 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.sales_partner",
    "fieldname": "amount_eligible_for_commission",
    "fieldtype": "Currency",
    "label": "Amount Eligible for Commission",
-   "no_copy": 1,
    "options": "Company:company:default_currency",
    "read_only": 1
   },
@@ -2372,18 +2324,26 @@
    "label": "UTM Analytics"
   },
   {
-   "fieldname": "section_break_vacb",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_rdks",
-   "fieldtype": "Column Break"
-  },
-  {
    "collapsible": 1,
    "fieldname": "automation_section",
    "fieldtype": "Section Break",
    "label": "Automation"
+  },
+  {
+   "fieldname": "section_break_pxwz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_rdke",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_rdiw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_iaso",
+   "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
@@ -2405,7 +2365,7 @@
    "link_fieldname": "consolidated_invoice"
   }
  ],
- "modified": "2026-08-14 12:43:19.480555",
+ "modified": "2026-08-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Sales Invoice",

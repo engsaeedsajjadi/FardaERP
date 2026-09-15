@@ -1,4 +1,7 @@
+import unittest
+
 import frappe
+from frappe.test_runner import make_test_objects
 
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from erpnext.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -38,17 +41,15 @@ class TestUtils(ERPNextTestSuite):
 		future_vouchers = get_future_stock_vouchers("2021-01-01", "00:00:00", for_items=["_Test Item"])
 
 		voucher_type_and_no = ("Purchase Receipt", pr.name)
-		self.assertIn(
-			voucher_type_and_no,
-			future_vouchers,
+		self.assertTrue(
+			voucher_type_and_no in future_vouchers,
 			msg="get_future_stock_vouchers not returning correct value",
 		)
 
 		posting_date = "2021-01-01"
 		gl_entries = get_voucherwise_gl_entries(future_vouchers, posting_date)
-		self.assertIn(
-			voucher_type_and_no,
-			gl_entries,
+		self.assertTrue(
+			voucher_type_and_no in gl_entries,
 			msg="get_voucherwise_gl_entries not returning expected GLes",
 		)
 

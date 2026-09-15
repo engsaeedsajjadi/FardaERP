@@ -2,16 +2,7 @@
 // License: GNU General Public License v3. See license.txt
 
 frappe.ui.form.on("Customer", {
-	restrict_to_companies(frm) {
-		if (!frm.doc.restrict_to_companies) {
-			frm.set_value("allowed_companies", []);
-		}
-	},
-
 	setup: function (frm) {
-		frm.set_query("allowed_companies", () => ({
-			query: "erpnext.stock.doctype.company_restriction.company_restriction.company_query",
-		}));
 		frm.custom_make_buttons = {
 			Opportunity: "Opportunity",
 			Quotation: "Quotation",
@@ -22,7 +13,7 @@ frappe.ui.form.on("Customer", {
 		frm.make_methods = {
 			Quotation: () =>
 				frappe.model.open_mapped_doc({
-					method: "erpnext.selling.doctype.customer.mapper.make_quotation",
+					method: "erpnext.selling.doctype.customer.customer.make_quotation",
 					frm: frm,
 				}),
 			"Sales Order": () =>
@@ -33,12 +24,12 @@ frappe.ui.form.on("Customer", {
 				}),
 			Opportunity: () =>
 				frappe.model.open_mapped_doc({
-					method: "erpnext.selling.doctype.customer.mapper.make_opportunity",
+					method: "erpnext.selling.doctype.customer.customer.make_opportunity",
 					frm: frm,
 				}),
 			"Payment Entry": () =>
 				frappe.model.open_mapped_doc({
-					method: "erpnext.selling.doctype.customer.mapper.make_payment_entry",
+					method: "erpnext.selling.doctype.customer.customer.make_payment_entry",
 					frm: frm,
 				}),
 			"Pricing Rule": () => frm.trigger("make_pricing_rule"),
@@ -223,11 +214,9 @@ frappe.ui.form.on("Customer", {
 			frappe.contacts.clear_address_and_contact(frm);
 		}
 
-		let grid = frm.get_field("sales_team")?.grid;
-		if (grid) {
-			grid.set_column_disp("allocated_amount", false);
-			grid.set_column_disp("incentives", false);
-		}
+		var grid = cur_frm.get_field("sales_team").grid;
+		grid.set_column_disp("allocated_amount", false);
+		grid.set_column_disp("incentives", false);
 
 		frm.set_query("customer_group", () => {
 			return {
@@ -288,7 +277,7 @@ frappe.ui.form.on("Customer", {
 					error: function () {
 						dialog.hide();
 						frappe.msgprint({
-							message: __("Linking to Supplier failed. Please try again."),
+							message: __("Linking to Supplier Failed. Please try again."),
 							title: __("Linking Failed"),
 							indicator: "red",
 						});

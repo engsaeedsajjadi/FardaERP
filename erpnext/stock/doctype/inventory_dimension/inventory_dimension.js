@@ -51,7 +51,6 @@ frappe.ui.form.on("Inventory Dimension", {
 				"fetch_from_parent",
 				"type_of_transaction",
 				"condition",
-				"mandatory_depends_on",
 				"validate_negative_stock",
 			];
 
@@ -73,44 +72,24 @@ frappe.ui.form.on("Inventory Dimension", {
 		frm.trigger("set_parent_fields");
 	},
 
-	istable(frm) {
-		frm.trigger("set_parent_fields");
-	},
-
-	reference_document(frm) {
-		frm.trigger("set_parent_fields");
-	},
-
-	apply_to_all_doctypes(frm) {
-		frm.trigger("set_parent_fields");
-	},
-
 	set_parent_fields(frm) {
-		const { reference_document, document_type } = frm.doc;
-		if (!reference_document || (!frm.doc.apply_to_all_doctypes && (!document_type || !frm.doc.istable))) {
-			return set_parent_field_options(frm, []);
-		}
-
 		if (frm.doc.apply_to_all_doctypes) {
-			return set_parent_field_options(frm, [{ value: reference_document, label: reference_document }]);
-		} else if (document_type && frm.doc.istable) {
+			let options = ["\n", frm.doc.reference_document];
+
+			frm.set_df_property("fetch_from_parent", "options", options);
+		} else if (frm.doc.document_type && frm.doc.istable) {
 			frappe.call({
 				method: "erpnext.stock.doctype.inventory_dimension.inventory_dimension.get_parent_fields",
 				args: {
-					child_doctype: document_type,
-					dimension_name: reference_document,
+					child_doctype: frm.doc.document_type,
+					dimension_name: frm.doc.reference_document,
 				},
 				callback: (r) => {
-					if (
-						frm.doc.reference_document !== reference_document ||
-						frm.doc.document_type !== document_type ||
-						frm.doc.apply_to_all_doctypes ||
-						!frm.doc.istable
-					) {
-						return;
+					if (r.message && r.message.length) {
+						frm.set_df_property("fetch_from_parent", "options", ["\n"].concat(r.message));
+					} else {
+						frm.set_df_property("fetch_from_parent", "hidden", 1);
 					}
-
-					return set_parent_field_options(frm, r.message || []);
 				},
 			});
 		}
@@ -135,12 +114,3 @@ frappe.ui.form.on("Inventory Dimension", {
 		});
 	},
 });
-
-function set_parent_field_options(frm, fields) {
-	frm.set_df_property("fetch_from_parent", "options", ["", ...fields]);
-	frm.set_df_property("fetch_from_parent", "hidden", !fields.length);
-
-	if (frm.doc.fetch_from_parent && !fields.some((field) => field.value === frm.doc.fetch_from_parent)) {
-		return frm.set_value("fetch_from_parent", "");
-	}
-}

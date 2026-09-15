@@ -6,7 +6,7 @@ def get_last_issue_from_customer(customer_name):
 		"Issue",
 		{"customer": customer_name},
 		["name", "subject", "customer"],
-		order_by="creation desc",
+		order_by="`creation` DESC",
 		limit=1,
 	)
 

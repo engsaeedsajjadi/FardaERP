@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import add_to_date
@@ -67,7 +68,7 @@ class SalesForecast(Document):
 
 
 @frappe.whitelist()
-def create_mps(source_name: str, target_doc: str | dict | Document | None = None):
+def create_mps(source_name, target_doc=None):
 	def postprocess(source, doc):
 		doc.naming_series = "MPS.YY.-.######"
 

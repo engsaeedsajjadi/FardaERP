@@ -197,7 +197,7 @@ class ServiceLevelAgreement(Document):
 		)
 
 		if self.document_type not in valid_document_types:
-			frappe.throw(msg=_("Please select a valid document type."), title=_("Invalid Document Type"))
+			frappe.throw(msg=_("Please select valid document type."), title=_("Invalid Document Type"))
 
 	def validate_status_field(self):
 		meta = frappe.get_meta(self.document_type)
@@ -430,7 +430,7 @@ def get_customer_territory(customer):
 
 
 @frappe.whitelist()
-def get_service_level_agreement_filters(doctype: str, name: str, customer: str | None = None):
+def get_service_level_agreement_filters(doctype, name, customer=None):
 	if not frappe.db.get_single_value("Support Settings", "track_service_level_agreement"):
 		return
 
@@ -782,8 +782,8 @@ def get_response_and_resolution_duration(doc):
 	return priority
 
 
-@frappe.whitelist(methods=["POST"])
-def reset_service_level_agreement(doctype: str, docname: str, reason: str, user: str):
+@frappe.whitelist()
+def reset_service_level_agreement(doctype: str, docname: str, reason, user):
 	if not frappe.db.get_single_value("Support Settings", "allow_resetting_service_level_agreement"):
 		frappe.throw(_("Allow Resetting Service Level Agreement from Support Settings."))
 
@@ -1040,7 +1040,7 @@ def get_tz(user):
 
 
 @frappe.whitelist()
-def get_user_time(user: str, to_string: bool = False):
+def get_user_time(user, to_string=False):
 	return get_datetime_str(now_datetime(user)) if to_string else now_datetime(user)
 
 

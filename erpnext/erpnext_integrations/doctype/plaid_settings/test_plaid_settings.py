@@ -1,6 +1,7 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
 import json
+import unittest
 
 import frappe
 from frappe.utils.response import json_handler
@@ -18,7 +19,7 @@ from erpnext.tests.utils import ERPNextTestSuite
 class TestPlaidSettings(ERPNextTestSuite):
 	def test_plaid_disabled(self):
 		frappe.db.set_single_value("Plaid Settings", "enabled", 0)
-		self.assertEqual(get_plaid_configuration(), "disabled")
+		self.assertTrue(get_plaid_configuration() == "disabled")
 
 	def test_add_account_type(self):
 		add_account_type("brokerage")
@@ -98,4 +99,4 @@ class TestPlaidSettings(ERPNextTestSuite):
 
 		new_bank_transaction(transactions)
 
-		self.assertEqual(len(frappe.get_all("Bank Transaction")), 1)
+		self.assertTrue(len(frappe.get_all("Bank Transaction")) == 1)

@@ -422,17 +422,21 @@ frappe.ui.form.on("Payment Entry", {
 
 	show_general_ledger: function (frm) {
 		if (frm.doc.docstatus > 0) {
-			frm.add_custom_button(__("Ledger"), function () {
-				frappe.route_options = {
-					voucher_no: frm.doc.name,
-					from_date: frm.doc.posting_date,
-					to_date: moment(frm.doc.modified).format("YYYY-MM-DD"),
-					company: frm.doc.company,
-					categorize_by: "",
-					show_cancelled_entries: frm.doc.docstatus === 2,
-				};
-				frappe.set_route("query-report", "General Ledger");
-			});
+			frm.add_custom_button(
+				__("Ledger"),
+				function () {
+					frappe.route_options = {
+						voucher_no: frm.doc.name,
+						from_date: frm.doc.posting_date,
+						to_date: moment(frm.doc.modified).format("YYYY-MM-DD"),
+						company: frm.doc.company,
+						categorize_by: "",
+						show_cancelled_entries: frm.doc.docstatus === 2,
+					};
+					frappe.set_route("query-report", "General Ledger");
+				},
+				"fa fa-table"
+			);
 		}
 	},
 
@@ -484,8 +488,6 @@ frappe.ui.form.on("Payment Entry", {
 				return {
 					query: "erpnext.controllers.queries.employee_query",
 				};
-			} else if (["Customer", "Supplier"].includes(frm.doc.party_type)) {
-				return erpnext.queries.party(frm.doc);
 			} else if (frm.doc.party_type == "Shareholder") {
 				return {
 					filters: {
@@ -983,7 +985,7 @@ frappe.ui.form.on("Payment Entry", {
 			let to_field = fields[key][1];
 
 			if (filters[from_field] && !filters[to_field]) {
-				frappe.throw(__("Error: {0} is a mandatory field", [to_field.replace(/_/g, " ")]));
+				frappe.throw(__("Error: {0} is mandatory field", [to_field.replace(/_/g, " ")]));
 			} else if (filters[from_field] && filters[from_field] > filters[to_field]) {
 				frappe.throw(
 					__("{0}: {1} must be less than {2}", [
@@ -1287,14 +1289,8 @@ frappe.ui.form.on("Payment Entry", {
 		await frappe.after_ajax();
 		const base_paid_amount = frm.doc.base_paid_amount || 0;
 		const base_received_amount = frm.doc.base_received_amount || 0;
-		let other_deductions = 0;
-		if (frm.doc.payment_type === "Internal Transfer") {
-			other_deductions = (frm.doc.deductions || [])
-				.filter((row) => !row.is_exchange_gain_loss)
-				.reduce((sum, row) => sum + flt(row.amount), 0);
-		}
 		const exchange_gain_loss = flt(
-			base_paid_amount - base_received_amount - other_deductions,
+			base_paid_amount - base_received_amount,
 			get_deduction_amount_precision()
 		);
 
@@ -1308,10 +1304,7 @@ frappe.ui.form.on("Payment Entry", {
 
 		if (!row) {
 			const company_defaults = frappe.get_doc(":Company", frm.doc.company);
-			const is_single_currency =
-				frm.doc.paid_from_account_currency === frm.doc.paid_to_account_currency;
 			const account =
-				(is_single_currency && company_defaults?.bank_charges_account) ||
 				company_defaults?.[account_fieldname] ||
 				(await prompt_for_missing_account(frm, account_fieldname));
 
@@ -1866,24 +1859,16 @@ frappe.ui.form.on("Payment Entry Deduction", {
 	before_deductions_remove: function (doc, cdt, cdn) {
 		const row = frappe.get_doc(cdt, cdn);
 		if (row.is_exchange_gain_loss && row.amount) {
-			frappe.throw(__("Cannot delete a system-generated deduction row"));
+			frappe.throw(__("Cannot delete Exchange Gain/Loss row"));
 		}
 	},
 
 	amount: function (frm) {
-		if (frm.doc.payment_type === "Internal Transfer") {
-			frm.events.set_exchange_gain_loss_deduction(frm);
-		} else {
-			frm.events.set_unallocated_amount(frm);
-		}
+		frm.events.set_unallocated_amount(frm);
 	},
 
 	deductions_remove: function (frm) {
-		if (frm.doc.payment_type === "Internal Transfer") {
-			frm.events.set_exchange_gain_loss_deduction(frm);
-		} else {
-			frm.events.set_unallocated_amount(frm);
-		}
+		frm.events.set_unallocated_amount(frm);
 	},
 });
 

@@ -108,7 +108,7 @@ class BankTransactionRule(Document):
 				frappe.throw(_("Party type is required to create a payment entry."))
 
 			if not self.party:
-				frappe.throw(_("Party is required to create a payment entry."))
+				frappe.throw(_("Party is required create a payment entry."))
 
 			if not self.account:
 				frappe.throw(_("Party account is required to create a payment entry."))
@@ -157,9 +157,12 @@ class BankTransactionRule(Document):
 		"""
 		Delete the matched rule from the bank transaction
 		"""
-		frappe.db.set_value(
-			"Bank Transaction", {"matched_transaction_rule": self.name}, "matched_transaction_rule", None
-		)
+		try:
+			frappe.db.set_value(
+				"Bank Transaction", {"matched_transaction_rule": self.name}, "matched_transaction_rule", None
+			)
+		except Exception:
+			pass
 
 	def after_delete(self):
 		"""

@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.query_builder.functions import Concat_ws, Date, NullIf
+from frappe.query_builder.functions import Concat_ws, Date
 
 
 def execute(filters=None):
@@ -93,9 +93,7 @@ def get_data(filters):
 			lead.phone,
 			lead.owner,
 			lead.company,
-			(Concat_ws(", ", NullIf(address.address_line1, ""), NullIf(address.address_line2, ""))).as_(
-				"address"
-			),
+			(Concat_ws(", ", address.address_line1, address.address_line2)).as_("address"),
 			address.pincode,
 			address.city,
 			address.state,

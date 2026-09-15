@@ -3,7 +3,7 @@
 
 
 import frappe
-from frappe import _, msgprint
+from frappe import _, msgprint, scrub, unscrub
 from frappe.core.doctype.user_permission.user_permission import get_permitted_documents
 from frappe.model.document import Document
 from frappe.utils import get_link_to_form, now
@@ -34,7 +34,6 @@ class POSProfile(Document):
 		allow_discount_change: DF.Check
 		allow_partial_payment: DF.Check
 		allow_rate_change: DF.Check
-		allow_warehouse_change: DF.Check
 		applicable_for_users: DF.Table[POSProfileUser]
 		apply_discount_on: DF.Literal["Grand Total", "Net Total"]
 		auto_add_item_to_cart: DF.Check
@@ -118,21 +117,14 @@ class POSProfile(Document):
 
 	def validate_default_profile(self):
 		for row in self.applicable_for_users:
-			pfu = frappe.qb.DocType("POS Profile User")
-			pf = frappe.qb.DocType("POS Profile")
-			res = (
-				frappe.qb.from_(pfu)
-				.inner_join(pf)
-				.on(pf.name == pfu.parent)
-				.select(pf.name)
-				.where(
-					(pfu.user == row.user)
-					& (pf.name != self.name)
-					& (pf.company == self.company)
-					& (pfu.default == 1)
-					& (pf.disabled == 0)
-				)
-				.run()
+			res = frappe.db.sql(
+				"""select pf.name
+				from
+					`tabPOS Profile User` pfu, `tabPOS Profile` pf
+				where
+					pf.name = pfu.parent and pfu.user = %s and pf.name != %s and pf.company = %s
+					and pfu.default=1 and pf.disabled = 0""",
+				(row.user, self.name, self.company),
 			)
 
 			if row.default and res:
@@ -202,9 +194,9 @@ class POSProfile(Document):
 
 		if invalid_modes:
 			if invalid_modes == 1:
-				msg = _("Please set default Cash or Bank account in Mode of Payment {0}")
+				msg = _("Please set default Cash or Bank account in Mode of Payment {}")
 			else:
-				msg = _("Please set default Cash or Bank account in Mode of Payments {0}")
+				msg = _("Please set default Cash or Bank account in Mode of Payments {}")
 			frappe.throw(msg.format(", ".join(invalid_modes)), title=_("Missing Account"))
 
 	def on_update(self):
@@ -275,17 +267,16 @@ def get_permitted_nodes(group_type):
 
 def get_child_nodes(group_type, root):
 	lft, rgt = frappe.db.get_value(group_type, root, ["lft", "rgt"])
-	return frappe.get_all(
-		group_type,
-		filters={"lft": [">=", lft], "rgt": ["<=", rgt]},
-		fields=["name", "lft", "rgt"],
-		order_by="lft",
+	return frappe.db.sql(
+		f""" Select name, lft, rgt from `tab{group_type}` where
+			lft >= {lft} and rgt <= {rgt} order by lft""",
+		as_dict=1,
 	)
 
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def pos_profile_query(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
+def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 	user = frappe.session["user"]
 	company = filters.get("company") or frappe.defaults.get_user_default("company")
 

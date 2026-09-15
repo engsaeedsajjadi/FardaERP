@@ -7,10 +7,11 @@ import json
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.query_builder.functions import Coalesce, Concat, Date, Round
+from frappe.query_builder.functions import Date
 from frappe.utils import flt, get_datetime, getdate
 from frappe.utils.deprecations import deprecated
 
+from erpnext.controllers.queries import get_match_cond
 from erpnext.setup.utils import get_exchange_rate
 
 
@@ -302,12 +303,7 @@ class Timesheet(Document):
 
 
 @frappe.whitelist()
-def get_projectwise_timesheet_data(
-	project: str | None = None,
-	parent: str | None = None,
-	from_time: str | None = None,
-	to_time: str | None = None,
-):
+def get_projectwise_timesheet_data(project=None, parent=None, from_time=None, to_time=None):
 	tsd = frappe.qb.DocType("Timesheet Detail")
 	ts = frappe.qb.DocType("Timesheet")
 
@@ -358,7 +354,7 @@ def get_projectwise_timesheet_data(
 
 
 @frappe.whitelist()
-def get_timesheet_detail_rate(timelog: str, currency: str):
+def get_timesheet_detail_rate(timelog, currency):
 	allowed_timesheets = frappe.get_list("Timesheet", pluck="name")
 
 	if not allowed_timesheets:
@@ -395,7 +391,7 @@ def get_timesheet_detail_rate(timelog: str, currency: str):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_timesheet(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict):
+def get_timesheet(doctype, txt, searchfield, start, page_len, filters):
 	if not filters:
 		filters = {}
 
@@ -429,7 +425,7 @@ def get_timesheet(doctype: str, txt: str, searchfield: str, start: int, page_len
 
 
 @frappe.whitelist()
-def get_timesheet_data(name: str, project: str | None = None):
+def get_timesheet_data(name, project=None):
 	data = None
 	if project:
 		data = get_projectwise_timesheet_data(project, name)
@@ -450,9 +446,7 @@ def get_timesheet_data(name: str, project: str | None = None):
 
 
 @frappe.whitelist()
-def make_sales_invoice(
-	source_name: str, item_code: str | None = None, customer: str | None = None, currency: str | None = None
-):
+def make_sales_invoice(source_name, item_code=None, customer=None, currency=None):
 	target = frappe.new_doc("Sales Invoice")
 	timesheet = frappe.get_doc("Timesheet", source_name)
 
@@ -504,9 +498,7 @@ def make_sales_invoice(
 
 
 @frappe.whitelist()
-def get_activity_cost(
-	employee: str | None = None, activity_type: str | None = None, currency: str | None = None
-):
+def get_activity_cost(employee=None, activity_type=None, currency=None):
 	base_currency = frappe.defaults.get_global_default("currency")
 	rate = frappe.db.get_values(
 		"Activity Cost",
@@ -530,42 +522,32 @@ def get_activity_cost(
 
 
 @frappe.whitelist()
-def get_events(start: str, end: str, filters: str | list | dict | None = None):
+def get_events(start, end, filters=None):
 	"""Returns events for Gantt / Calendar view rendering.
 	:param start: Start date-time.
 	:param end: End date-time.
 	:param filters: Filters (JSON).
 	"""
-	from erpnext.utilities.query import get_event_conditions_qb
+	filters = json.loads(filters)
+	from frappe.desk.calendar import get_event_conditions
 
-	filters = frappe.parse_json(filters) if filters else {}
+	conditions = get_event_conditions("Timesheet", filters)
 
-	tsd = frappe.qb.DocType("Timesheet Detail")
-	ts = frappe.qb.DocType("Timesheet")
-
-	query = (
-		frappe.qb.from_(tsd)
-		.inner_join(ts)
-		.on(tsd.parent == ts.name)
-		.select(
-			tsd.name.as_("name"),
-			tsd.docstatus.as_("status"),
-			tsd.parent.as_("parent"),
-			tsd.from_time.as_("start_date"),
-			tsd.hours,
-			tsd.activity_type,
-			tsd.project,
-			tsd.to_time.as_("end_date"),
-			Concat(tsd.parent, " (", Round(tsd.hours, 2), " hrs)").as_("title"),
-		)
-		.where((ts.docstatus < 2) & (tsd.from_time <= end) & (tsd.to_time >= start))
+	return frappe.db.sql(
+		"""select `tabTimesheet Detail`.name as name,
+			`tabTimesheet Detail`.docstatus as status, `tabTimesheet Detail`.parent as parent,
+			from_time as start_date, hours, activity_type,
+			`tabTimesheet Detail`.project, to_time as end_date,
+			CONCAT(`tabTimesheet Detail`.parent, ' (', ROUND(hours,2),' hrs)') as title
+		from `tabTimesheet Detail`, `tabTimesheet`
+		where `tabTimesheet Detail`.parent = `tabTimesheet`.name
+			and `tabTimesheet`.docstatus < 2
+			and (from_time <= %(end)s and to_time >= %(start)s) {conditions} {match_cond}
+		""".format(conditions=conditions, match_cond=get_match_cond("Timesheet")),
+		{"start": start, "end": end},
+		as_dict=True,
+		update={"allDay": 0},
 	)
-
-	# user-permission match conditions + calendar filters on Timesheet (query-builder form)
-	for condition in get_event_conditions_qb("Timesheet", filters):
-		query = query.where(condition)
-
-	return query.run(as_dict=True, update={"allDay": 0})
 
 
 def get_timesheets_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by="creation"):
@@ -601,7 +583,7 @@ def get_timesheets_list(doctype, txt, filters, limit_start, limit_page_length=20
 				child_table.activity_type,
 				table.status,
 				child_table.billing_hours,
-				Coalesce(table.sales_invoice, child_table.sales_invoice).as_("sales_invoice"),
+				(table.sales_invoice | child_table.sales_invoice).as_("sales_invoice"),
 				child_table.project,
 			)
 			.orderby(table.end_date)

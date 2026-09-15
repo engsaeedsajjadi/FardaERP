@@ -110,7 +110,7 @@ class OpeningInvoiceCreationTool(Document):
 	def validate_mandatory_invoice_fields(self, row):
 		if self.create_missing_party:
 			if not row.party and not row.party_name:
-				frappe.throw(_("Row #{0}: Either Party ID or Party Name is required").format(row.idx))
+				frappe.throw(_("Row #{}: Either Party ID or Party Name is required").format(row.idx))
 
 			if not row.party and row.party_name:
 				row.party = self.add_party(row.party_type, row.party_name)
@@ -120,10 +120,10 @@ class OpeningInvoiceCreationTool(Document):
 
 		else:
 			if not row.party:
-				frappe.throw(_("Row #{0}: Party ID is required").format(row.idx))
+				frappe.throw(_("Row #{}: Party ID is required").format(row.idx))
 			if not frappe.db.exists(row.party_type, row.party):
 				frappe.throw(
-					_("Row #{0}: {1} {2} does not exist.").format(
+					_("Row #{}: {} {} does not exist.").format(
 						row.idx, frappe.bold(row.party_type), frappe.bold(row.party)
 					)
 				)
@@ -308,12 +308,12 @@ def start_import(invoices):
 			publish(idx, total, d.doctype, errors=errors if is_last else None)
 		except Exception:
 			errors += 1
-			frappe.db.rollback(save_point=savepoint)
+			frappe.db.rollback()
 			doc.log_error("Opening invoice creation failed")
 			publish(idx, total, d.doctype, errors=errors if is_last else None)
 	if errors:
 		frappe.msgprint(
-			_("You had {0} errors while creating opening invoices. Check {1} for more details").format(
+			_("You had {} errors while creating opening invoices. Check {} for more details").format(
 				errors, "<a href='/app/List/Error Log' class='variant-click'>Error Log</a>"
 			),
 			indicator="red",
@@ -337,7 +337,7 @@ def publish(index, total, doctype, errors=None):
 
 
 @frappe.whitelist()
-def get_temporary_opening_account(company: str | None = None):
+def get_temporary_opening_account(company=None):
 	if not company:
 		return
 

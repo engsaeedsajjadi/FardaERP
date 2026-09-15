@@ -8,7 +8,6 @@ from functools import reduce
 
 import frappe
 from frappe import _
-from frappe.core.doctype.file.utils import find_file_by_url
 from frappe.desk.form.linked_with import get_linked_fields
 from frappe.model.document import Document
 from frappe.utils import cint, cstr
@@ -58,16 +57,14 @@ def validate_columns(data):
 
 
 @frappe.whitelist()
-def validate_company(company: str):
-	frappe.has_permission("Chart of Accounts Importer", throw=True)
-
+def validate_company(company):
 	parent_company, allow_account_creation_against_child_company = frappe.get_cached_value(
 		"Company", company, ["parent_company", "allow_account_creation_against_child_company"]
 	)
 
 	if parent_company and (not allow_account_creation_against_child_company):
-		msg = _("{0} is a child company.").format(frappe.bold(company)) + " "
-		msg += _("Please import accounts against parent company or enable {0} in company master.").format(
+		msg = _("{} is a child company.").format(frappe.bold(company)) + " "
+		msg += _("Please import accounts against parent company or enable {} in company master.").format(
 			frappe.bold(_("Allow Account Creation Against Child Company"))
 		)
 		frappe.throw(msg, title=_("Wrong Company"))
@@ -83,7 +80,7 @@ def validate_company(company: str):
 
 
 @frappe.whitelist()
-def import_coa(file_name: str, company: str):
+def import_coa(file_name, company):
 	frappe.only_for("Accounts Manager")
 
 	# delete existing data for accounts
@@ -113,10 +110,7 @@ def import_coa(file_name: str, company: str):
 
 
 def get_file(file_name):
-	file_doc = find_file_by_url(file_name)
-	if not file_doc:
-		raise frappe.PermissionError
-
+	file_doc = frappe.get_doc("File", {"file_url": file_name})
 	parts = file_doc.get_extension()
 	extension = parts[1]
 	extension = extension.lstrip(".")
@@ -180,12 +174,8 @@ def generate_data_from_excel(file_doc, extension, as_dict=False):
 
 
 @frappe.whitelist()
-def get_coa(
-	doctype: str, parent: str, is_root: bool = False, file_name: str | None = None, for_validate: int = 0
-):
+def get_coa(doctype, parent, is_root=False, file_name=None, for_validate=0):
 	"""called by tree view (to fetch node's children)"""
-
-	frappe.has_permission("Chart of Accounts Importer", throw=True)
 
 	file_doc, extension = get_file(file_name)
 	parent = None if parent == _("All Accounts") else parent
@@ -333,9 +323,7 @@ def build_response_as_excel(writer):
 
 
 @frappe.whitelist()
-def download_template(file_type: str, template_type: str, company: str):
-	frappe.has_permission("Chart of Accounts Importer", throw=True)
-
+def download_template(file_type, template_type, company):
 	writer = get_template(template_type, company)
 
 	if file_type == "CSV":
@@ -388,7 +376,8 @@ def get_sample_template(writer, company):
 	return writer
 
 
-def validate_accounts(file_doc: Document, extension: str):
+@frappe.whitelist()
+def validate_accounts(file_doc, extension):
 	if extension == "csv":
 		accounts = generate_data_from_csv(file_doc, as_dict=True)
 	else:

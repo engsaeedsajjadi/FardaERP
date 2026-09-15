@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _, scrub
-from frappe.utils import get_datetime, getdate, today
+from frappe.utils import getdate, today
 
 from erpnext.stock.report.stock_analytics.stock_analytics import (
 	get_period,
@@ -31,9 +31,7 @@ def get_columns(period_columns):
 
 def get_work_orders(filters):
 	from_date = filters.get("from_date")
-	# `creation` and `actual_end_date` are datetime columns, so a bare date upper
-	# bound would coerce to midnight and drop records created later on the last day.
-	to_date = get_datetime(filters.get("to_date")).replace(hour=23, minute=59, second=59)
+	to_date = filters.get("to_date")
 
 	WorkOrder = frappe.qb.DocType("Work Order")
 

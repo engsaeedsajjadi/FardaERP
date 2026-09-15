@@ -6,13 +6,11 @@ frappe.ui.form.on("Quality Procedure", {
 		frm.set_query("procedure", "processes", (frm) => {
 			return {
 				filters: {
-					name:
-						frm.parent_quality_procedure == null
-							? ["!=", frm.name]
-							: ["not in", [frm.name, frm.parent_quality_procedure]],
+					name: ["not in", [frm.parent_quality_procedure, frm.name]],
 				},
 			};
 		});
+
 		frm.set_query("parent_quality_procedure", function () {
 			return {
 				filters: {

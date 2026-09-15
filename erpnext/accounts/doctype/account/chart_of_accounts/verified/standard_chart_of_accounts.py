@@ -35,10 +35,6 @@ def get():
 				_("Short-term Investments"): {"account_category": "Short-term Investments"},
 				_("Stock Assets"): {
 					_("Stock In Hand"): {"account_type": "Stock", "account_category": "Stock Assets"},
-					_("Stock Delivered But Not Billed"): {
-						"account_type": "Stock Delivered But Not Billed",
-						"account_category": "Stock Assets",
-					},
 					"account_type": "Stock",
 					"account_category": "Stock Assets",
 				},
@@ -138,7 +134,6 @@ def get():
 				_("Gain/Loss on Asset Disposal"): {"account_category": "Other Operating Income"},
 				_("Impairment"): {"account_category": "Operating Expenses"},
 				_("Tax Expense"): {"account_category": "Tax Expense"},
-				_("Exchange Loss"): {"account_category": "Operating Expenses"},
 			},
 			"root_type": "Expense",
 		},
@@ -150,7 +145,6 @@ def get():
 			_("Indirect Income"): {
 				_("Interest Income"): {"account_category": "Investment Income"},
 				_("Interest on Fixed Deposits"): {"account_category": "Investment Income"},
-				_("Exchange Gain"): {"account_category": "Other Operating Income"},
 				"is_group": 1,
 			},
 			"root_type": "Income",

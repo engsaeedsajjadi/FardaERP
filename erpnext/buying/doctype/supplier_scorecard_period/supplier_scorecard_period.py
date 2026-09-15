@@ -82,6 +82,7 @@ class SupplierScorecardPeriod(Document):
 					).format(crit.criteria_name),
 					frappe.ValidationError,
 				)
+				crit.score = 0
 
 	def calculate_score(self):
 		myscore = 0

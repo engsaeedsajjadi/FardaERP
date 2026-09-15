@@ -8,7 +8,7 @@ app_email = "hello@frappe.io"
 app_license = "GNU General Public License (v3)"
 source_link = "https://github.com/frappe/erpnext"
 app_logo_url = "/assets/erpnext/images/erpnext-logo.svg"
-app_home = "/desk/home"
+app_home = "/desk"
 
 add_to_apps_screen = [
 	{
@@ -17,28 +17,10 @@ add_to_apps_screen = [
 		"title": app_title,
 		"route": app_home,
 		"has_permission": "erpnext.check_app_permission",
-		"sequence_id": 1,
 	}
 ]
 
-# Modules that are a folder of code and nothing else. Their doctypes, reports and controllers stay
-# where they are; what they no longer own is navigation, which now sits in the sidebar named beside
-# each. Left in the dock, each would carry an entry of its own for two to four records. See
-# `frappe.utils.modules.get_code_only_modules`.
-#
-# The value names the modules that inherited that navigation, so a Call Log or a Code List resolves
-# to a sidebar the user can actually navigate to instead of dead-ending in a module the dock never
-# shows.
-code_only_modules = {
-	"Telephony": ["ERPNext Integrations"],
-	# Its one doctype, Communication Medium, describes how a call reaches someone, so it sits in
-	# the Telephony section beside the call settings rather than in a shell of its own.
-	"Communication": ["ERPNext Integrations"],
-	"EDI": ["Utilities"],
-	"Bulk Transaction": ["Utilities"],
-}
-
-develop_version = "17.x.x-develop"
+develop_version = "15.x.x-develop"
 
 app_include_js = "erpnext.bundle.js"
 app_include_css = "erpnext.bundle.css"
@@ -55,7 +37,6 @@ web_include_icons = [
 
 doctype_js = {
 	"Address": "public/js/address.js",
-	"Sales Order": "public/js/sales_order_proforma.js",
 	"Communication": "public/js/communication.js",
 	"Event": "public/js/event.js",
 	"Newsletter": "public/js/newsletter.js",
@@ -90,6 +71,7 @@ after_app_uninstall = "erpnext.setup.install.after_app_uninstall"
 boot_session = "erpnext.startup.boot.boot_session"
 notification_config = "erpnext.startup.notifications.get_notification_config"
 get_help_messages = "erpnext.utilities.activation.get_help_messages"
+leaderboards = "erpnext.startup.leaderboard.get_leaderboards"
 filters_config = "erpnext.startup.filters.get_filters_config"
 additional_print_settings = "erpnext.controllers.print_settings.get_print_settings"
 
@@ -326,20 +308,6 @@ sounds = [
 
 has_upload_permission = {"Employee": "erpnext.setup.doctype.employee.employee.has_upload_permission"}
 
-permission_query_conditions = {
-	"Item": "erpnext.stock.doctype.company_restriction.company_restriction.get_permission_query_conditions",
-	"Customer": "erpnext.stock.doctype.company_restriction.company_restriction.get_permission_query_conditions",
-	"Supplier": "erpnext.stock.doctype.company_restriction.company_restriction.get_permission_query_conditions",
-	"Item Price": "erpnext.stock.doctype.company_restriction.company_restriction.get_inherited_permission_query_conditions",
-}
-
-has_permission = {
-	"Item": "erpnext.stock.doctype.company_restriction.company_restriction.has_permission",
-	"Customer": "erpnext.stock.doctype.company_restriction.company_restriction.has_permission",
-	"Supplier": "erpnext.stock.doctype.company_restriction.company_restriction.has_permission",
-	"Item Price": "erpnext.stock.doctype.company_restriction.company_restriction.has_inherited_permission",
-}
-
 has_website_permission = {
 	"Sales Order": "erpnext.controllers.website_list_for_contact.has_website_permission",
 	"Quotation": "erpnext.controllers.website_list_for_contact.has_website_permission",
@@ -376,30 +344,15 @@ period_closing_doctypes = [
 	"Subcontracting Receipt",
 ]
 
-pre_submit_validation_doctypes = [
-	"Sales Invoice",
-	"Purchase Invoice",
-	"Delivery Note",
-	"Purchase Receipt",
-	"Sales Order",
-]
-
 doc_events = {
 	"*": {
 		"validate": [
 			"erpnext.support.doctype.service_level_agreement.service_level_agreement.apply",
 			"erpnext.setup.doctype.transaction_deletion_record.transaction_deletion_record.check_for_running_deletion_job",
-			"erpnext.stock.doctype.company_restriction.company_restriction.validate_transaction_company",
 		],
 	},
 	tuple(period_closing_doctypes): {
 		"validate": "erpnext.accounts.doctype.accounting_period.accounting_period.validate_accounting_period_on_doc_save",
-	},
-	tuple(pre_submit_validation_doctypes): {
-		"validate": "erpnext.accounts.utils.pre_submit_validation",
-	},
-	("Item", "Customer", "Supplier"): {
-		"validate": "erpnext.stock.doctype.company_restriction.company_restriction.validate_allowed_companies",
 	},
 	"Stock Entry": {
 		"on_submit": "erpnext.stock.doctype.material_request.material_request.update_completed_and_requested_qty",
@@ -469,19 +422,11 @@ naming_series_variables = {
 	for variable in naming_series_variables_list
 }
 
+# On cancel event Payment Entry will be exempted and all linked submittable doctype will get cancelled.
+# to maintain data integrity we exempted payment entry. it will un-link when sales invoice get cancelled.
+# if payment entry not in auto cancel exempted doctypes it will cancel payment entry.
 auto_cancel_exempted_doctypes = [
-	# On cancel event Payment Entry will be exempted and all linked submittable doctype will get cancelled.
-	# to maintain data integrity we exempted payment entry. it will un-link when sales invoice get cancelled.
-	# if payment entry not in auto cancel exempted doctypes it will cancel payment entry.
 	"Payment Entry",
-	# Reverse ledger entries are created instead to ensure ledger immutability.
-	"GL Entry",
-	"Stock Ledger Entry",
-	"Payment Ledger Entry",
-	"Advance Payment Ledger Entry",
-	# May be linked to Period Closing Voucher, but cancelled with custom logic in PCV.
-	# This is better to avoid stale docs when cancelling PCV from backend.
-	"Account Closing Balance",
 ]
 
 scheduler_events = {
@@ -637,7 +582,6 @@ accounting_dimension_doctypes = [
 	"Account Closing Balance",
 	"Supplier Quotation",
 	"Supplier Quotation Item",
-	"Request for Quotation Item",
 	"Payment Reconciliation",
 	"Payment Reconciliation Allocation",
 	"Payment Request",
@@ -753,18 +697,12 @@ default_log_clearing_doctypes = {
 
 export_python_type_annotations = True
 
-# Send non-GET requests for ERPNext's endpoints as native `application/json`
-# bodies instead of form-encoded, per-key JSON-stringified values.
-use_json_request_body = True
-
 fields_for_group_similar_items = ["qty", "amount"]
 
 # Translation
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 ignore_translatable_strings_from = ["frappe"]
-require_type_annotated_api_methods = True
-
 repost_allowed_doctypes = [
 	"Sales Invoice",
 	"Purchase Invoice",

@@ -3,7 +3,6 @@
 
 
 """Global Defaults"""
-
 import frappe
 import frappe.defaults
 from frappe.custom.doctype.property_setter.property_setter import make_property_setter
@@ -19,18 +18,6 @@ keydict = {
 	"disable_rounded_total": "disable_rounded_total",
 	"disable_in_words": "disable_in_words",
 }
-
-ROUNDED_TOTAL_DOCTYPES = (
-	"Quotation",
-	"Sales Order",
-	"POS Invoice",
-	"Sales Invoice",
-	"Delivery Note",
-	"Supplier Quotation",
-	"Purchase Order",
-	"Purchase Invoice",
-	"Purchase Receipt",
-)
 
 from frappe.model.document import Document
 
@@ -51,7 +38,7 @@ class GlobalDefaults(Document):
 		demo_company: DF.Link | None
 		disable_in_words: DF.Check
 		disable_rounded_total: DF.Check
-		hide_currency_symbol: DF.Check
+		hide_currency_symbol: DF.Literal["", "No", "Yes"]
 		use_posting_datetime_for_naming_documents: DF.Check
 	# end: auto-generated types
 
@@ -66,7 +53,6 @@ class GlobalDefaults(Document):
 
 		self.toggle_rounded_total()
 		self.toggle_in_words()
-		self.set_disable_rounded_total_on_pos_profiles()
 
 		frappe.clear_cache()
 
@@ -75,31 +61,44 @@ class GlobalDefaults(Document):
 		return frappe.defaults.get_defaults()
 
 	def toggle_rounded_total(self):
+		self.disable_rounded_total = cint(self.disable_rounded_total)
+
 		# Make property setters to hide rounded total fields
-		for doctype in ROUNDED_TOTAL_DOCTYPES:
+		for doctype in (
+			"Quotation",
+			"Sales Order",
+			"Sales Invoice",
+			"Delivery Note",
+			"Supplier Quotation",
+			"Purchase Order",
+			"Purchase Invoice",
+			"Purchase Receipt",
+		):
 			make_property_setter(
 				doctype,
 				"base_rounded_total",
 				"hidden",
-				cint(self.disable_rounded_total),
+				self.disable_rounded_total,
 				"Check",
 				validate_fields_for_doctype=False,
+			)
+			make_property_setter(
+				doctype, "base_rounded_total", "print_hide", 1, "Check", validate_fields_for_doctype=False
 			)
 
 			make_property_setter(
 				doctype,
 				"rounded_total",
 				"hidden",
-				cint(self.disable_rounded_total),
+				self.disable_rounded_total,
 				"Check",
 				validate_fields_for_doctype=False,
 			)
-
 			make_property_setter(
 				doctype,
 				"rounded_total",
 				"print_hide",
-				cint(self.disable_rounded_total),
+				self.disable_rounded_total,
 				"Check",
 				validate_fields_for_doctype=False,
 			)
@@ -114,13 +113,24 @@ class GlobalDefaults(Document):
 			)
 
 	def toggle_in_words(self):
+		self.disable_in_words = cint(self.disable_in_words)
+
 		# Make property setters to hide in words fields
-		for doctype in ROUNDED_TOTAL_DOCTYPES:
+		for doctype in (
+			"Quotation",
+			"Sales Order",
+			"Sales Invoice",
+			"Delivery Note",
+			"Supplier Quotation",
+			"Purchase Order",
+			"Purchase Invoice",
+			"Purchase Receipt",
+		):
 			make_property_setter(
 				doctype,
 				"in_words",
 				"hidden",
-				cint(self.disable_in_words),
+				self.disable_in_words,
 				"Check",
 				validate_fields_for_doctype=False,
 			)
@@ -128,14 +138,7 @@ class GlobalDefaults(Document):
 				doctype,
 				"in_words",
 				"print_hide",
-				cint(self.disable_in_words),
+				self.disable_in_words,
 				"Check",
 				validate_fields_for_doctype=False,
 			)
-
-	def set_disable_rounded_total_on_pos_profiles(self):
-		POSProfile = frappe.qb.DocType("POS Profile")
-
-		frappe.qb.update(POSProfile).set(
-			POSProfile.disable_rounded_total, cint(self.disable_rounded_total)
-		).run()

@@ -105,7 +105,7 @@ def get_formatted_ids(video_list):
 
 
 @frappe.whitelist()
-def get_id_from_url(url: str):
+def get_id_from_url(url):
 	"""
 	Returns video id from url
 	:param youtube url: String URL

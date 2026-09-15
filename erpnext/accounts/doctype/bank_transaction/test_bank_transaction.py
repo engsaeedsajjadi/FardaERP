@@ -23,6 +23,8 @@ from erpnext.tests.utils import ERPNextTestSuite, if_lending_app_installed
 
 class TestBankTransaction(ERPNextTestSuite):
 	def setUp(self):
+		make_pos_profile()
+
 		# generate and use a uniq hash identifier for 'Bank Account' and it's linked GL 'Account' to avoid validation error
 		uniq_identifier = frappe.generate_hash(length=10)
 		gl_account = create_gl_account("_Test Bank " + uniq_identifier)
@@ -30,7 +32,6 @@ class TestBankTransaction(ERPNextTestSuite):
 			gl_account=gl_account, bank_account_name="Checking Account " + uniq_identifier
 		)
 
-		make_pos_profile()
 		add_transactions(bank_account=bank_account)
 		add_vouchers(gl_account=gl_account)
 
@@ -46,7 +47,7 @@ class TestBankTransaction(ERPNextTestSuite):
 			from_date=bank_transaction.date,
 			to_date=utils.today(),
 		)
-		self.assertIn("Conrad Electronic", [payment["party"] for payment in linked_payments])
+		self.assertTrue(linked_payments[0]["party"] == "Conrad Electronic")
 
 	# This test validates a simple reconciliation leading to the clearance of the bank transaction and the payment
 	def test_reconcile(self):
@@ -69,10 +70,10 @@ class TestBankTransaction(ERPNextTestSuite):
 		unallocated_amount = frappe.db.get_value(
 			"Bank Transaction", bank_transaction.name, "unallocated_amount"
 		)
-		self.assertEqual(unallocated_amount, 0)
+		self.assertTrue(unallocated_amount == 0)
 
 		clearance_date = frappe.db.get_value("Payment Entry", payment.name, "clearance_date")
-		self.assertIsNot(clearance_date, None)
+		self.assertTrue(clearance_date is not None)
 
 		bank_transaction.reload()
 		bank_transaction.cancel()
@@ -207,8 +208,9 @@ class TestBankTransaction(ERPNextTestSuite):
 		self.assertEqual(
 			frappe.db.get_value("Bank Transaction", bank_transaction.name, "unallocated_amount"), 0
 		)
-		self.assertIsNot(
-			frappe.db.get_value("Sales Invoice Payment", dict(parent=payment.name), "clearance_date"), None
+		self.assertTrue(
+			frappe.db.get_value("Sales Invoice Payment", dict(parent=payment.name), "clearance_date")
+			is not None
 		)
 
 	@if_lending_app_installed

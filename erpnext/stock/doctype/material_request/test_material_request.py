@@ -10,15 +10,13 @@ from frappe.utils import add_days, flt, getdate, today
 
 from erpnext.controllers.accounts_controller import InvalidQtyError
 from erpnext.stock.doctype.item.test_item import create_item
-from erpnext.stock.doctype.material_request.mapper import (
+from erpnext.stock.doctype.material_request.material_request import (
 	create_pick_list,
 	make_in_transit_stock_entry,
 	make_purchase_order,
 	make_request_for_quotation,
 	make_stock_entry,
 	make_supplier_quotation,
-)
-from erpnext.stock.doctype.material_request.material_request import (
 	raise_work_orders,
 )
 from erpnext.stock.doctype.stock_entry.stock_entry import make_stock_in_entry
@@ -767,11 +765,11 @@ class TestMaterialRequest(ERPNextTestSuite):
 		mr = frappe.get_doc("Material Request", mr.name)
 		mr.submit()
 		completed_qty = mr.items[0].ordered_qty
-		requested_qty = frappe.db.get_value(
-			"Bin",
-			{"item_code": mr.items[0].item_code, "warehouse": mr.items[0].warehouse},
-			"indented_qty",
-		)
+		requested_qty = frappe.db.sql(
+			"""select indented_qty from `tabBin` where \
+			item_code= %s and warehouse= %s """,
+			(mr.items[0].item_code, mr.items[0].warehouse),
+		)[0][0]
 
 		prod_order = raise_work_orders(mr.name, mr.company)
 		po = frappe.get_doc("Work Order", prod_order[0])
@@ -781,11 +779,11 @@ class TestMaterialRequest(ERPNextTestSuite):
 		mr = frappe.get_doc("Material Request", mr.name)
 		self.assertEqual(completed_qty + po.qty, mr.items[0].ordered_qty)
 
-		new_requested_qty = frappe.db.get_value(
-			"Bin",
-			{"item_code": mr.items[0].item_code, "warehouse": mr.items[0].warehouse},
-			"indented_qty",
-		)
+		new_requested_qty = frappe.db.sql(
+			"""select indented_qty from `tabBin` where \
+			item_code= %s and warehouse= %s """,
+			(mr.items[0].item_code, mr.items[0].warehouse),
+		)[0][0]
 
 		self.assertEqual(requested_qty - po.qty, new_requested_qty)
 
@@ -794,11 +792,11 @@ class TestMaterialRequest(ERPNextTestSuite):
 		mr = frappe.get_doc("Material Request", mr.name)
 		self.assertEqual(completed_qty, mr.items[0].ordered_qty)
 
-		new_requested_qty = frappe.db.get_value(
-			"Bin",
-			{"item_code": mr.items[0].item_code, "warehouse": mr.items[0].warehouse},
-			"indented_qty",
-		)
+		new_requested_qty = frappe.db.sql(
+			"""select indented_qty from `tabBin` where \
+			item_code= %s and warehouse= %s """,
+			(mr.items[0].item_code, mr.items[0].warehouse),
+		)[0][0]
 		self.assertEqual(requested_qty, new_requested_qty)
 
 	def test_requested_qty_multi_uom(self):
@@ -960,7 +958,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		for company, _mr_list in comapnywise_mr_list.items():
 			emails = get_email_list(company)
 
-			self.assertIn(comapnywise_users[company], emails)
+			self.assertTrue(comapnywise_users[company] in emails)
 
 		for perm in permissions:
 			perm.delete()
@@ -1052,7 +1050,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		from frappe.utils import add_to_date, today
 
 		from erpnext.selling.doctype.product_bundle.test_product_bundle import make_product_bundle
-		from erpnext.selling.doctype.sales_order.mapper import make_material_request
+		from erpnext.selling.doctype.sales_order.sales_order import make_material_request
 		from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 		sub_item_a = "_Test Bundle ItemA"
@@ -1088,7 +1086,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		self.assertEqual(mr.items[1].qty, 5)
 
 	def test_item_change_on_sales_order_row_is_blocked(self):
-		from erpnext.selling.doctype.sales_order.mapper import make_material_request
+		from erpnext.selling.doctype.sales_order.sales_order import make_material_request
 		from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 		other_item = create_item("_Test MR Item Swap").name
@@ -1103,7 +1101,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		"""Test for pick list mapped doc qty from partially received Material Request Transfer"""
 		import json
 
-		from erpnext.stock.doctype.pick_list.mapper import create_stock_entry
+		from erpnext.stock.doctype.pick_list.pick_list import create_stock_entry
 		from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
 		new_item = create_item("_Test Pick List Item", is_stock_item=1)
@@ -1273,107 +1271,8 @@ class TestMaterialRequest(ERPNextTestSuite):
 		self.assertEqual(material_request.status, "Transferred")
 		self.assertEqual(material_request.transfer_status, "Completed")
 
-	def test_check_modified_date_detects_concurrent_modification(self):
-		"""check_modified_date must raise when the in-memory doc is stale vs the DB modified
-		timestamp. Covers the converted get_value + get_datetime comparison that replaced the
-		raw MariaDB-only TIMEDIFF (which errors on Postgres); update_status() runs this guard."""
-		from frappe.utils import add_to_date, get_datetime
-
-		mr = make_material_request(qty=10)
-
-		fresh = frappe.get_doc("Material Request", mr.name)
-		# modified matches the DB row -> guard passes.
-		fresh.check_modified_date()
-
-		# Stale in-memory modified -> concurrent-modification guard must fire.
-		fresh.modified = add_to_date(get_datetime(fresh.modified), seconds=-120)
-		with self.assertRaises(frappe.ValidationError) as cm:
-			fresh.check_modified_date()
-		self.assertIn("has been modified", str(cm.exception))
-
-	def test_validate_qty_against_so_blocks_over_request(self):
-		"""validate_qty_against_so must block requesting more than the Sales Order qty, net of
-		already-indented submitted MRs. Covers the converted Sales Order Item and Material Request
-		Item SUM queries. (The guard is currently not wired into validate(), so call it directly.)"""
-		from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
-
-		item_code = "_Test Item"
-		so = make_sales_order(item_code=item_code, qty=10)  # submitted -> SO Item stock_qty 10
-
-		def _mr_against_so(qty):
-			mr = frappe.new_doc("Material Request")
-			mr.material_request_type = "Purchase"
-			mr.company = "_Test Company"
-			mr.append(
-				"items",
-				{
-					"item_code": item_code,
-					"qty": qty,
-					"uom": "_Test UOM",
-					"conversion_factor": 1,
-					"schedule_date": today(),
-					"warehouse": "_Test Warehouse - _TC",
-					"sales_order": so.name,
-				},
-			)
-			return mr
-
-		# An already-submitted MR consuming 6 of the SO's 10.
-		mr1 = _mr_against_so(6)
-		mr1.insert()
-		mr1.submit()
-
-		# A new request for 5 more -> already_indented 6 + 5 = 11 > 10 -> must throw.
-		over = _mr_against_so(5)
-		over.insert()
-		with self.assertRaises(frappe.ValidationError) as cm:
-			over.validate_qty_against_so()
-		self.assertIn("maximum", str(cm.exception))
-
-		# Exactly within the remaining 4 -> 6 + 4 = 10, not greater -> no throw.
-		over.items[0].qty = 4
-		over.validate_qty_against_so()
-
-	def test_get_material_requests_based_on_supplier(self):
-		"""The supplier-based Material Request picker must run on every engine.
-
-		It deduplicated requests with SELECT DISTINCT while ordering by an item
-		column that is not in the select list; PostgreSQL rejects that, so the
-		picker has to group and order by an aggregate instead.
-		"""
-		from erpnext.stock.doctype.material_request.material_request import (
-			get_material_requests_based_on_supplier,
-		)
-
-		item = create_item("_Test MR Default Supplier Item")
-		item.set("item_defaults", [])
-		item.append(
-			"item_defaults",
-			{
-				"company": "_Test Company",
-				"default_warehouse": "_Test Warehouse - _TC",
-				"default_supplier": "_Test Supplier",
-			},
-		)
-		item.save()
-
-		mr1 = make_material_request(item_code=item.name, qty=5)
-		mr2 = make_material_request(item_code=item.name, qty=7)
-
-		result = get_material_requests_based_on_supplier(
-			doctype="Material Request",
-			txt="",
-			searchfield="name",
-			start=0,
-			page_len=20,
-			filters={"supplier": "_Test Supplier", "company": "_Test Company"},
-		)
-		returned = {row["name"] for row in result}
-		self.assertIn(mr1.name, returned)
-		self.assertIn(mr2.name, returned)
-
 	def test_get_item_default_suppliers(self):
-		from erpnext.stock.doctype.material_request.mapper import get_item_default_suppliers
+		from erpnext.stock.doctype.material_request.material_request import get_item_default_suppliers
 
 		with_supplier = create_item_with_default_supplier("_Test MR Item Supplier A", "_Test Supplier")
 		without_supplier = create_item("_Test MR Item Without Supplier").name
@@ -1393,7 +1292,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		self.assertEqual(po.supplier, "_Test Supplier")
 
 	def test_make_purchase_orders_by_supplier(self):
-		from erpnext.stock.doctype.material_request.mapper import make_purchase_orders_by_supplier
+		from erpnext.stock.doctype.material_request.material_request import make_purchase_orders_by_supplier
 
 		item_codes = [create_item(f"_Test MR Grouped Item {index}").name for index in range(1, 4)]
 		mr = make_material_request_for_items(item_codes)
@@ -1423,7 +1322,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		self.assertEqual(second.items[0].stock_qty, 4)
 
 	def test_make_purchase_orders_by_supplier_sets_schedule_date(self):
-		from erpnext.stock.doctype.material_request.mapper import make_purchase_orders_by_supplier
+		from erpnext.stock.doctype.material_request.material_request import make_purchase_orders_by_supplier
 
 		mr = make_material_request_for_items(["_Test Item"])
 		frappe.db.set_value("Material Request Item", mr.items[0].name, "schedule_date", add_days(today(), -1))
@@ -1447,7 +1346,7 @@ class TestMaterialRequest(ERPNextTestSuite):
 		self.assertTrue(any("was set to today" in m.get("message") for m in alerts))
 
 	def test_make_purchase_orders_by_supplier_invalid_rows(self):
-		from erpnext.stock.doctype.material_request.mapper import make_purchase_orders_by_supplier
+		from erpnext.stock.doctype.material_request.material_request import make_purchase_orders_by_supplier
 
 		mr = make_material_request_for_items(["_Test Item"])
 		row = {

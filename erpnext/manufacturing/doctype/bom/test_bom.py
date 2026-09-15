@@ -34,8 +34,8 @@ class TestBOM(ERPNextTestSuite):
 		items_dict = get_bom_items_as_dict(
 			bom=get_default_bom(), company="_Test Company", qty=1, fetch_exploded=0
 		)
-		self.assertIn(self.globalTestRecords["BOM"][2]["items"][0]["item_code"], items_dict)
-		self.assertIn(self.globalTestRecords["BOM"][2]["items"][1]["item_code"], items_dict)
+		self.assertTrue(self.globalTestRecords["BOM"][2]["items"][0]["item_code"] in items_dict)
+		self.assertTrue(self.globalTestRecords["BOM"][2]["items"][1]["item_code"] in items_dict)
 		self.assertEqual(len(items_dict.values()), 2)
 
 	@timeout
@@ -45,165 +45,17 @@ class TestBOM(ERPNextTestSuite):
 		items_dict = get_bom_items_as_dict(
 			bom=get_default_bom(), company="_Test Company", qty=1, fetch_exploded=1
 		)
-		self.assertIn(self.globalTestRecords["BOM"][2]["items"][0]["item_code"], items_dict)
-		self.assertNotIn(self.globalTestRecords["BOM"][2]["items"][1]["item_code"], items_dict)
-		self.assertIn(self.globalTestRecords["BOM"][0]["items"][0]["item_code"], items_dict)
-		self.assertIn(self.globalTestRecords["BOM"][0]["items"][1]["item_code"], items_dict)
+		self.assertTrue(self.globalTestRecords["BOM"][2]["items"][0]["item_code"] in items_dict)
+		self.assertFalse(self.globalTestRecords["BOM"][2]["items"][1]["item_code"] in items_dict)
+		self.assertTrue(self.globalTestRecords["BOM"][0]["items"][0]["item_code"] in items_dict)
+		self.assertTrue(self.globalTestRecords["BOM"][0]["items"][1]["item_code"] in items_dict)
 		self.assertEqual(len(items_dict.values()), 3)
 
 	@timeout
 	def test_get_items_list(self):
 		from erpnext.manufacturing.doctype.bom.bom import get_bom_items
 
-		bom = get_default_bom()
-		self.assertEqual(len(get_bom_items(bom=bom, company="_Test Company")), 3)
-
-		# the roles that own the Stock Entry / Material Request workflows fetch components here
-		with self.set_user(make_user_with_roles("_test_bom_stock_user@example.com", "Stock User")):
-			self.assertEqual(len(get_bom_items(bom=bom, company="_Test Company")), 3)
-
-		with self.set_user(make_user_with_roles("_test_bom_no_access@example.com")):
-			self.assertRaises(frappe.PermissionError, get_bom_items, bom, "_Test Company")
-
-	@timeout
-	def test_get_items_as_dict_only_checks_permission_when_asked(self):
-		from erpnext.manufacturing.doctype.bom.bom import get_bom_items_as_dict
-
-		bom = get_default_bom()
-		with self.set_user(make_user_with_roles("_test_bom_no_access@example.com")):
-			# internal callers keep the privileged default, and nested BOMs inherit it
-			self.assertTrue(get_bom_items_as_dict(bom=bom, company="_Test Company", fetch_exploded=0))
-			self.assertRaises(
-				frappe.PermissionError,
-				partial(
-					get_bom_items_as_dict,
-					bom=bom,
-					company="_Test Company",
-					fetch_exploded=0,
-					ignore_permissions=False,
-				),
-			)
-
-	@timeout
-	def test_get_bom_diff_checks_both_boms(self):
-		from erpnext.manufacturing.doctype.bom.mapper import get_bom_diff
-
-		bom1 = get_default_bom()
-		bom2 = get_default_bom("_Test FG Item")
-
-		with self.set_user(make_user_with_roles("_test_bom_stock_user@example.com", "Stock User")):
-			self.assertTrue(get_bom_diff(bom1, bom2))
-
-		with self.set_user(make_user_with_roles("_test_bom_no_access@example.com")):
-			self.assertRaises(frappe.PermissionError, get_bom_diff, bom1, bom2)
-
-	@timeout
-	def test_get_items_keeps_bom_no_phantom_pair_coherent(self):
-		from erpnext.manufacturing.doctype.bom.bom import get_bom_items_as_dict
-		from erpnext.manufacturing.doctype.production_plan.test_production_plan import make_bom
-
-		for phantom_first in (True, False):
-			rm_phantom = make_item(properties={"is_stock_item": 1, "valuation_rate": 10}).name
-			rm_normal = make_item(properties={"is_stock_item": 1, "valuation_rate": 10}).name
-			component = make_item(properties={"is_stock_item": 1, "valuation_rate": 10}).name
-
-			# phantom sub-BOM created first -> smaller auto-name; the non-phantom one gets the
-			# larger name, which is exactly what an independent Max(bom_no) would wrongly pick
-			phantom_bom = make_bom(item=component, raw_materials=[rm_phantom], do_not_save=True)
-			phantom_bom.is_phantom_bom = 1
-			phantom_bom.save()
-			phantom_bom.submit()
-			normal_bom = make_bom(item=component, raw_materials=[rm_normal])
-
-			fg_item = make_item(properties={"is_stock_item": 1, "valuation_rate": 10}).name
-			first_bom, second_bom = (
-				(phantom_bom.name, normal_bom.name) if phantom_first else (normal_bom.name, phantom_bom.name)
-			)
-			parent = make_bom(item=fg_item, raw_materials=[component], do_not_save=True)
-			parent.items[0].bom_no = first_bom
-			component_doc = frappe.get_doc("Item", component)
-			parent.append(
-				"items",
-				{
-					"item_code": component,
-					"qty": 1,
-					"uom": component_doc.stock_uom,
-					"stock_uom": component_doc.stock_uom,
-					"bom_no": second_bom,
-				},
-			)
-			parent.save()
-			parent.submit()
-
-			items_dict = get_bom_items_as_dict(parent.name, "_Test Company", qty=1, fetch_exploded=0)
-			self.assertIn(rm_phantom, items_dict)
-			self.assertIn(component, items_dict)
-			self.assertEqual(flt(items_dict[component].qty), 1.0)
-			self.assertNotIn(rm_normal, items_dict)
-
-	@timeout
-	def test_get_items_amount_uses_each_lines_own_rate(self):
-		from erpnext.manufacturing.doctype.bom.bom import get_bom_items_as_dict
-		from erpnext.manufacturing.doctype.production_plan.test_production_plan import make_bom
-
-		rm = make_item(properties={"is_stock_item": 1, "valuation_rate": 10, "stock_uom": "Nos"})
-		if not any(row.uom == "Box" for row in rm.uoms):
-			rm.append("uoms", {"uom": "Box", "conversion_factor": 5})
-			rm.save()
-
-		fg_item = make_item(properties={"is_stock_item": 1, "valuation_rate": 10}).name
-		bom = make_bom(item=fg_item, raw_materials=[rm.name], rm_qty=2, do_not_save=True)
-		bom.append("items", {"item_code": rm.name, "qty": 3, "uom": "Box", "stock_uom": "Nos"})
-		bom.save()
-		bom.submit()
-
-		lines = [row for row in bom.items if row.item_code == rm.name]
-		self.assertEqual(len(lines), 2)
-		self.assertEqual(len({flt(row.rate) for row in lines}), 2)
-
-		requested_qty = 2
-		expected = sum(flt(row.qty) * flt(row.rate) for row in lines) / flt(bom.quantity) * requested_qty
-		items_dict = get_bom_items_as_dict(bom.name, "_Test Company", qty=requested_qty, fetch_exploded=0)
-
-		self.assertEqual(len([row for row in items_dict if row == rm.name]), 1)
-		self.assertAlmostEqual(flt(items_dict[rm.name].amount), expected, places=2)
-
-	@timeout
-	def test_get_items_takes_line_columns_from_one_line(self):
-		from erpnext.manufacturing.doctype.bom.bom import get_bom_items_as_dict
-		from erpnext.manufacturing.doctype.production_plan.test_production_plan import make_bom
-		from erpnext.stock.doctype.warehouse.test_warehouse import create_warehouse
-
-		rm = make_item(properties={"is_stock_item": 1, "valuation_rate": 10})
-		fg_item = make_item(properties={"is_stock_item": 1, "valuation_rate": 10}).name
-
-		first_warehouse = create_warehouse("_Test BOM Line A")
-		second_warehouse = create_warehouse("_Test BOM Line B")
-
-		bom = make_bom(item=fg_item, raw_materials=[rm.name], rm_qty=2, do_not_save=True)
-		bom.items[0].description = "bbb first line"
-		bom.items[0].source_warehouse = first_warehouse
-		bom.append(
-			"items",
-			{
-				"item_code": rm.name,
-				"qty": 3,
-				"uom": rm.stock_uom,
-				"stock_uom": rm.stock_uom,
-				"description": "ccc second line",
-				"source_warehouse": second_warehouse,
-			},
-		)
-		bom.save()
-		bom.submit()
-
-		items_dict = get_bom_items_as_dict(bom.name, "_Test Company", qty=1, fetch_exploded=0)
-		row = items_dict[rm.name]
-
-		# "ccc" sorts above "bbb" on either engine, so an aggregated description would win here;
-		# the value must instead come from the first line, together with that line's warehouse
-		self.assertEqual(row.description, "bbb first line")
-		self.assertEqual(row.source_warehouse, first_warehouse)
+		self.assertEqual(len(get_bom_items(bom=get_default_bom(), company="_Test Company")), 3)
 
 	@timeout
 	def test_default_bom(self):
@@ -245,10 +97,10 @@ class TestBOM(ERPNextTestSuite):
 		update_cost_in_all_boms_in_test()
 
 		# check if new valuation rate updated in all BOMs
-		for d in frappe.get_all(
-			"BOM Item",
-			filters={"item_code": "_Test Item 2", "docstatus": 1, "parenttype": "BOM"},
-			fields=["base_rate"],
+		for d in frappe.db.sql(
+			"""select base_rate from `tabBOM Item`
+			where item_code='_Test Item 2' and docstatus=1 and parenttype='BOM'""",
+			as_dict=1,
 		):
 			self.assertEqual(d.base_rate, rm_base_rate + 10)
 
@@ -610,7 +462,7 @@ class TestBOM(ERPNextTestSuite):
 				"secondary_item_type": "Additional Finished Good",
 				"qty": 1,
 				"cost_allocation_per": 10,
-				"valuation_type": "% of Component Cost",
+				"valuation_type": "% of FG Cost",
 			},
 		)
 
@@ -645,7 +497,7 @@ class TestBOM(ERPNextTestSuite):
 				"secondary_item_type": "Scrap",
 				"qty": 1,
 				"cost_allocation_per": 10,
-				"valuation_type": "% of Component Cost",
+				"valuation_type": "% of FG Cost",
 			},
 		)
 		self.assertRaises(frappe.ValidationError, bom_doc.save)
@@ -718,7 +570,7 @@ class TestBOM(ERPNextTestSuite):
 				"secondary_item_type": "By-Product",
 				"qty": 1,
 				"cost_allocation_per": 10,
-				"valuation_type": "% of Component Cost",
+				"valuation_type": "% of FG Cost",
 			},
 		)
 		bom_doc.save()
@@ -1170,9 +1022,9 @@ class TestBOM(ERPNextTestSuite):
 		for row in data:
 			items.append(row[0])
 
-		self.assertNotIn("_Test RM Item 1 Do Not Include In Manufacture", items)
-		self.assertNotIn("_Test RM Item 2 Fixed Asset Item", items)
-		self.assertIn("_Test RM Item 3 Manufacture Item", items)
+		self.assertTrue("_Test RM Item 1 Do Not Include In Manufacture" not in items)
+		self.assertTrue("_Test RM Item 2 Fixed Asset Item" not in items)
+		self.assertTrue("_Test RM Item 3 Manufacture Item" in items)
 
 	def test_bom_raw_materials_stock_uom(self):
 		rm_item = make_item(
@@ -1350,52 +1202,6 @@ class TestBOM(ERPNextTestSuite):
 		)
 
 	@timeout
-	def test_percentage_based_component_quantities(self):
-		fg_item = make_item(properties={"is_stock_item": 1}).name
-		rm1 = make_item(properties={"is_stock_item": 1, "valuation_rate": 100.0}).name
-		rm2 = make_item(properties={"is_stock_item": 1, "valuation_rate": 100.0}).name
-		rm3 = make_item(properties={"is_stock_item": 1, "valuation_rate": 100.0}).name
-
-		bom = frappe.new_doc("BOM")
-		bom.company = "_Test Company"
-		bom.item = fg_item
-		bom.quantity = 200
-		bom.set_qty_based_on_percentage = 1
-		bom.append("items", {"item_code": rm1, "percentage": 40, "qty": 1})
-		bom.append("items", {"item_code": rm2, "percentage": 35, "qty": 1})
-		bom.append("items", {"item_code": rm3, "is_balance_item": 1, "qty": 1})
-		bom.insert()
-
-		self.assertEqual(flt(bom.items[0].qty), 80)
-		self.assertEqual(flt(bom.items[1].qty), 70)
-		self.assertEqual(flt(bom.items[2].percentage), 25)
-		self.assertEqual(flt(bom.items[2].qty), 50)
-
-	@timeout
-	def test_percentage_total_must_be_100(self):
-		fg_item = make_item(properties={"is_stock_item": 1}).name
-		rm1 = make_item(properties={"is_stock_item": 1, "valuation_rate": 100.0}).name
-		rm2 = make_item(properties={"is_stock_item": 1, "valuation_rate": 100.0}).name
-
-		bom = frappe.new_doc("BOM")
-		bom.company = "_Test Company"
-		bom.item = fg_item
-		bom.quantity = 100
-		bom.set_qty_based_on_percentage = 1
-		bom.append("items", {"item_code": rm1, "percentage": 40, "qty": 1})
-		bom.append("items", {"item_code": rm2, "percentage": 30, "qty": 1})
-
-		self.assertRaises(frappe.ValidationError, bom.insert)
-
-		bom.items[1].percentage = 0
-		self.assertRaises(frappe.ValidationError, bom.insert)
-
-		bom.items[1].percentage = 60
-		bom.with_operations = 1
-		bom.track_semi_finished_goods = 1
-		self.assertRaisesRegex(frappe.ValidationError, "Track Semi Finished Goods", bom.insert)
-
-	@timeout
 	def test_final_operation_must_produce_the_bom_item(self):
 		from erpnext.manufacturing.doctype.operation.test_operation import make_operation
 		from erpnext.manufacturing.doctype.workstation.test_workstation import make_workstation
@@ -1444,27 +1250,6 @@ class TestBOM(ERPNextTestSuite):
 
 def get_default_bom(item_code="_Test FG Item 2"):
 	return frappe.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1})
-
-
-def make_user_with_roles(email, *roles):
-	"""A user holding exactly `roles`, so permission boundaries are pinned to the roles alone."""
-	if not frappe.db.exists("User", email):
-		frappe.get_doc(
-			{
-				"doctype": "User",
-				"email": email,
-				"first_name": email.split("@")[0],
-				"send_welcome_email": 0,
-			}
-		).insert(ignore_permissions=True)
-
-	user = frappe.get_doc("User", email)
-	if existing := [row.role for row in user.roles]:
-		user.remove_roles(*existing)
-	if roles:
-		user.add_roles(*roles)
-
-	return email
 
 
 def level_order_traversal(node):
@@ -1533,12 +1318,16 @@ def reset_item_valuation_rate(item_code, warehouse_list=None, qty=None, rate=Non
 
 	if not warehouse_list:
 		# Reconcile every warehouse the item has a non-zero balance in -- including
-		# negative balances left by other tests. `get_valuation_rate` averages
+		# negative balances left by other tests. get_valuation_rate averages
 		# Sum(stock_value)/Sum(actual_qty) across all bins, so a leftover negative
 		# balance in one warehouse can cancel the reset qty elsewhere and make the
 		# average collapse to 0, which is a source of flaky BOM-cost failures.
-		warehouse_list = frappe.get_all(
-			"Bin", filters={"item_code": item_code, "actual_qty": ["!=", 0]}, pluck="warehouse"
+		warehouse_list = frappe.db.sql_list(
+			"""
+			select warehouse from `tabBin`
+			where item_code=%s and actual_qty != 0
+		""",
+			item_code,
 		)
 
 		if not warehouse_list:

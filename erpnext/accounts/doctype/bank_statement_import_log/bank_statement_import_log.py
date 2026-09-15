@@ -1265,7 +1265,8 @@ def update_pdf_tables(statement_import_id: str, tables: list | str):
 	if doc.status == "Completed":
 		frappe.throw(_("This statement has already been imported."), title=_("Already Imported"))
 
-	tables = frappe.parse_json(tables)
+	if isinstance(tables, str):
+		tables = json.loads(tables)
 
 	doc.apply_pdf_tables(tables)
 
@@ -1285,7 +1286,8 @@ def reextract_pdf_table(statement_import_id: str, page: int, table_index: int, b
 	if doc.status == "Completed":
 		frappe.throw(_("This statement has already been imported."), title=_("Already Imported"))
 
-	bbox = frappe.parse_json(bbox)
+	if isinstance(bbox, str):
+		bbox = json.loads(bbox)
 
 	page = int(page)
 	table_index = int(table_index)
@@ -1370,7 +1372,8 @@ def update_column_mapping(statement_import_id: str, column_mapping: list | str):
 	if doc.status == "Completed":
 		frappe.throw(_("This statement has already been imported."), title=_("Already Imported"))
 
-	column_mapping = frappe.parse_json(column_mapping)
+	if isinstance(column_mapping, str):
+		column_mapping = json.loads(column_mapping)
 
 	doc.apply_column_mapping(column_mapping)
 	doc.save()

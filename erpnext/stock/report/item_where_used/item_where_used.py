@@ -259,7 +259,7 @@ def get_bom_output_rows(item, company=None):
 def get_product_bundle_component_rows(item):
 	rows = frappe.get_all(
 		"Product Bundle Item",
-		filters={"item_code": item, "parenttype": "Product Bundle", "docstatus": 1},
+		filters={"item_code": item, "parenttype": "Product Bundle", "docstatus": 0},
 		fields=["parent", "idx", "qty", "uom"],
 		order_by="parent asc, idx asc",
 	)
@@ -281,7 +281,7 @@ def get_product_bundle_component_rows(item):
 					uom=row.uom,
 					stock_quantity=row.qty,
 					stock_uom=row.uom,
-					is_active=bundle.is_active,
+					is_active=0 if bundle.disabled else 1,
 					disabled=bundle.disabled,
 				)
 			)
@@ -292,8 +292,8 @@ def get_product_bundle_component_rows(item):
 def get_product_bundle_parent_rows(item):
 	rows = frappe.get_all(
 		"Product Bundle",
-		filters={"new_item_code": item, "docstatus": 1},
-		fields=["name", "new_item_code", "is_active", "disabled"],
+		filters={"new_item_code": item, "docstatus": 0},
+		fields=["name", "new_item_code", "disabled"],
 		order_by="name asc",
 	)
 
@@ -305,7 +305,7 @@ def get_product_bundle_parent_rows(item):
 			document_name=row.name,
 			related_item=row.new_item_code,
 			matched_field="Product Bundle.new_item_code",
-			is_active=row.is_active,
+			is_active=0 if row.disabled else 1,
 			disabled=row.disabled,
 		)
 		for row in rows
@@ -461,8 +461,8 @@ def get_product_bundle_map(bundle_names):
 		row.name: row
 		for row in frappe.get_all(
 			"Product Bundle",
-			filters={"name": ["in", bundle_names], "docstatus": 1},
-			fields=["name", "new_item_code", "is_active", "disabled"],
+			filters={"name": ["in", bundle_names], "docstatus": 0},
+			fields=["name", "new_item_code", "disabled"],
 		)
 	}
 

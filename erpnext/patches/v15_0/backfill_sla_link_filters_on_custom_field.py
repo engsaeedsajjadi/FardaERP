@@ -8,12 +8,10 @@ def execute():
 			"fieldname": "service_level_agreement",
 			"fieldtype": "Link",
 			"options": "Service Level Agreement",
+			"link_filters": ("is", "not set"),
 		},
-		fields=["name", "dt", "link_filters"],
+		fields=["name", "dt"],
 	):
-		if custom_field.link_filters:
-			continue
-
 		link_filters = frappe.as_json(
 			[["Service Level Agreement", "document_type", "=", custom_field.dt]], indent=None
 		)

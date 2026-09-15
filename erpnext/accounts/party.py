@@ -1,7 +1,6 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-from datetime import date
 
 import frappe
 from frappe import _, msgprint, qb, scrub
@@ -26,7 +25,6 @@ import erpnext
 from erpnext import get_company_currency
 from erpnext.accounts.utils import get_fiscal_year
 from erpnext.exceptions import InvalidAccountCurrency, PartyDisabled, PartyFrozen
-from erpnext.stock.doctype.price_list.price_list import is_price_list_enabled
 from erpnext.utilities.regional import temporary_flag
 
 try:
@@ -76,21 +74,22 @@ class DuplicatePartyAccountError(frappe.ValidationError):
 
 @frappe.whitelist()
 def get_party_details(
-	party: str | None = None,
-	account: str | None = None,
-	party_type: str = "Customer",
-	company: str | None = None,
-	posting_date: str | None = None,
-	bill_date: str | None = None,
-	price_list: str | None = None,
-	currency: str | None = None,
-	doctype: str | None = None,
-	fetch_payment_terms_template: bool = True,
-	party_address: str | None = None,
-	company_address: str | None = None,
-	shipping_address: str | None = None,
-	dispatch_address: str | None = None,
-	pos_profile: str | None = None,
+	party=None,
+	account=None,
+	party_type="Customer",
+	company=None,
+	posting_date=None,
+	bill_date=None,
+	price_list=None,
+	currency=None,
+	doctype=None,
+	ignore_permissions=False,
+	fetch_payment_terms_template=True,
+	party_address=None,
+	company_address=None,
+	shipping_address=None,
+	dispatch_address=None,
+	pos_profile=None,
 ):
 	if not party:
 		return frappe._dict()
@@ -141,7 +140,6 @@ def _get_party_details(
 	if not ignore_permissions:
 		ptype = "select" if frappe.only_has_select_perm(party_type) else "read"
 		frappe.has_permission(party_type, ptype, party, throw=True)
-		validate_party_company(party_type, party.name, company)
 
 	currency = party.get("default_currency") or currency or get_company_currency(company)
 
@@ -157,7 +155,7 @@ def _get_party_details(
 		dispatch_address,
 		ignore_permissions=ignore_permissions,
 	)
-	set_contact_details(party_details, party, party_type, doctype)
+	set_contact_details(party_details, party, party_type)
 	set_other_values(party_details, party, party_type)
 	set_price_list(party_details, party, party_type, price_list, pos_profile)
 
@@ -197,17 +195,6 @@ def _get_party_details(
 		party_details["tax_category"] = frappe.get_value("POS Profile", pos_profile, "tax_category")
 
 	return party_details
-
-
-def validate_party_company(party_type, party, company):
-	if not company or party_type not in ("Customer", "Supplier"):
-		return
-
-	from erpnext.stock.doctype.company_restriction.company_restriction import (
-		validate_masters_for_company,
-	)
-
-	validate_masters_for_company(party_type, [party], company)
 
 
 def set_address_details(
@@ -359,21 +346,9 @@ def complete_contact_details(party_details):
 	party_details.update(contact_details)
 
 
-def set_contact_details(party_details, party, party_type, doctype=None):
+def set_contact_details(party_details, party, party_type):
 	party_details.contact_person = get_default_contact(party_type, party.name)
 	complete_contact_details(party_details)
-
-	# the shipping contact is picked by the user, so it has no default to fall back on;
-	# blank it instead of carrying the previous party's contact over
-	if doctype and frappe.get_meta(doctype).has_field("shipping_contact_person"):
-		party_details.update(
-			{
-				"shipping_contact_person": None,
-				"shipping_contact_display": None,
-				"shipping_contact_mobile": None,
-				"shipping_contact_email": None,
-			}
-		)
 
 
 def set_other_values(party_details, party, party_type):
@@ -395,17 +370,12 @@ def set_other_values(party_details, party, party_type):
 
 
 def get_default_price_list(party):
-	"""Return the first enabled default price list for party (Document object)"""
-	price_list = party.get("default_price_list")
-	if is_price_list_enabled(price_list):
-		return price_list
+	"""Return default price list for party (Document object)"""
+	if party.get("default_price_list"):
+		return party.default_price_list
 
-	if party.doctype != "Customer":
-		return
-
-	price_list = frappe.get_cached_value("Customer Group", party.customer_group, "default_price_list")
-	if is_price_list_enabled(price_list):
-		return price_list
+	if party.doctype == "Customer":
+		return frappe.get_cached_value("Customer Group", party.customer_group, "default_price_list")
 
 
 def set_price_list(party_details, party, party_type, given_price_list, pos=None):
@@ -418,16 +388,13 @@ def set_price_list(party_details, party, party_type, given_price_list, pos=None)
 	elif pos and party_type == "Customer":
 		customer_price_list = frappe.get_value("Customer", party.name, "default_price_list")
 
-		if is_price_list_enabled(customer_price_list):
+		if customer_price_list:
 			price_list = customer_price_list
 		else:
 			pos_price_list = frappe.get_value("POS Profile", pos, "selling_price_list")
 			price_list = pos_price_list or given_price_list
 	else:
 		price_list = get_default_price_list(party) or given_price_list
-
-	if price_list and not is_price_list_enabled(price_list):
-		price_list = None
 
 	if price_list:
 		party_details.price_list_currency = frappe.db.get_value(
@@ -456,9 +423,7 @@ def set_account_and_due_date(party, account, party_type, company, posting_date, 
 
 
 @frappe.whitelist()
-def get_party_account(
-	party_type: str, party: str | None = None, company: str | None = None, include_advance: bool = False
-):
+def get_party_account(party_type, party=None, company=None, include_advance=False):
 	"""Returns the account for the given `party`.
 	Will first search in party (Customer / Supplier) record, if not found,
 	will search in group (Customer Group / Supplier Group),
@@ -680,14 +645,7 @@ def validate_party_accounts(doc):
 
 
 @frappe.whitelist()
-def get_due_date(
-	posting_date: str | date | None,
-	party_type: str | None,
-	party: str | None,
-	company: str | None = None,
-	bill_date: str | None = None,
-	template_name: str | None = None,
-):
+def get_due_date(posting_date, party_type, party, company=None, bill_date=None, template_name=None):
 	"""Get due date from `Payment Terms Template`"""
 	due_date = None
 	if (bill_date or posting_date) and party:
@@ -769,9 +727,7 @@ def validate_due_date_with_template(posting_date, due_date, bill_date, template_
 
 
 @frappe.whitelist()
-def get_address_tax_category(
-	tax_category: str | None = None, billing_address: str | None = None, shipping_address: str | None = None
-):
+def get_address_tax_category(tax_category=None, billing_address=None, shipping_address=None):
 	addr_tax_category_from = frappe.get_single_value(
 		"Accounts Settings", "determine_address_tax_category_from"
 	)
@@ -787,16 +743,16 @@ def get_address_tax_category(
 
 @frappe.whitelist()
 def set_taxes(
-	party: str | None,
-	party_type: str,
-	posting_date: str | date | None,
-	company: str | None,
-	customer_group: str | None = None,
-	supplier_group: str | None = None,
-	tax_category: str | None = None,
-	billing_address: str | None = None,
-	shipping_address: str | None = None,
-	use_for_shopping_cart: int | None = None,
+	party,
+	party_type,
+	posting_date,
+	company,
+	customer_group=None,
+	supplier_group=None,
+	tax_category=None,
+	billing_address=None,
+	shipping_address=None,
+	use_for_shopping_cart=None,
 ):
 	from erpnext.accounts.doctype.tax_rule.tax_rule import get_party_details, get_tax_template
 
@@ -836,7 +792,7 @@ def set_taxes(
 
 
 @frappe.whitelist()
-def get_payment_terms_template(party_name: str, party_type: str, company: str | None = None):
+def get_payment_terms_template(party_name, party_type, company=None):
 	if party_type not in ("Customer", "Supplier"):
 		return
 	template = None
@@ -951,13 +907,16 @@ def get_dashboard_info(party_type, party, loyalty_program=None):
 			d.company, {"grand_total": d.grand_total, "base_grand_total": d.base_grand_total}
 		)
 
-	gle = frappe.qb.DocType("GL Entry")
 	company_wise_total_unpaid = frappe._dict(
-		frappe.qb.from_(gle)
-		.select(gle.company, Sum(gle.debit_in_account_currency) - Sum(gle.credit_in_account_currency))
-		.where((gle.party_type == party_type) & (gle.party == party) & (gle.is_cancelled == 0))
-		.groupby(gle.company)
-		.run()
+		frappe.db.sql(
+			"""
+		select company, sum(debit_in_account_currency) - sum(credit_in_account_currency)
+		from `tabGL Entry`
+		where party_type = %s and party=%s
+		and is_cancelled = 0
+		group by company""",
+			(party_type, party),
+		)
 	)
 
 	for d in companies:

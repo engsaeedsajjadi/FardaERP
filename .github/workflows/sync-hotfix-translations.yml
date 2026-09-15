@@ -16,9 +16,8 @@ on:
     - cron: "0 10 * * 1"
   workflow_dispatch:
 
-# The runner dispatch uses RELEASE_TOKEN (a PAT), not the default GITHUB_TOKEN,
-# so no GITHUB_TOKEN permissions are required.
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   trigger-runners:

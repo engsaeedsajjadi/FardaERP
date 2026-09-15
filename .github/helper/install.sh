@@ -36,27 +36,7 @@ export GIT_TERMINAL_PROMPT=0
 
 githubbranch=${GITHUB_BASE_REF:-${GITHUB_REF##*/}}
 frappeuser=${FRAPPE_USER:-"frappe"}
-frappecommitish=${FRAPPE_BRANCH:-}
-
-# A stacked pull request targets another erpnext branch, which has no counterpart in frappe.
-# Fall back to develop so the bench is still installed. An explicit FRAPPE_BRANCH is trusted as
-# given, since it can be a commit sha rather than a branch.
-if [ -z "$frappecommitish" ]; then
-    frappecommitish=$githubbranch
-
-    # git ls-remote --exit-code reports 2 for a branch that is not there and 128 for a remote it
-    # could not reach. Only the first one is proof of absence; keep the branch on anything else so
-    # a flaky probe cannot install an unrelated frappe.
-    probe=0
-    git ls-remote --exit-code --heads "https://github.com/${frappeuser}/frappe" "$frappecommitish" >/dev/null 2>&1 || probe=$?
-
-    if [ "$probe" -eq 2 ]; then
-        echo "frappe has no branch ${frappecommitish}, falling back to develop"
-        frappecommitish=develop
-    elif [ "$probe" -ne 0 ]; then
-        echo "could not reach frappe to check for branch ${frappecommitish} (git ls-remote exited ${probe}), keeping it"
-    fi
-fi
+frappecommitish=${FRAPPE_BRANCH:-$githubbranch}
 db_host=${DB_HOST:-"127.0.0.1"}
 db_user_host=${DB_USER_HOST:-"localhost"}
 wkhtmltox_deb=${WKHTMLTOX_DEB:-"/tmp/wkhtmltox.deb"}
@@ -218,7 +198,7 @@ restore_warm_bench() {
         # Phase 1 already fetched ~/frappe to the exact live develop SHA. Fetch that commit
         # straight from it (bench init names the remote 'upstream', not 'origin', and points
         # it at this local clone — so a plain `git fetch origin` does not work).
-        git fetch --no-tags --update-shallow "$HOME/frappe" HEAD || exit 1
+        git fetch --no-tags "$HOME/frappe" HEAD || exit 1
         git checkout --force FETCH_HEAD || exit 1
     ); then
         echo "Fast-forward to ${frappe_sha} failed; falling back to full init"
@@ -347,10 +327,14 @@ if [ "$DB" == "postgres" ];then
     echo "travis" | psql -h 127.0.0.1 -p 5432 -c "CREATE DATABASE test_frappe" -U postgres;
     echo "travis" | psql -h 127.0.0.1 -p 5432 -c "CREATE USER test_frappe WITH PASSWORD 'test_frappe'" -U postgres;
 
-    # Durability-off for speed (no fsync/synchronous_commit/full_page_writes) is applied by
-    # start-db.sh's postgres `-o` flags on every start — setup job AND each test shard — so it is
-    # NOT repeated here. The postgres workflow runs in-runner via start-db.sh, not a service
-    # container.
+    # Disposable CI DB: durability off for speed (postgres fsyncs every commit by default, which
+    # dominates a commit-heavy suite). All reloadable, no restart. The postgres workflow runs a
+    # service-container DB and never calls start-db.sh, so the flags must be applied here.
+    echo "travis" | psql -h 127.0.0.1 -p 5432 -U postgres \
+        -c "ALTER SYSTEM SET synchronous_commit = 'off'" \
+        -c "ALTER SYSTEM SET fsync = 'off'" \
+        -c "ALTER SYSTEM SET full_page_writes = 'off'" \
+        -c "SELECT pg_reload_conf()";
 fi
 
 cd ~/frappe-bench || exit

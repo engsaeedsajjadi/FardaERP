@@ -197,7 +197,6 @@ class TaxWithholdingEntry(Document):
 
 				new_entry = frappe.copy_doc(old_entry)
 				new_entry.update(values_to_update)
-				new_entry.flags.skip_docstatus_validation = True
 				new_entry.insert()
 
 				docs_needing_reindex.add((old_entry.parenttype, old_entry.parent))
@@ -336,7 +335,6 @@ class TaxWithholdingEntry(Document):
 				"withholding_date": None,
 			}
 			new_entry.update(values_to_update)
-			new_entry.flags.skip_docstatus_validation = True
 			new_entry.insert()
 
 			docs_needing_reindex.add((entry.parenttype, entry.parent))

@@ -6,7 +6,10 @@ import math
 import frappe
 from frappe import _, bold
 from frappe.model.document import Document
-from frappe.utils import add_days, getdate, parse_json
+from frappe.model.mapper import get_mapped_doc
+from frappe.query_builder.functions import Sum
+from frappe.utils import add_days, flt, getdate, parse_json, today
+from frappe.utils.nestedset import get_descendants_of
 
 
 class MasterProductionSchedule(Document):
@@ -453,7 +456,7 @@ def get_item_lead_time(item_code):
 	query = (
 		frappe.qb.from_(doctype)
 		.select(
-			((doctype.manufacturing_time_in_mins / 1440.0) + doctype.purchase_time + doctype.buffer_time).as_(
+			((doctype.manufacturing_time_in_mins / 1440) + doctype.purchase_time + doctype.buffer_time).as_(
 				"cumulative_lead_time"
 			)
 		)
@@ -468,7 +471,7 @@ def get_item_lead_time(item_code):
 
 
 @frappe.whitelist()
-def get_mps_details(mps: str):
+def get_mps_details(mps):
 	return frappe.db.get_value(
 		"Master Production Schedule",
 		mps,

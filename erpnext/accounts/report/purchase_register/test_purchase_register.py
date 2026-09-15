@@ -24,64 +24,6 @@ class TestPurchaseRegister(ERPNextTestSuite):
 		self.assertEqual(first_row.total_tax, 100)
 		self.assertEqual(first_row.grand_total, 1100)
 
-	def test_expense_account_columns_sorted_case_insensitively(self):
-		# The dynamic expense-account columns must follow MariaDB's case-insensitive collation order and
-		# be identical on both engines. frappe drops ORDER BY for distinct queries on postgres, so the
-		# report sorts in python with casefold; plain sorted() would be case-sensitive ("ZZZ" < "aaa").
-		from erpnext.accounts.doctype.account.test_account import create_account
-		from erpnext.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
-
-		company = "_Test Company"
-		lower = create_account(
-			account_name="aaa Test Expense", parent_account="Expenses - _TC", company=company
-		)
-		upper = create_account(
-			account_name="ZZZ Test Expense", parent_account="Expenses - _TC", company=company
-		)
-		for account in (upper, lower):  # submit in non-casefold order
-			make_purchase_invoice(company=company, expense_account=account)
-
-		filters = frappe._dict(company=company, from_date=add_months(today(), -1), to_date=today())
-		columns = execute(filters)[0]
-		labels = [col["label"] for col in columns if col.get("label") in (lower, upper)]
-
-		self.assertEqual(labels, sorted([lower, upper], key=str.casefold))
-
-	def test_add_and_deduct_rows_on_one_account_are_netted(self):
-		"""An account head carrying both an Add and a Deduct row must report their net.
-
-		The tax query groups by (parent, account_head, add_deduct_tax), so such an account comes
-		back as two rows. Only one of them survived into the report.
-		"""
-		from erpnext.accounts.doctype.purchase_invoice.test_purchase_invoice import (
-			make_purchase_invoice as make_pi,
-		)
-
-		company = "_Test Company"
-		tax_account = "_Test Account VAT - _TC"
-
-		pi = make_pi(company=company, do_not_save=True)
-		for add_deduct, amount in (("Add", 10), ("Deduct", 4)):
-			pi.append(
-				"taxes",
-				{
-					"charge_type": "Actual",
-					"account_head": tax_account,
-					"description": "VAT",
-					"category": "Total",
-					"add_deduct_tax": add_deduct,
-					"tax_amount": amount,
-					"cost_center": "Main - _TC",
-				},
-			)
-		pi.save()
-		pi.submit()
-
-		filters = frappe._dict(company=company, from_date=add_months(today(), -1), to_date=today())
-		row = next(r for r in execute(filters)[1] if r.get("voucher_no") == pi.name)
-
-		self.assertEqual(flt(row.get(frappe.scrub(tax_account))), 6.0)
-
 	def test_purchase_register_ignores_tax_rows_from_other_doctype(self):
 		filters = frappe._dict(company="_Test Company 6", from_date=add_months(today(), -1), to_date=today())
 

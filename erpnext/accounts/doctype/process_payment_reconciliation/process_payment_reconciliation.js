@@ -61,7 +61,7 @@ frappe.ui.form.on("Process Payment Reconciliation", {
 					},
 				}).then((r) => {
 					if (!r.exc) {
-						frappe.show_alert(__("Job started"));
+						frappe.show_alert(__("Job Started"));
 						frm.reload_doc();
 					}
 				});
@@ -103,7 +103,7 @@ frappe.ui.form.on("Process Payment Reconciliation", {
 					},
 				}).then((r) => {
 					if (!r.exc) {
-						frappe.show_alert(__("Job paused"));
+						frappe.show_alert(__("Job Paused"));
 						frm.reload_doc();
 					}
 				});

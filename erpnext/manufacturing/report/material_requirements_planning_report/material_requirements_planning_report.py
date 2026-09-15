@@ -15,6 +15,7 @@ from frappe.utils import (
 	days_diff,
 	flt,
 	formatdate,
+	get_date_str,
 	get_first_day,
 	getdate,
 	parse_json,
@@ -1113,7 +1114,7 @@ class MaterialRequirementsPlanningReport:
 			args["to_date"] = add_days(from_date, -1)
 
 			if bucket_size == "Monthly":
-				args["label"] = formatdate(args["from_date"], "MMM YYYY")
+				args["label"] = formatdate(from_date, "MMM YYYY")
 			else:
 				if bucket_size == "Weekly":
 					args["label"] = (
@@ -1221,7 +1222,7 @@ def get_item_lead_time(item_code, type_of_material):
 			.when(
 				(doctype.manufacturing_time_in_mins.isnull() | (doctype.manufacturing_time_in_mins <= 0)), 0
 			)
-			.else_(1440.0 / doctype.manufacturing_time_in_mins + doctype.buffer_time)
+			.else_(1440 / doctype.manufacturing_time_in_mins + doctype.buffer_time)
 			.as_("lead_time")
 		)
 	else:

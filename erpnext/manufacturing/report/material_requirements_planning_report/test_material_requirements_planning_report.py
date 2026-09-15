@@ -189,18 +189,6 @@ class TestMaterialRequirementsPlanningReport(ERPNextTestSuite):
 		)
 
 
-def make_chart_row(delivery_date, planned_qty=1):
-	return frappe._dict(
-		{
-			"delivery_date": delivery_date,
-			"planned_qty": planned_qty,
-			"in_hand_qty": 0,
-			"po_ordered_qty": 0,
-			"wo_ordered_qty": 0,
-		}
-	)
-
-
 def make_mrp_plan(test_case, planned_qty=10, rm_qty=2):
 	"""Build a finished good with a submitted BOM and an MPS demanding it, then return the
 	report's own output rows -- the same payload the report's client sends to `make_order`."""
@@ -287,3 +275,15 @@ def get_created_order(mps, doctype):
 		frappe.throw(f"Expected exactly one {doctype} for {mps}, got {names}")
 
 	return frappe.get_doc(doctype, names[0])
+
+
+def make_chart_row(delivery_date, planned_qty=1):
+	return frappe._dict(
+		{
+			"delivery_date": delivery_date,
+			"planned_qty": planned_qty,
+			"in_hand_qty": 0,
+			"po_ordered_qty": 0,
+			"wo_ordered_qty": 0,
+		}
+	)

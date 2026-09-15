@@ -3,7 +3,6 @@
 
 import frappe
 from frappe import _, throw
-from frappe.model.document import Document
 from frappe.utils import add_days, cint, cstr, date_diff, formatdate, getdate
 
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
@@ -186,7 +185,9 @@ class MaintenanceSchedule(TransactionBase):
 		else:
 			holiday_list = frappe.get_cached_value("Company", self.company, "default_holiday_list")
 
-		holidays = frappe.get_all("Holiday", filters={"parent": holiday_list}, pluck="holiday_date")
+		holidays = frappe.db.sql_list(
+			"""select holiday_date from `tabHoliday` where parent=%s""", holiday_list
+		)
 
 		if not validated and holidays:
 			# max iterations = len(holidays)
@@ -234,22 +235,16 @@ class MaintenanceSchedule(TransactionBase):
 				throw(_("Start date should be less than end date for Item {0}").format(d.item_code))
 
 	def validate_sales_order(self):
-		ms = frappe.qb.DocType("Maintenance Schedule")
-		msi = frappe.qb.DocType("Maintenance Schedule Item")
 		for d in self.get("items"):
 			if d.sales_order:
-				# filter the parent schedule's docstatus (matches the original ms.docstatus = 1)
-				chk = (
-					frappe.qb.from_(ms)
-					.inner_join(msi)
-					.on(msi.parent == ms.name)
-					.select(ms.name)
-					.where((msi.sales_order == d.sales_order) & (ms.docstatus == 1))
-					.limit(1)
-					.run(pluck=True)
+				chk = frappe.db.sql(
+					"""select ms.name from `tabMaintenance Schedule` ms,
+					`tabMaintenance Schedule Item` msi where msi.parent=ms.name and
+					msi.sales_order=%s and ms.docstatus=1""",
+					d.sales_order,
 				)
 				if chk:
-					throw(_("Maintenance Schedule {0} exists against {1}").format(chk[0], d.sales_order))
+					throw(_("Maintenance Schedule {0} exists against {1}").format(chk[0][0], d.sales_order))
 
 	def validate_items_table_change(self):
 		doc_before_save = self.get_doc_before_save()
@@ -295,11 +290,10 @@ class MaintenanceSchedule(TransactionBase):
 
 		for row in voucher_nos:
 			if row.voucher_type != "Maintenance Schedule":
-				frappe.throw(
-					_(
-						"Serial and Batch Bundle {0} should have voucher type as 'Maintenance Schedule'"
-					).format(row.name)
-				)
+				msg = f"""Serial and Batch Bundle {row.name}
+					should have voucher type as 'Maintenance Schedule'"""
+
+				frappe.throw(_(msg))
 
 	def on_update(self):
 		self.db_set("status", "Draft")
@@ -334,14 +328,14 @@ class MaintenanceSchedule(TransactionBase):
 				amc_start_date
 			):
 				throw(
-					_("Serial No {0} is under warranty until {1}").format(
+					_("Serial No {0} is under warranty upto {1}").format(
 						serial_no, sr_details.warranty_expiry_date
 					)
 				)
 
 			if sr_details.amc_expiry_date and getdate(sr_details.amc_expiry_date) >= getdate(amc_start_date):
 				throw(
-					_("Serial No {0} is under maintenance contract until {1}").format(
+					_("Serial No {0} is under maintenance contract upto {1}").format(
 						serial_no, sr_details.amc_expiry_date
 					)
 				)
@@ -411,11 +405,9 @@ class MaintenanceSchedule(TransactionBase):
 		delete_events(self.doctype, self.name)
 
 	@frappe.whitelist()
-	def get_pending_data(self, data_type: str, s_date: str | None = None, item_name: str | None = None):
+	def get_pending_data(self, data_type, s_date=None, item_name=None):
 		if data_type == "date":
 			dates = ""
-			if not item_name:
-				frappe.throw(_("Item Name is required."))
 			for schedule in self.schedules:
 				if schedule.item_name == item_name and schedule.completion_status == "Pending":
 					dates = dates + "\n" + formatdate(schedule.scheduled_date, "dd-MM-yyyy")
@@ -429,8 +421,6 @@ class MaintenanceSchedule(TransactionBase):
 						break
 			return items
 		elif data_type == "id":
-			if not s_date:
-				frappe.throw(_("Scheduled Date is required."))
 			for schedule in self.schedules:
 				if schedule.item_name == item_name and s_date == formatdate(
 					schedule.scheduled_date, "dd-mm-yyyy"
@@ -439,10 +429,12 @@ class MaintenanceSchedule(TransactionBase):
 
 
 @frappe.whitelist()
-def get_serial_nos_from_schedule(item_code: str, schedule: str):
-	serial_nos = frappe.db.get_value(
-		"Maintenance Schedule Item", {"parent": schedule, "item_code": item_code}, "serial_no"
-	)
+def get_serial_nos_from_schedule(item_code, schedule=None):
+	serial_nos = []
+	if schedule:
+		serial_nos = frappe.db.get_value(
+			"Maintenance Schedule Item", {"parent": schedule, "item_code": item_code}, "serial_no"
+		)
 
 	if serial_nos:
 		serial_nos = get_serial_nos(serial_nos)
@@ -451,12 +443,7 @@ def get_serial_nos_from_schedule(item_code: str, schedule: str):
 
 
 @frappe.whitelist()
-def make_maintenance_visit(
-	source_name: str,
-	target_doc: str | dict | Document | None = None,
-	item_name: str | None = None,
-	s_id: str | None = None,
-):
+def make_maintenance_visit(source_name, target_doc=None, item_name=None, s_id=None):
 	from frappe.model.mapper import get_mapped_doc
 
 	def condition(doc):

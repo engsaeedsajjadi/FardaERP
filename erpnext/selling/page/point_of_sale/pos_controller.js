@@ -608,7 +608,7 @@ erpnext.PointOfSale.Controller = class {
 			method:
 				doc.doctype == "POS Invoice"
 					? "erpnext.accounts.doctype.pos_invoice.pos_invoice.make_sales_return"
-					: "erpnext.accounts.doctype.sales_invoice.mapper.make_sales_return",
+					: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_sales_return",
 			args: {
 				source_name: doc.name,
 				target_doc: this.frm.doc,
@@ -824,7 +824,7 @@ erpnext.PointOfSale.Controller = class {
 		} else if (is_stock_item && available_qty < qty_needed) {
 			frappe.throw({
 				message: __(
-					"Stock quantity is not enough for Item Code: {0} under warehouse {1}. Available quantity {2} {3}.",
+					"Stock quantity not enough for Item Code: {0} under warehouse {1}. Available quantity {2} {3}.",
 					[bold_item_code, bold_warehouse, bold_available_qty, bold_uom]
 				),
 				indicator: "orange",

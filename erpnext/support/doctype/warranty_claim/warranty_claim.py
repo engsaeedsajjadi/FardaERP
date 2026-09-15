@@ -4,7 +4,6 @@
 
 import frappe
 from frappe import _, session
-from frappe.model.document import Document
 from frappe.utils import now_datetime
 
 from erpnext.utilities.transaction_base import TransactionBase
@@ -62,20 +61,14 @@ class WarrantyClaim(TransactionBase):
 			self.resolution_date = now_datetime()
 
 	def on_cancel(self):
-		mv = frappe.qb.DocType("Maintenance Visit")
-		mvp = frappe.qb.DocType("Maintenance Visit Purpose")
-		# filter the parent Maintenance Visit's docstatus (as the original SQL did), not the child row's
-		visits = (
-			frappe.qb.from_(mvp)
-			.inner_join(mv)
-			.on(mvp.parent == mv.name)
-			.select(mv.name)
-			.where((mvp.prevdoc_docname == self.name) & (mv.docstatus != 2))
-			.limit(500)
-			.run()
+		lst = frappe.db.sql(
+			"""select t1.name
+			from `tabMaintenance Visit` t1, `tabMaintenance Visit Purpose` t2
+			where t2.parent = t1.name and t2.prevdoc_docname = %s and	t1.docstatus!=2""",
+			(self.name),
 		)
-		if visits:
-			lst1 = ",".join(x[0] for x in visits)
+		if lst:
+			lst1 = ",".join(x[0] for x in lst)
 			frappe.throw(_("Cancel Material Visit {0} before cancelling this Warranty Claim").format(lst1))
 		else:
 			self.db_set("status", "Cancelled")
@@ -85,26 +78,19 @@ class WarrantyClaim(TransactionBase):
 
 
 @frappe.whitelist()
-def make_maintenance_visit(source_name: str, target_doc: str | dict | Document | None = None):
+def make_maintenance_visit(source_name, target_doc=None):
 	from frappe.model.mapper import get_mapped_doc, map_child_doc
 
 	def _update_links(source_doc, target_doc, source_parent):
 		target_doc.prevdoc_doctype = source_parent.doctype
 		target_doc.prevdoc_docname = source_parent.name
 
-	mv = frappe.qb.DocType("Maintenance Visit")
-	mvp = frappe.qb.DocType("Maintenance Visit Purpose")
-	visit = (
-		frappe.qb.from_(mv)
-		.inner_join(mvp)
-		.on(mvp.parent == mv.name)
-		.select(mv.name)
-		.where(
-			(mvp.prevdoc_docname == source_name)
-			& (mv.docstatus == 1)
-			& (mv.completion_status == "Fully Completed")
-		)
-		.run()
+	visit = frappe.db.sql(
+		"""select t1.name
+		from `tabMaintenance Visit` t1, `tabMaintenance Visit Purpose` t2
+		where t2.parent=t1.name and t2.prevdoc_docname=%s
+		and t1.docstatus=1 and t1.completion_status='Fully Completed'""",
+		source_name,
 	)
 
 	if not visit:

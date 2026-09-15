@@ -5,11 +5,11 @@
 import os
 
 import frappe
-from frappe import N_ as _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.desk.page.setup_wizard.setup_wizard import add_all_roles_to
 
 from erpnext.setup.doctype.incoterm.incoterm import create_incoterms
+from erpnext.setup.utils import identity as _
 
 from .default_success_action import get_default_success_action
 
@@ -20,8 +20,6 @@ default_mail_footer = """<div style="padding: 7px; text-align: right; color: #88
 def after_install():
 	if not frappe.db.exists("Role", "Analytics"):
 		frappe.get_doc({"doctype": "Role", "role_name": "Analytics"}).insert()
-
-	create_shop_floor_roles()
 
 	set_single_defaults()
 	setup_repost_defaults()
@@ -40,6 +38,7 @@ def after_install():
 	make_default_operations()
 	update_pegged_currencies()
 	set_default_print_formats()
+	create_letter_head()
 	toggle_hidden_fields()
 	frappe.db.commit()
 
@@ -52,15 +51,6 @@ def make_default_operations():
 			doc.insert(ignore_permissions=True)
 
 
-def create_shop_floor_roles():
-	"""Roles that drive the Shop Floor page's two experiences (manager board vs operator view)."""
-	for role_name in ("Shop Floor Manager", "Shop Floor User"):
-		if not frappe.db.exists("Role", role_name):
-			frappe.get_doc({"doctype": "Role", "role_name": role_name, "desk_access": 1}).insert(
-				ignore_permissions=True
-			)
-
-
 def set_single_defaults():
 	for dt in (
 		"Accounts Settings",
@@ -69,8 +59,10 @@ def set_single_defaults():
 		"Selling Settings",
 		"Stock Settings",
 	):
-		default_values = frappe.get_all(
-			"DocField", filters={"parent": dt}, fields=["fieldname", "default"], as_list=True
+		default_values = frappe.db.sql(
+			"""select fieldname, `default` from `tabDocField`
+			where parent=%s""",
+			dt,
 		)
 		if default_values:
 			try:
@@ -345,28 +337,22 @@ def update_pegged_currencies():
 
 
 def set_default_print_formats():
-	# For each doctype, prefer the newer builder-made "Modern with Images" format,
-	# falling back to the older "with Item Image" format if it isn't present.
 	default_map = {
-		"Sales Order": ["Sales Order Modern with Images", "Sales Order with Item Image"],
-		"Sales Invoice": ["Sales Invoice Modern with Images", "Sales Invoice with Item Image"],
-		"Delivery Note": ["Delivery Note Modern with Images", "Delivery Note with Item Image"],
-		"Purchase Order": ["Purchase Order Modern with Images", "Purchase Order with Item Image"],
-		"Purchase Invoice": ["Purchase Invoice Modern with Images", "Purchase Invoice with Item Image"],
-		"POS Invoice": ["POS Invoice Modern with Images", "POS Invoice with Item Image"],
-		"Quotation": ["Quotation Modern with Images", "Quotation with Item Image"],
-		"Request for Quotation": [
-			"Request for Quotation Modern with Images",
-			"Request for Quotation with Item Image",
-		],
+		"Sales Order": "Sales Order with Item Image",
+		"Sales Invoice": "Sales Invoice with Item Image",
+		"Delivery Note": "Delivery Note with Item Image",
+		"Purchase Order": "Purchase Order with Item Image",
+		"Purchase Invoice": "Purchase Invoice with Item Image",
+		"POS Invoice": "POS Invoice with Item Image",
+		"Quotation": "Quotation with Item Image",
+		"Request for Quotation": "Request for Quotation with Item Image",
 	}
 
-	for doctype, print_formats in default_map.items():
+	for doctype, print_format in default_map.items():
 		if frappe.get_meta(doctype).default_print_format:
 			continue
 
-		print_format = next((pf for pf in print_formats if frappe.db.exists("Print Format", pf)), None)
-		if not print_format:
+		if not frappe.db.exists("Print Format", print_format):
 			continue
 
 		frappe.make_property_setter(
@@ -379,6 +365,29 @@ def set_default_print_formats():
 			},
 			validate_fields_for_doctype=False,
 		)
+
+
+def create_letter_head():
+	base_path = frappe.get_app_path("erpnext", "accounts", "letterhead")
+
+	letterheads = {
+		"Company Letterhead": "company_letterhead.html",
+		"Company Letterhead - Grey": "company_letterhead_grey.html",
+	}
+
+	for name, filename in letterheads.items():
+		if not frappe.db.exists("Letter Head", name):
+			content = frappe.read_file(os.path.join(base_path, filename))
+			doc = frappe.get_doc(
+				{
+					"doctype": "Letter Head",
+					"letter_head_name": name,
+					"source": "HTML",
+					"content": content,
+					"is_default": 1 if name == "Company Letterhead - Grey" else 0,
+				}
+			)
+			doc.insert(ignore_permissions=True)
 
 
 def toggle_hidden_fields():

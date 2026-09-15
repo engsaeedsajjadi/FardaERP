@@ -7,7 +7,7 @@ from collections import defaultdict
 import frappe
 from frappe.utils import flt
 
-from erpnext.buying.doctype.purchase_order.mapper import get_mapped_subcontracting_order
+from erpnext.buying.doctype.purchase_order.purchase_order import get_mapped_subcontracting_order
 from erpnext.controllers.subcontracting_controller import (
 	get_materials_from_supplier,
 	make_rm_stock_entry,
@@ -25,7 +25,6 @@ from erpnext.controllers.tests.test_subcontracting_controller import (
 	set_backflush_based_on,
 )
 from erpnext.manufacturing.doctype.production_plan.test_production_plan import make_bom
-from erpnext.projects.doctype.project.test_project import make_project
 from erpnext.stock.doctype.item.test_item import make_item
 from erpnext.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 from erpnext.subcontracting.doctype.subcontracting_order.subcontracting_order import (
@@ -112,82 +111,6 @@ class TestSubcontractingOrder(ERPNextTestSuite):
 		scr.cancel()
 		sco.load_from_db()
 		self.assertEqual(sco.status, "Partially Received")
-
-	def test_project_is_carried_over_from_purchase_order(self):
-		project = make_project({"project_name": "_Test SCO Project"}).name
-		po = make_subcontracted_purchase_order(project)
-
-		sco = get_mapped_subcontracting_order(source_name=po.name)
-
-		self.assertEqual(sco.project, project)
-		self.assertEqual(sco.items[0].project, project)
-
-	def test_project_cannot_differ_from_purchase_order(self):
-		project = make_project({"project_name": "_Test SCO Project"}).name
-		other_project = make_project({"project_name": "_Test SCO Project 2"}).name
-		po = make_subcontracted_purchase_order(project)
-
-		sco = get_mapped_subcontracting_order(source_name=po.name)
-		sco.items[0].project = other_project
-		self.assertRaises(frappe.ValidationError, sco.save)
-
-	def test_sco_requires_a_subcontracting_purchase_order(self):
-		sco = get_subcontracting_order(do_not_save=1)
-		sco.purchase_order = None
-		self.assertRaises(frappe.ValidationError, sco.validate_purchase_order_for_subcontracting)
-
-	def test_service_item_must_be_non_stock(self):
-		sco = get_subcontracting_order(do_not_submit=1)
-		sco.service_items[0].item_code = "_Test Item"  # a stock item
-		self.assertRaises(frappe.ValidationError, sco.validate_service_items)
-
-	def test_reserve_warehouse_must_differ_from_supplier_warehouse(self):
-		sco = get_subcontracting_order(do_not_submit=1)
-		sco.supplied_items[0].reserve_warehouse = sco.supplier_warehouse
-		self.assertRaises(frappe.ValidationError, sco.validate_supplied_items)
-
-	def test_subcontracting_receipt_applies_bom_process_loss(self):
-		sco = get_subcontracting_order()
-		frappe.db.set_value("BOM", sco.items[0].bom, "process_loss_percentage", 10)
-
-		scr = make_subcontracting_receipt(sco.name)
-
-		# 10% of the ordered 10 qty is lost in processing
-		self.assertEqual(scr.items[0].received_qty, 10)
-		self.assertEqual(scr.items[0].process_loss_qty, 1)
-		self.assertEqual(scr.items[0].qty, 9)
-
-	def test_service_cost_is_matched_by_purchase_order_item(self):
-		service_items = [
-			{
-				"warehouse": "_Test Warehouse - _TC",
-				"item_code": "Subcontracted Service Item 7",
-				"qty": 10,
-				"rate": 100,
-				"fg_item": "Subcontracted Item SA7",
-				"fg_item_qty": 10,
-			},
-			{
-				"warehouse": "_Test Warehouse - _TC",
-				"item_code": "Subcontracted Service Item 1",
-				"qty": 10,
-				"rate": 200,
-				"fg_item": "Subcontracted Item SA1",
-				"fg_item_qty": 10,
-			},
-		]
-		sco = get_subcontracting_order(service_items=service_items)
-		expected = {item.purchase_order_item: item.service_cost_per_qty for item in sco.items}
-
-		# The two finished goods have distinct service costs, so a position-based pairing would swap them
-		self.assertEqual(len(set(expected.values())), 2)
-
-		# Service costs must follow purchase_order_item, not list position
-		sco.service_items.reverse()
-		sco.calculate_service_costs()
-
-		for item in sco.items:
-			self.assertEqual(item.service_cost_per_qty, expected[item.purchase_order_item])
 
 	def test_make_rm_stock_entry(self):
 		sco = get_subcontracting_order()
@@ -841,7 +764,7 @@ class TestSubcontractingOrder(ERPNextTestSuite):
 		self.assertEqual(ordered_qty + 10, new_ordered_qty)
 
 	def test_requested_qty_for_subcontracting_order(self):
-		from erpnext.stock.doctype.material_request.mapper import make_purchase_order
+		from erpnext.stock.doctype.material_request.material_request import make_purchase_order
 		from erpnext.stock.doctype.material_request.test_material_request import make_material_request
 
 		requested_qty = frappe.db.get_value(
@@ -857,7 +780,7 @@ class TestSubcontractingOrder(ERPNextTestSuite):
 			qty=10,
 		)
 
-		self.assertEqual(mr.docstatus, 1)
+		self.assertTrue(mr.docstatus == 1)
 
 		new_requested_qty = frappe.db.get_value(
 			"Bin",
@@ -943,7 +866,7 @@ class TestSubcontractingOrder(ERPNextTestSuite):
 		sco.submit()
 
 		sre_list = get_sre_details_for_voucher("Subcontracting Order", sco.name)
-		self.assertGreater(len(sre_list), 0)
+		self.assertTrue(len(sre_list) > 0)
 
 		se_dict = make_rm_stock_entry(sco.name)
 		se = frappe.get_doc(se_dict)
@@ -1060,8 +983,9 @@ def create_subcontracting_order(**args):
 			warehouses = []
 			for item in po.items:
 				warehouses.append(item.warehouse)
-			for idx, val in enumerate(sco.items):
-				val.warehouse = warehouses[idx]
+			else:
+				for idx, val in enumerate(sco.items):
+					val.warehouse = warehouses[idx]
 
 	warehouses = set()
 	for item in sco.items:
@@ -1076,31 +1000,3 @@ def create_subcontracting_order(**args):
 			sco.submit()
 
 	return sco
-
-
-def make_subcontracted_purchase_order(project):
-	from erpnext.buying.doctype.purchase_order.test_purchase_order import create_purchase_order
-
-	service_items = [
-		{
-			"warehouse": "_Test Warehouse - _TC",
-			"item_code": "Subcontracted Service Item 7",
-			"qty": 10,
-			"rate": 100,
-			"fg_item": "Subcontracted Item SA7",
-			"fg_item_qty": 10,
-		},
-	]
-	po = create_purchase_order(
-		rm_items=service_items,
-		is_subcontracted=1,
-		supplier_warehouse="_Test Warehouse 1 - _TC",
-		do_not_submit=1,
-	)
-	po.project = project
-	for item in po.items:
-		item.project = project
-	po.save()
-	po.submit()
-
-	return po

@@ -71,12 +71,12 @@ def get_ratios_data(filters, period_list, years):
 	assets, liabilities, income, expense = get_gl_data(filters, period_list, years)
 
 	current_asset, total_asset = {}, {}
-	fixed_asset = {}
 	current_liability, total_liability = {}, {}
 	net_sales, total_income = {}, {}
 	cogs, total_expense = {}, {}
 	quick_asset = {}
 	direct_expense = {}
+	fixed_asset = {}
 
 	for year in years:
 		total_quick_asset = 0

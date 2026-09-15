@@ -519,7 +519,20 @@ def create_service_level_agreement(
 
 
 def create_customer():
-	return "_Test Customer"
+	customer = frappe.get_doc(
+		{
+			"doctype": "Customer",
+			"customer_name": "_Test Customer",
+			"customer_group": "Commercial",
+			"customer_type": "Individual",
+			"territory": "Rest Of The World",
+		}
+	)
+	if not frappe.db.exists("Customer", "_Test Customer"):
+		customer.insert(ignore_permissions=True)
+		return customer.name
+	else:
+		return frappe.db.exists("Customer", "_Test Customer")
 
 
 def create_customer_group():

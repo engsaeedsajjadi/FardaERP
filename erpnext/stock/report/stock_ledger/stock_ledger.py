@@ -3,6 +3,7 @@
 
 
 import copy
+from collections import defaultdict
 
 import frappe
 from frappe import _
@@ -903,8 +904,6 @@ def get_opening_balance_for_inv_dimension(filters, inv_dimension_wise_value):
 			query = query.where(sl_doctype[key].isin(value))
 		else:
 			query = query.where(sl_doctype[key] == value)
-
-	query = query.groupby(sl_doctype.item_code, sl_doctype.warehouse)
 
 	opening_data = query.run(as_dict=True)
 

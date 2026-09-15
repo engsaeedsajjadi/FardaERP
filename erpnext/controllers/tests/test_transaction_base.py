@@ -1,3 +1,5 @@
+import unittest
+
 import frappe
 
 from erpnext.tests.utils import ERPNextTestSuite

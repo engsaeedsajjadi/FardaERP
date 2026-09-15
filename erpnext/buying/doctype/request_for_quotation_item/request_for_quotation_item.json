@@ -30,9 +30,7 @@
   "col_break4",
   "material_request",
   "material_request_item",
-  "accounting_dimensions_section",
-  "cost_center",
-  "dimension_col_break",
+  "section_break_24",
   "project_name",
   "section_break_23",
   "page_break"
@@ -256,20 +254,9 @@
   },
   {
    "collapsible": 1,
-   "fieldname": "accounting_dimensions_section",
+   "fieldname": "section_break_24",
    "fieldtype": "Section Break",
    "label": "Accounting Dimensions"
-  },
-  {
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "label": "Cost Center",
-   "options": "Cost Center",
-   "print_hide": 1
-  },
-  {
-   "fieldname": "dimension_col_break",
-   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,

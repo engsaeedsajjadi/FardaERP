@@ -19,12 +19,9 @@ def get_list_context(context=None):
 		"currency": frappe.db.get_default("currency"),
 		"currency_symbols": json.dumps(
 			dict(
-				frappe.get_all(
-					"Currency",
-					filters={"enabled": 1},
-					fields=["name", "symbol"],
-					as_list=True,
-					limit_page_length=0,  # all enabled currencies are needed for the symbol map
+				frappe.db.sql(
+					"""select name, symbol
+			from tabCurrency where enabled=1"""
 				)
 			)
 		),
@@ -310,7 +307,7 @@ def add_role_for_portal_user(portal_user, role):
 		return
 
 	user_doc.add_roles(role)
-	frappe.msgprint(_("Added {1} role to user {0}.").format(frappe.bold(user_doc.name), role), alert=True)
+	frappe.msgprint(_("Added {1} Role to User {0}.").format(frappe.bold(user_doc.name), role), alert=True)
 
 
 def link_portal_users_to_contacts(doc):

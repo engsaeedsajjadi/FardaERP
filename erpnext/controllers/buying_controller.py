@@ -35,10 +35,6 @@ class BuyingController(SubcontractingController):
 		self.flags.ignore_permlevel_for_fields = ["buying_price_list", "price_list_currency"]
 
 	def validate(self):
-		from erpnext.stock.doctype.landed_cost_voucher.landed_cost_voucher import (
-			set_landed_cost_voucher_amount,
-		)
-
 		self.set_rate_for_standalone_debit_note()
 
 		super().validate()
@@ -63,7 +59,12 @@ class BuyingController(SubcontractingController):
 			self.validate_rejected_warehouse()
 			self.validate_accepted_rejected_qty()
 			validate_for_items(self)
-			set_landed_cost_voucher_amount(self)
+
+			# sub-contracting
+			self.validate_for_subcontracting()
+			if self.get("is_old_subcontracting_flow"):
+				self.create_raw_materials_supplied_or_received()
+			self.set_landed_cost_voucher_amount()
 
 		if self.doctype in ("Purchase Receipt", "Purchase Invoice"):
 			self.update_valuation_rate()
@@ -121,7 +122,7 @@ class BuyingController(SubcontractingController):
 			msg += f"<li>{po} ({date})</li>"
 		msg += "</ul>"
 
-		frappe.throw(msg)
+		frappe.throw(_(msg))
 
 	def create_package_for_transfer(self) -> None:
 		"""Create serial and batch package for Sourece Warehouse in case of inter transfer."""
@@ -279,7 +280,7 @@ class BuyingController(SubcontractingController):
 		if self.is_return and len(not_cancelled_asset):
 			frappe.throw(
 				_(
-					"{0} has submitted assets linked to it. You need to cancel the assets to create purchase return."
+					"{} has submitted assets linked to it. You need to cancel the assets to create purchase return."
 				).format(self.return_against),
 				title=_("Not Allowed"),
 			)
@@ -296,8 +297,8 @@ class BuyingController(SubcontractingController):
 				frappe.throw(
 					_("Row #{idx}: {from_warehouse_field} and {to_warehouse_field} cannot be same.").format(
 						idx=item.idx,
-						from_warehouse_field=item.meta.get_translated_label("from_warehouse"),
-						to_warehouse_field=item.meta.get_translated_label("warehouse"),
+						from_warehouse_field=_(item.meta.get_label("from_warehouse")),
+						to_warehouse_field=_(item.meta.get_label("warehouse")),
 					)
 				)
 
@@ -427,13 +428,13 @@ class BuyingController(SubcontractingController):
 		(
 			tax_accounts,
 			total_valuation_amount,
-			total_actual_tax_amount,
-			total_actual_tax_on_stock_items,
+			all_item_charges,
+			stock_item_charges,
 		) = self.get_tax_details()
 
-		# Pre-compute each item's share of the "Actual" valuation charges (keyed by row object).
+		# Pre-compute each item's share of the "Actual" valuation charges (keyed by row idx).
 		actual_charge_per_item = self.distribute_actual_tax_amount(
-			stock_and_asset_items, total_actual_tax_amount, total_actual_tax_on_stock_items
+			stock_and_asset_items, all_item_charges, stock_item_charges
 		)
 
 		last_item_idx = max((d.idx for d in self.get("items")), default=1)
@@ -481,12 +482,21 @@ class BuyingController(SubcontractingController):
 				if not qty_in_stock_uom and item.get("rejected_qty"):
 					qty_in_stock_uom = flt(item.rejected_qty * item.conversion_factor)
 
-				item.valuation_rate = (
-					net_rate
-					+ item.item_tax_amount
-					+ flt(item.landed_cost_voucher_amount)
-					+ flt(item.get("amount_difference_with_purchase_invoice"))
-				) / qty_in_stock_uom
+				if self.get("is_old_subcontracting_flow"):
+					item.rm_supp_cost = self.get_supplied_items_cost(item.name, reset_outgoing_rate)
+					item.valuation_rate = (
+						net_rate
+						+ item.item_tax_amount
+						+ item.rm_supp_cost
+						+ flt(item.landed_cost_voucher_amount)
+					) / qty_in_stock_uom
+				else:
+					item.valuation_rate = (
+						net_rate
+						+ item.item_tax_amount
+						+ flt(item.landed_cost_voucher_amount)
+						+ flt(item.get("amount_difference_with_purchase_invoice"))
+					) / qty_in_stock_uom
 			else:
 				item.valuation_rate = 0.0
 
@@ -495,8 +505,11 @@ class BuyingController(SubcontractingController):
 	def get_tax_details(self):
 		tax_accounts = []
 		total_valuation_amount = 0.0
-		total_actual_tax_amount = 0.0
-		total_actual_tax_on_stock_items = 0.0
+		# Per-row "Actual" valuation charge amounts, kept separate (not pooled) so each can be
+		# distributed individually - this keeps the per-item item_tax_amount in lockstep with the
+		# per-tax-row amount capitalized in the GL (see get_capitalized_valuation_tax).
+		all_item_charges = []
+		stock_item_charges = []
 
 		for d in self.get("taxes"):
 			if d.category not in ["Valuation", "Valuation and Total"]:
@@ -510,12 +523,12 @@ class BuyingController(SubcontractingController):
 				total_valuation_amount += amount
 				tax_accounts.append(d.account_head)
 			elif d.charge_type == "Actual" and d.get("allocate_full_amount_to_stock_items"):
-				# Allocate the full amount to stock/asset items only (e.g. Freight)
-				total_actual_tax_on_stock_items += amount
+				# Capitalize the full amount onto stock/asset items only (e.g. Freight)
+				stock_item_charges.append(amount)
 			else:
-				total_actual_tax_amount += amount
+				all_item_charges.append(amount)
 
-		return tax_accounts, total_valuation_amount, total_actual_tax_amount, total_actual_tax_on_stock_items
+		return tax_accounts, total_valuation_amount, all_item_charges, stock_item_charges
 
 	def get_item_tax_amount(self, item, tax_accounts):
 		item_tax_amount = 0.0
@@ -536,20 +549,26 @@ class BuyingController(SubcontractingController):
 
 		return item_tax_amount
 
-	def distribute_actual_tax_amount(self, stock_and_asset_items, total_on_all_items, total_on_stock_items):
+	def distribute_actual_tax_amount(self, stock_and_asset_items, all_item_charges, stock_item_charges):
 		"""Distribute "Actual" valuation charges to each item, keyed by row idx.
 
-		`total_on_all_items` is spread across every item by net amount; a non-stock item's
-		share is computed but never capitalized (e.g. a genuine tax). `total_on_stock_items`
-		(flagged `allocate_full_amount_to_stock_items`) is spread across stock/asset items only,
-		so the whole charge is capitalized (e.g. Freight).
+		Each charge is spread individually (not pooled together) so the resulting per-item
+		item_tax_amount decomposes exactly into the per-tax-row amount capitalized in the GL
+		(see get_capitalized_valuation_tax) - pooling first and spreading the aggregate can drift
+		by rounding for multiple charges over unevenly valued items. A charge in `all_item_charges`
+		is spread across every item by net amount; a non-stock item's share is computed but never
+		capitalized (e.g. a genuine tax). A charge in `stock_item_charges` (flagged
+		`allocate_full_amount_to_stock_items`) is spread across stock/asset items only, so the whole
+		charge is capitalized (e.g. Freight).
 		"""
 		all_items = [d for d in self.get("items") if d.item_code]
 		stock_items = [d for d in all_items if d.item_code in stock_and_asset_items]
 
 		charge_per_item = {}
-		self._spread_charge_over_items(charge_per_item, total_on_all_items, all_items)
-		self._spread_charge_over_items(charge_per_item, total_on_stock_items, stock_items)
+		for charge in all_item_charges:
+			self._spread_charge_over_items(charge_per_item, charge, all_items)
+		for charge in stock_item_charges:
+			self._spread_charge_over_items(charge_per_item, charge, stock_items)
 		return charge_per_item
 
 	def _spread_charge_over_items(self, charge_per_item, total_charge, items):
@@ -689,6 +708,36 @@ class BuyingController(SubcontractingController):
 					* (d.conversion_factor or 1)
 				)
 
+	def validate_for_subcontracting(self):
+		if self.is_subcontracted and self.get("is_old_subcontracting_flow"):
+			if self.doctype in ["Purchase Receipt", "Purchase Invoice"] and not self.supplier_warehouse:
+				frappe.throw(
+					_("{field_label} is mandatory for sub-contracted {doctype}.").format(
+						field_label=_(self.meta.get_label("supplier_warehouse")), doctype=_(self.doctype)
+					)
+				)
+
+			for item in self.get("items"):
+				if item in self.sub_contracted_items and not item.bom:
+					frappe.throw(
+						_("Please select BOM in BOM field for Item {item_code}.").format(
+							item_code=frappe.bold(item.item_code)
+						)
+					)
+			if self.doctype != "Purchase Order":
+				return
+			for row in self.get("supplied_items"):
+				if not row.reserve_warehouse:
+					frappe.throw(
+						_(
+							"Reserved Warehouse is mandatory for the Item {item_code} in Raw Materials supplied."
+						).format(item_code=frappe.bold(row.rm_item_code))
+					)
+		else:
+			for item in self.get("items"):
+				if item.get("bom"):
+					item.bom = None
+
 	def set_qty_as_per_stock_uom(self):
 		allow_to_edit_stock_qty = frappe.get_single_value(
 			"Stock Settings", "allow_to_edit_stock_uom_qty_for_purchase"
@@ -702,7 +751,7 @@ class BuyingController(SubcontractingController):
 					frappe.throw(
 						_("Row #{idx}: {field_label} is mandatory.").format(
 							idx=d.idx,
-							field_label=d.meta.get_translated_label("conversion_factor"),
+							field_label=_(d.meta.get_label("conversion_factor")),
 						)
 					)
 				d.stock_qty = flt(d.qty) * flt(d.conversion_factor)
@@ -749,7 +798,7 @@ class BuyingController(SubcontractingController):
 				frappe.throw(
 					_("Row #{idx}: {field_label} can not be negative for item {item_code}.").format(
 						idx=item_row["idx"],
-						field_label=frappe.get_meta(item_row.doctype).get_translated_label(fieldname),
+						field_label=frappe.get_meta(item_row.doctype).get_label(fieldname),
 						item_code=frappe.bold(item_row["item_code"]),
 					)
 				)
@@ -889,6 +938,9 @@ class BuyingController(SubcontractingController):
 					)
 				)
 
+		if self.get("is_old_subcontracting_flow"):
+			self.make_sl_entries_for_supplier_warehouse(sl_entries)
+
 		self.make_sl_entries(
 			sl_entries,
 			allow_negative_stock=allow_negative_stock,
@@ -924,6 +976,7 @@ class BuyingController(SubcontractingController):
 	def check_purchase_order_on_hold_or_close(self, ref_fieldname, exclude_if_field=None):
 		if self.get("is_return"):
 			return
+
 		self.check_for_on_hold_or_closed_status(
 			"Purchase Order", ref_fieldname, exclude_if_field=exclude_if_field
 		)
@@ -951,6 +1004,8 @@ class BuyingController(SubcontractingController):
 					)
 
 				po_obj.update_ordered_qty(po_item_rows)
+				if self.get("is_old_subcontracting_flow"):
+					po_obj.update_reserved_qty_for_subcontract()
 
 	def on_submit(self):
 		if self.get("is_return"):
@@ -1141,14 +1196,15 @@ class BuyingController(SubcontractingController):
 					asset = frappe.get_doc("Asset", asset.name)
 					if delete_asset and is_auto_create_enabled:
 						# need to delete movements to delete assets otherwise throws link exists error
-						movements = frappe.get_all(
-							"Asset Movement Item",
-							filters={"asset": asset.name},
-							pluck="parent",
-							limit_page_length=0,  # delete every movement of the asset (no default 20 cap)
+						movements = frappe.db.sql(
+							"""SELECT asm.name
+							FROM `tabAsset Movement` asm, `tabAsset Movement Item` asm_item
+							WHERE asm_item.parent=asm.name and asm_item.asset=%s""",
+							asset.name,
+							as_dict=1,
 						)
 						for movement in movements:
-							frappe.delete_doc("Asset Movement", movement, force=1)
+							frappe.delete_doc("Asset Movement", movement.name, force=1)
 						frappe.delete_doc("Asset", asset.name, force=1)
 						continue
 
@@ -1202,14 +1258,14 @@ class BuyingController(SubcontractingController):
 					frappe.throw(
 						_("Row #{idx}: {schedule_date} cannot be before {transaction_date}.").format(
 							idx=d.idx,
-							schedule_date=self.meta.get_translated_label("schedule_date"),
-							transaction_date=self.meta.get_translated_label("transaction_date"),
+							schedule_date=_(self.meta.get_label("schedule_date")),
+							transaction_date=_(self.meta.get_label("transaction_date")),
 						)
 					)
 		else:
 			frappe.throw(
 				_("Please enter the {schedule_date}.").format(
-					schedule_date=self.meta.get_translated_label("schedule_date")
+					schedule_date=_(self.meta.get_label("schedule_date"))
 				)
 			)
 
@@ -1218,7 +1274,10 @@ class BuyingController(SubcontractingController):
 		if self.doctype == "Material Request":
 			return
 
-		validate_item_type(self, "is_purchase_item", "purchase")
+		if self.get("is_old_subcontracting_flow"):
+			validate_item_type(self, "is_sub_contracted_item", "subcontracted")
+		else:
+			validate_item_type(self, "is_purchase_item", "purchase")
 
 
 def get_asset_item_details(asset_items):
@@ -1241,12 +1300,17 @@ def validate_item_type(doc, fieldname, message):
 	if not items:
 		return
 
-	invalid_items = frappe.get_all(
-		"Item",
-		filters={"name": ["in", items], fieldname: 0},
-		pluck="item_code",
-		limit_page_length=0,  # validate every item in the document (no default 20 cap)
-	)
+	item_list = ", ".join(["%s" % frappe.db.escape(d) for d in items])
+
+	invalid_items = [
+		d[0]
+		for d in frappe.db.sql(
+			f"""
+		select item_code from tabItem where name in ({item_list}) and {fieldname}=0
+		""",
+			as_list=True,
+		)
+	]
 
 	if invalid_items:
 		items = ", ".join([d for d in invalid_items])

@@ -2,6 +2,8 @@
 # License: GNU General Public License v3. See license.txt
 
 
+import unittest
+
 import frappe
 
 from erpnext.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -91,9 +93,7 @@ class TestPricingRule(ERPNextTestSuite):
 		details = get_item_details(args)
 		self.assertEqual(details.get("discount_percentage"), 5)
 
-		frappe.db.set_value(
-			"Pricing Rule", {"campaign": "_Test Campaign"}, "priority", None, update_modified=False
-		)
+		frappe.db.sql("update `tabPricing Rule` set priority=NULL where campaign='_Test Campaign'")
 		from erpnext.accounts.doctype.pricing_rule.utils import MultiplePricingRuleConflict
 
 		self.assertRaises(MultiplePricingRuleConflict, get_item_details, args)

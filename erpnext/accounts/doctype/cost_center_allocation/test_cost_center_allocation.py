@@ -1,5 +1,6 @@
 # Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+import unittest
 
 import frappe
 from frappe.query_builder.functions import Sum
@@ -182,7 +183,7 @@ class TestCostCenterAllocation(ERPNextTestSuite):
 		self.assertTrue(gl_entries)
 
 		for gle in gl_entries:
-			self.assertIn(gle.cost_center, expected_values)
+			self.assertTrue(gle.cost_center in expected_values)
 			self.assertEqual(gle.debit, 0)
 			self.assertEqual(gle.credit, expected_values[gle.cost_center])
 

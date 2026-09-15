@@ -13,7 +13,6 @@ from erpnext.accounts.doctype.financial_report_template.financial_report_engine 
 from erpnext.accounts.report.financial_statements import (
 	accumulate_values_into_parents,
 	add_total_row,
-	build_period_list,
 	calculate_values,
 	compute_growth_view_data,
 	compute_margin_view_data,
@@ -24,7 +23,7 @@ from erpnext.accounts.report.financial_statements import (
 	get_columns,
 	get_data,
 	get_filtered_list_for_consolidated_report,
-	get_period_keys_for_total,
+	get_period_list,
 	prepare_data,
 )
 
@@ -33,10 +32,15 @@ def execute(filters=None):
 	if filters and filters.report_template:
 		return FinancialReportEngine().execute(filters)
 
-	period_list = build_period_list(filters)
-
-	if not period_list:
-		return
+	period_list = get_period_list(
+		filters.from_fiscal_year,
+		filters.to_fiscal_year,
+		filters.period_start_date,
+		filters.period_end_date,
+		filters.filter_based_on,
+		filters.periodicity,
+		company=filters.company,
+	)
 
 	income = get_data(
 		filters.company,
@@ -59,12 +63,7 @@ def execute(filters=None):
 	)
 
 	net_profit_loss = get_net_profit_loss(
-		income,
-		expense,
-		period_list,
-		filters.company,
-		filters.presentation_currency,
-		accumulated_values=bool(filters.accumulated_values),
+		income, expense, period_list, filters.company, filters.presentation_currency
 	)
 
 	data = []
@@ -73,13 +72,7 @@ def execute(filters=None):
 	if net_profit_loss:
 		data.append(net_profit_loss)
 
-	columns = get_columns(
-		filters.periodicity,
-		period_list,
-		filters.accumulated_values,
-		filters.company,
-		selected_view=filters.get("selected_view"),
-	)
+	columns = get_columns(filters.periodicity, period_list, filters.accumulated_values, filters.company)
 
 	currency = filters.presentation_currency or frappe.get_cached_value(
 		"Company", filters.company, "default_currency"
@@ -94,38 +87,39 @@ def execute(filters=None):
 		compute_growth_view_data(data, period_list)
 
 	if filters.get("selected_view") == "Margin":
-		compute_margin_view_data(data, period_list)
+		compute_margin_view_data(data, period_list, filters.accumulated_values)
 
 	return columns, data, None, chart, report_summary, primitive_summary
 
 
 def get_report_summary(
-	period_list,
-	periodicity,
-	income,
-	expense,
-	net_profit_loss,
-	currency,
-	filters,
-	consolidated=False,
+	period_list, periodicity, income, expense, net_profit_loss, currency, filters, consolidated=False
 ):
 	net_income, net_expense, net_profit = 0.0, 0.0, 0.0
 
 	# from consolidated financial statement
 	if filters.get("accumulated_in_group_company"):
 		period_list = get_filtered_list_for_consolidated_report(filters, period_list)
-		keys = [period if consolidated else period.key for period in period_list]
-	else:
-		keys = get_period_keys_for_total(period_list, filters.accumulated_values, consolidated)
 
-	# get_data() output: [...account rows..., total_row, {}]  →  [-2] = total row, [-1] = blank separator
-	for key in keys:
+	if filters.accumulated_values:
+		# when 'accumulated_values' is enabled, periods have running balance.
+		# so, last period will have the net amount.
+		key = period_list[-1].key
 		if income:
-			net_income += flt(income[-2].get(key))
+			net_income = income[-2].get(key)
 		if expense:
-			net_expense += flt(expense[-2].get(key))
+			net_expense = expense[-2].get(key)
 		if net_profit_loss:
-			net_profit += flt(net_profit_loss.get(key))
+			net_profit = net_profit_loss.get(key)
+	else:
+		for period in period_list:
+			key = period if consolidated else period.key
+			if income:
+				net_income += income[-2].get(key)
+			if expense:
+				net_expense += expense[-2].get(key)
+			if net_profit_loss:
+				net_profit += net_profit_loss.get(key)
 
 	if len(period_list) == 1 and periodicity == "Yearly":
 		profit_label = _("Profit This Year")
@@ -149,15 +143,8 @@ def get_report_summary(
 	], net_profit
 
 
-def get_net_profit_loss(
-	income,
-	expense,
-	period_list,
-	company,
-	currency=None,
-	consolidated=False,
-	accumulated_values=False,
-):
+def get_net_profit_loss(income, expense, period_list, company, currency=None, consolidated=False):
+	total = 0
 	net_profit_loss = {
 		"account_name": "'" + _("Profit for the year") + "'",
 		"account": "'" + _("Profit for the year") + "'",
@@ -177,9 +164,8 @@ def get_net_profit_loss(
 		if net_profit_loss[key]:
 			has_value = True
 
-	total_keys = get_period_keys_for_total(period_list, accumulated_values, consolidated)
-
-	net_profit_loss["total"] = flt(sum(net_profit_loss.get(k, 0.0) for k in total_keys))
+		total += flt(net_profit_loss[key])
+		net_profit_loss["total"] = total
 
 	if has_value:
 		return net_profit_loss
@@ -229,7 +215,15 @@ def execute_snapshot_report(filters):
 			_("Profit and Loss Statement requires {0} to be synced to DuckDB").format(frappe.bold("GL Entry"))
 		)
 
-	period_list = build_period_list(filters)
+	period_list = get_period_list(
+		filters.from_fiscal_year,
+		filters.to_fiscal_year,
+		filters.period_start_date,
+		filters.period_end_date,
+		filters.filter_based_on,
+		filters.periodicity,
+		company=filters.company,
+	)
 
 	income = _get_data_duckdb(conn, filters, "Income", "Credit", period_list)
 	expense = _get_data_duckdb(conn, filters, "Expense", "Debit", period_list)

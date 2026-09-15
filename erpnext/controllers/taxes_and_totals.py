@@ -13,6 +13,7 @@ from frappe.utils import cint, flt, round_based_on_smallest_currency_fraction
 import erpnext
 from erpnext.accounts.doctype.journal_entry.journal_entry import get_exchange_rate
 from erpnext.accounts.doctype.pricing_rule.utils import get_applied_pricing_rules
+from erpnext.accounts.utils import get_zero_cutoff
 from erpnext.controllers.accounts_controller import (
 	validate_conversion_rate,
 	validate_inclusive_tax,
@@ -21,6 +22,7 @@ from erpnext.controllers.accounts_controller import (
 from erpnext.deprecation_dumpster import deprecated
 from erpnext.stock.get_item_details import (
 	NOT_APPLICABLE_TAX,
+	ItemDetailsCtx,
 	_get_item_tax_template,
 	get_item_tax_map,
 )
@@ -98,7 +100,7 @@ class calculate_taxes_and_totals:
 		for item in self.doc.items:
 			if item.item_code and item.get("item_tax_template"):
 				item_doc = frappe.get_cached_doc("Item", item.item_code)
-				ctx = frappe._dict(
+				ctx = ItemDetailsCtx(
 					{
 						"net_rate": item.net_rate or item.rate,
 						"base_net_rate": item.base_net_rate or item.base_rate,
@@ -130,9 +132,9 @@ class calculate_taxes_and_totals:
 					if item.item_tax_template not in taxes:
 						item.item_tax_template = taxes[0]
 						frappe.msgprint(
-							_(
-								"Row {0}: Item Tax template for {1} updated as per validity and rate applied"
-							).format(item.idx, frappe.bold(item.item_code))
+							_("Row {0}: Item Tax template updated as per validity and rate applied").format(
+								item.idx, frappe.bold(item.item_code)
+							)
 						)
 
 						# For correct tax_amount calculation re-computation is required
@@ -157,7 +159,7 @@ class calculate_taxes_and_totals:
 			validate_conversion_rate(
 				self.doc.currency,
 				self.doc.conversion_rate,
-				self.doc.meta.get_translated_label("conversion_rate"),
+				self.doc.meta.get_label("conversion_rate"),
 				self.doc.company,
 			)
 
@@ -347,7 +349,7 @@ class calculate_taxes_and_totals:
 				self._set_in_company_currency(item, ["net_rate", "net_amount"])
 
 	def _load_item_tax_rate(self, item_tax_rate):
-		return frappe.parse_json(item_tax_rate) if item_tax_rate else {}
+		return json.loads(item_tax_rate) if item_tax_rate else {}
 
 	def get_current_tax_fraction(self, tax, item_tax_map, item):
 		"""
@@ -574,7 +576,7 @@ class calculate_taxes_and_totals:
 				+ "<br>".join(invalid_rows)
 			)
 
-			frappe.throw(message)
+			frappe.throw(_(message))
 
 	def get_tax_amount_if_for_valuation_or_deduction(self, tax_amount, tax):
 		# if just for valuation, do not add the tax amount in total
@@ -1335,6 +1337,11 @@ def get_itemised_tax(doc, with_tax_account=False):
 			tax_info.tax_account = tax.account_head
 
 	return itemised_tax
+
+
+from erpnext.deprecation_dumpster import (
+	taxes_and_totals_get_itemised_taxable_amount as get_itemised_taxable_amount,
+)
 
 
 def get_rounded_tax_amount(itemised_tax, precision):

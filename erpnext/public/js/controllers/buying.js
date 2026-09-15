@@ -69,7 +69,7 @@ erpnext.buying = {
 				if (this.frm.fields_dict.buying_price_list) {
 					this.frm.set_query("buying_price_list", function () {
 						return {
-							filters: { buying: 1, enabled: 1 },
+							filters: { buying: 1 },
 						};
 					});
 				}
@@ -91,8 +91,12 @@ erpnext.buying = {
 
 				this.frm.set_query("item_code", "items", function () {
 					if (me.frm.doc.is_subcontracted) {
-						var filters = { supplier: me.frm.doc.supplier, company: me.frm.doc.company };
-						filters["is_stock_item"] = 0;
+						var filters = { supplier: me.frm.doc.supplier };
+						if (me.frm.doc.is_old_subcontracting_flow) {
+							filters["is_sub_contracted_item"] = 1;
+						} else {
+							filters["is_stock_item"] = 0;
+						}
 
 						return {
 							query: "erpnext.controllers.queries.item_query",
@@ -101,12 +105,7 @@ erpnext.buying = {
 					} else {
 						return {
 							query: "erpnext.controllers.queries.item_query",
-							filters: {
-								supplier: me.frm.doc.supplier,
-								is_purchase_item: 1,
-								has_variants: 0,
-								company: me.frm.doc.company,
-							},
+							filters: { supplier: me.frm.doc.supplier, is_purchase_item: 1, has_variants: 0 },
 						};
 					}
 				});
@@ -263,7 +262,7 @@ erpnext.buying = {
 						frappe.msgprint(
 							__("Row #{0}: {1} can not be negative for item {2}", [
 								item.idx,
-								frappe.meta.get_translated_label(cdt, fieldnames[i], cdn),
+								__(frappe.meta.get_label(cdt, fieldnames[i], cdn)),
 								item.item_code,
 							])
 						);
@@ -541,7 +540,7 @@ erpnext.buying.link_to_mrs = function (frm) {
 			var item_length = frm.doc.items.length;
 			for (let item of frm.doc.items) {
 				var qty = item.qty;
-				(r.message || []).forEach(function (d) {
+				(r.message[0] || []).forEach(function (d) {
 					if (
 						d.qty > 0 &&
 						qty > 0 &&
@@ -557,10 +556,10 @@ erpnext.buying.link_to_mrs = function (frm) {
 						item.qty = my_qty;
 
 						frappe.msgprint(
-							__("Assigning {0} to {1} (row {2})", [d.mr_name, d.item_code, item.idx])
+							"Assigning " + d.mr_name + " to " + d.item_code + " (row " + item.idx + ")"
 						);
 						if (qty > 0) {
-							frappe.msgprint(__("Splitting {0} units of {1}", [qty, d.item_code]));
+							frappe.msgprint("Splitting " + qty + " units of " + d.item_code);
 							var newrow = frappe.model.add_child(frm.doc, item.doctype, "items");
 							item_length++;
 
@@ -613,7 +612,7 @@ erpnext.buying.get_items_from_product_bundle = function (frm) {
 				options: "Product Bundle",
 				reqd: 1,
 				get_query: () => {
-					return { filters: { docstatus: 1, disabled: 0 } };
+					return { filters: { disabled: 0 } };
 				},
 			},
 			{
@@ -633,7 +632,7 @@ erpnext.buying.get_items_from_product_bundle = function (frm) {
 				method: "erpnext.stock.doctype.packed_item.packed_item.get_items_from_product_bundle",
 				args: {
 					row: {
-						product_bundle: args.product_bundle,
+						item_code: args.product_bundle,
 						quantity: args.quantity,
 						parenttype: frm.doc.doctype,
 						parent: frm.doc.name,

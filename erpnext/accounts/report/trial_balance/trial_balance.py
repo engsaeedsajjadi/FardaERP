@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.query_builder.functions import Max, Sum
+from frappe.query_builder.functions import Sum
 from frappe.utils import add_days, cstr, flt, formatdate, getdate
 
 import erpnext
@@ -82,21 +82,12 @@ def validate_filters(filters):
 
 
 def get_data(filters):
-	accounts = frappe.get_all(
-		"Account",
-		filters={"company": filters.company},
-		fields=[
-			"name",
-			"account_number",
-			"parent_account",
-			"account_name",
-			"root_type",
-			"report_type",
-			"is_group",
-			"lft",
-			"rgt",
-		],
-		order_by="lft",
+	accounts = frappe.db.sql(
+		"""select name, account_number, parent_account, account_name, root_type, report_type, is_group, lft, rgt
+
+		from `tabAccount` where company=%s order by lft""",
+		filters.company,
+		as_dict=True,
 	)
 	company_currency = filters.presentation_currency or erpnext.get_company_currency(filters.company)
 
@@ -249,8 +240,7 @@ def get_opening_balance(
 		frappe.qb.from_(closing_balance)
 		.select(
 			closing_balance.account,
-			# account_currency is constant per grouped account -> Max() keeps the GROUP BY postgres-valid
-			Max(closing_balance.account_currency).as_("account_currency"),
+			closing_balance.account_currency,
 			Sum(closing_balance.debit).as_("debit"),
 			Sum(closing_balance.credit).as_("credit"),
 			Sum(closing_balance.debit_in_account_currency).as_("debit_in_account_currency"),
@@ -597,21 +587,11 @@ def execute_snapshot_report(filters):
 
 def get_data_duckdb(filters, conn):
 	# accounts and all metadata via frappe.db — only GL Entry comes from DuckDB
-	accounts = frappe.get_all(
-		"Account",
-		filters={"company": filters.company},
-		fields=[
-			"name",
-			"account_number",
-			"parent_account",
-			"account_name",
-			"root_type",
-			"report_type",
-			"is_group",
-			"lft",
-			"rgt",
-		],
-		order_by="lft",
+	accounts = frappe.db.sql(
+		"""select name, account_number, parent_account, account_name, root_type, report_type, is_group, lft, rgt
+		from `tabAccount` where company=%s order by lft""",
+		filters.company,
+		as_dict=True,
 	)
 	if not accounts:
 		return None

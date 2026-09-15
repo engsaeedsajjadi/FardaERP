@@ -2,7 +2,6 @@
 # License: GNU General Public License v3. See license.txt
 
 
-import datetime
 from collections import OrderedDict, defaultdict
 
 import frappe
@@ -10,7 +9,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname, revert_series_if_last
 from frappe.utils import cint, flt, get_link_to_form
-from frappe.utils.data import DateTimeLikeObject, add_days
+from frappe.utils.data import add_days
 
 
 class UnableToSelectBatchError(frappe.ValidationError):
@@ -235,18 +234,18 @@ class Batch(Document):
 
 @frappe.whitelist()
 def get_batch_qty(
-	batch_no: str | None = None,
-	warehouse: str | None = None,
-	item_code: str | None = None,
-	creation: DateTimeLikeObject | None = None,
-	posting_datetime: DateTimeLikeObject | None = None,
-	posting_date: DateTimeLikeObject | None = None,
-	posting_time: datetime.timedelta | None = None,
-	ignore_voucher_nos: list | None = None,
-	for_stock_levels: bool = False,
-	consider_negative_batches: bool = False,
-	do_not_check_future_batches: bool = False,
-	ignore_reserved_stock: bool = False,
+	batch_no=None,
+	warehouse=None,
+	item_code=None,
+	creation=None,
+	posting_datetime=None,
+	posting_date=None,
+	posting_time=None,
+	ignore_voucher_nos=None,
+	for_stock_levels=False,
+	consider_negative_batches=False,
+	do_not_check_future_batches=False,
+	ignore_reserved_stock=False,
 ):
 	"""Returns batch actual qty if warehouse is passed,
 	        or returns dict of qty by warehouse if warehouse is None
@@ -295,26 +294,15 @@ def get_batch_qty(
 
 
 @frappe.whitelist()
-def get_batches_by_oldest(item_code: str, warehouse: str):
+def get_batches_by_oldest(item_code, warehouse):
 	"""Returns the oldest batch and qty for the given item_code and warehouse"""
 	batches = get_batch_qty(item_code=item_code, warehouse=warehouse)
-	if not batches:
-		return []
-
-	expiry_dates = dict(
-		frappe.get_all(
-			"Batch",
-			filters={"name": ["in", {batch.batch_no for batch in batches}]},
-			fields=["name", "expiry_date"],
-			as_list=True,
-		)
-	)
-	batches_dates = [[batch, expiry_dates.get(batch.batch_no)] for batch in batches]
+	batches_dates = [[batch, frappe.get_value("Batch", batch.batch_no, "expiry_date")] for batch in batches]
 	batches_dates.sort(key=lambda tup: (tup[1] is None, tup[1]))
 	return batches_dates
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist()
 def split_batch(batch_no: str, item_code: str, warehouse: str, qty: float, new_batch_id: str | None = None):
 	"""Split the batch into a new batch"""
 	batch = frappe.get_doc(doctype="Batch", item=item_code, batch_id=new_batch_id).insert()
@@ -403,7 +391,7 @@ def validate_serial_no_with_batch(serial_nos, item_code):
 
 	serial_no_link = ",".join(get_link_to_form("Serial No", sn) for sn in serial_nos)
 
-	message = _("Serial Nos") if len(serial_nos) > 1 else _("Serial No")
+	message = "Serial Nos" if len(serial_nos) > 1 else "Serial No"
 	frappe.throw(_("There is no batch found against the {0}: {1}").format(message, serial_no_link))
 
 
@@ -414,10 +402,11 @@ def make_batch(kwargs):
 
 
 @frappe.whitelist()
-def get_pos_reserved_batch_qty(filters: dict | str):
+def get_pos_reserved_batch_qty(filters):
 	import json
 
-	filters = frappe.parse_json(filters)
+	if isinstance(filters, str):
+		filters = json.loads(filters)
 
 	p = frappe.qb.DocType("POS Invoice").as_("p")
 	item = frappe.qb.DocType("POS Invoice Item").as_("item")

@@ -14,20 +14,5 @@ frappe.ui.form.on("Product Bundle", {
 				query: "erpnext.controllers.queries.item_query",
 			};
 		});
-
-		// A submitted bundle is immutable. To change it, create a new version
-		// (a fresh draft copied from this one) and submit that instead.
-		if (frm.doc.docstatus === 1) {
-			frm.add_custom_button(
-				__("New Version"),
-				() => {
-					frappe.model.open_mapped_doc({
-						method: "erpnext.selling.doctype.product_bundle.product_bundle.make_new_version",
-						frm: frm,
-					});
-				},
-				__("Actions")
-			);
-		}
 	},
 });

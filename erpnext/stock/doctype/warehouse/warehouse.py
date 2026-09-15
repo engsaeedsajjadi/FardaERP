@@ -3,7 +3,6 @@
 
 
 import json
-from typing import Any
 
 import frappe
 from frappe import _, throw
@@ -186,17 +185,12 @@ class Warehouse(NestedSet):
 
 
 @frappe.whitelist()
-def get_children(
-	doctype: str,
-	parent: str | None = None,
-	company: str | None = None,
-	is_root: bool = False,
-	include_disabled: bool | str = False,
-):
+def get_children(doctype, parent=None, company=None, is_root=False, include_disabled=False):
 	if is_root:
 		parent = ""
 
-	include_disabled = frappe.parse_json(include_disabled)
+	if isinstance(include_disabled, str):
+		include_disabled = json.loads(include_disabled)
 
 	fields = ["name as value", "is_group as expandable"]
 
@@ -211,7 +205,7 @@ def get_children(
 	return frappe.get_list(doctype, fields=fields, filters=filters, order_by="name")
 
 
-@frappe.whitelist(methods=["POST"])
+@frappe.whitelist()
 def add_node():
 	from frappe.desk.treeview import make_tree_args
 
@@ -224,7 +218,7 @@ def add_node():
 
 
 @frappe.whitelist()
-def convert_to_group_or_ledger(docname: str | None = None):
+def convert_to_group_or_ledger(docname=None):
 	if not docname:
 		docname = frappe.form_dict.docname
 	return frappe.get_doc("Warehouse", docname).convert_to_group_or_ledger()
@@ -307,9 +301,7 @@ def apply_warehouse_filter(query, sle, filters):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_warehouses_for_reorder(
-	doctype: str, txt: Any, searchfield: Any, start: int, page_len: int, filters: dict
-):
+def get_warehouses_for_reorder(doctype, txt, searchfield, start, page_len, filters):
 	filters = frappe._dict(filters or {})
 
 	if filters.warehouse and not frappe.db.exists("Warehouse", filters.warehouse):

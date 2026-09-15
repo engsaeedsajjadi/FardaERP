@@ -145,8 +145,6 @@ frappe.query_reports["Accounts Receivable Summary"] = {
 			fieldtype: "Check",
 		},
 	],
-	collapsible_filters: true,
-	separate_check_filters: true,
 
 	onload: function (report) {
 		report.page.add_inner_button(__("Accounts Receivable"), function () {

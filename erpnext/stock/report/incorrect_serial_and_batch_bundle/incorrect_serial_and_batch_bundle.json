@@ -1,6 +1,5 @@
 {
  "add_total_row": 0,
- "add_translate_data": 0,
  "columns": [],
  "creation": "2025-02-03 15:39:44.521366",
  "disabled": 0,
@@ -10,7 +9,9 @@
  "idx": 0,
  "is_standard": "Yes",
  "json": "{}",
- "modified": "2026-04-20 16:55:11.972979",
+ "letter_head": null,
+ "letterhead": null,
+ "modified": "2025-02-03 15:39:47.613040",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Incorrect Serial and Batch Bundle",

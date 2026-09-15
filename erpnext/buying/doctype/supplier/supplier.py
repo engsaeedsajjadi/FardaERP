@@ -40,14 +40,12 @@ class Supplier(TransactionBase):
 		from erpnext.buying.doctype.customer_number_at_supplier.customer_number_at_supplier import (
 			CustomerNumberAtSupplier,
 		)
-		from erpnext.stock.doctype.company_restriction.company_restriction import CompanyRestriction
 		from erpnext.utilities.doctype.portal_user.portal_user import PortalUser
 
 		accounts: DF.Table[PartyAccount]
 		alias: DF.Data | None
 		allow_purchase_invoice_creation_without_purchase_order: DF.Check
 		allow_purchase_invoice_creation_without_purchase_receipt: DF.Check
-		allowed_companies: DF.TableMultiSelect[CompanyRestriction]
 		companies: DF.Table[AllowedToTransactWith]
 		country: DF.Link | None
 		customer_numbers: DF.Table[CustomerNumberAtSupplier]
@@ -73,7 +71,6 @@ class Supplier(TransactionBase):
 		primary_address: DF.TextEditor | None
 		release_date: DF.Date | None
 		represents_company: DF.Link | None
-		restrict_to_companies: DF.Check
 		supplier_details: DF.Text | None
 		supplier_group: DF.Link | None
 		supplier_name: DF.Data
@@ -197,7 +194,7 @@ class Supplier(TransactionBase):
 			)
 
 	def create_primary_contact(self):
-		from erpnext.selling.doctype.customer.mapper import make_contact
+		from erpnext.selling.doctype.customer.customer import make_contact
 
 		if not self.supplier_primary_contact:
 			if self.mobile_no or self.email_id:
@@ -209,7 +206,7 @@ class Supplier(TransactionBase):
 	def create_primary_address(self):
 		from frappe.contacts.doctype.address.address import get_address_display
 
-		from erpnext.selling.doctype.customer.mapper import make_address
+		from erpnext.selling.doctype.customer.customer import make_address
 
 		if self.flags.is_new_doc and self.get("address_line1"):
 			address = make_address(self)
@@ -237,9 +234,7 @@ class Supplier(TransactionBase):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-def get_supplier_primary(
-	doctype: str | None, txt: str, searchfield: str | None, start: int, page_len: int, filters: dict
-):
+def get_supplier_primary(doctype, txt, searchfield, start, page_len, filters):
 	supplier = filters.get("supplier")
 	type = filters.get("type")
 	type_doctype = frappe.qb.DocType(type)

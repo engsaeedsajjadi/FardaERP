@@ -73,7 +73,7 @@
   }
  ],
  "links": [],
- "modified": "2026-08-21 23:11:38.710171",
+ "modified": "2025-05-13 15:33:03.791814",
  "modified_by": "Administrator",
  "module": "Assets",
  "name": "Asset Category",
@@ -116,10 +116,6 @@
    "role": "Quality Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "role": "Item Manager",
-   "select": 1
   }
  ],
  "row_format": "Dynamic",

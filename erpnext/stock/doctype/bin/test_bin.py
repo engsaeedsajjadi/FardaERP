@@ -5,7 +5,6 @@ import frappe
 
 from erpnext.stock.doctype.item.test_item import make_item
 from erpnext.stock.utils import _create_bin
-from erpnext.tests.assertions import assert_raises_with_savepoint
 from erpnext.tests.utils import ERPNextTestSuite
 
 
@@ -20,7 +19,7 @@ class TestBin(ERPNextTestSuite):
 		bin1.insert()
 
 		bin2 = frappe.get_doc(doctype="Bin", item_code=item_code, warehouse=warehouse)
-		with assert_raises_with_savepoint(self, frappe.UniqueValidationError):
+		with self.assertRaises(frappe.UniqueValidationError):
 			bin2.insert()
 
 		# util method should handle it
@@ -119,6 +118,6 @@ class TestBin(ERPNextTestSuite):
 		self.assertEqual(bin.stock_value, 0)
 
 	def test_index_exists(self):
-		# has_index is db-agnostic; raw "SHOW INDEX" is MySQL-only and errors on Postgres
-		if not frappe.db.has_index("tabBin", "unique_item_warehouse"):
+		indexes = frappe.db.sql("show index from tabBin where Non_unique = 0", as_dict=1)
+		if not any(index.get("Key_name") == "unique_item_warehouse" for index in indexes):
 			self.fail("Expected unique index on item-warehouse")

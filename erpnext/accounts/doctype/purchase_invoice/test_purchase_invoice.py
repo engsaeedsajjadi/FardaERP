@@ -3,14 +3,13 @@
 
 
 import frappe
-from frappe.query_builder.functions import Sum
 from frappe.utils import add_days, cint, flt, getdate, nowdate, today
 
 import erpnext
 from erpnext.accounts.doctype.account.test_account import create_account, get_inventory_account
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
-from erpnext.buying.doctype.purchase_order.mapper import get_mapped_purchase_invoice
-from erpnext.buying.doctype.purchase_order.mapper import make_purchase_invoice as make_pi_from_po
+from erpnext.buying.doctype.purchase_order.purchase_order import get_mapped_purchase_invoice
+from erpnext.buying.doctype.purchase_order.purchase_order import make_purchase_invoice as make_pi_from_po
 from erpnext.buying.doctype.purchase_order.test_purchase_order import (
 	create_pr_against_po,
 	create_purchase_order,
@@ -21,9 +20,9 @@ from erpnext.controllers.buying_controller import QtyMismatchError
 from erpnext.exceptions import InvalidCurrency
 from erpnext.projects.doctype.project.test_project import make_project
 from erpnext.stock.doctype.item.test_item import create_item
-from erpnext.stock.doctype.material_request.mapper import make_purchase_order
+from erpnext.stock.doctype.material_request.material_request import make_purchase_order
 from erpnext.stock.doctype.material_request.test_material_request import make_material_request
-from erpnext.stock.doctype.purchase_receipt.mapper import (
+from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 	make_purchase_invoice as create_purchase_invoice_from_receipt,
 )
 from erpnext.stock.doctype.purchase_receipt.test_purchase_receipt import (
@@ -81,7 +80,7 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		pi.delete()
 
 	def test_update_received_qty_in_material_request(self):
-		from erpnext.buying.doctype.purchase_order.mapper import make_purchase_invoice
+		from erpnext.buying.doctype.purchase_order.purchase_order import make_purchase_invoice
 
 		"""
 		Test if the received_qty in Material Request is updated correctly when
@@ -124,10 +123,11 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			"_Test Account Discount - _TC": [0, 168.03],
 			"Round Off - _TC": [0, 0.3],
 		}
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=["account", "debit", "credit"],
+		gl_entries = frappe.db.sql(
+			"""select account, debit, credit from `tabGL Entry`
+			where voucher_type = 'Purchase Invoice' and voucher_no = %s""",
+			pi.name,
+			as_dict=1,
 		)
 		for d in gl_entries:
 			self.assertEqual([d.debit, d.credit], expected_gl_entries.get(d.account))
@@ -469,11 +469,12 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		self.check_gle_for_pi(pi.name)
 
 	def check_gle_for_pi(self, pi):
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi},
-			fields=["account", {"SUM": "debit", "as": "debit"}, {"SUM": "credit", "as": "credit"}],
-			group_by="account",
+		gl_entries = frappe.db.sql(
+			"""select account, sum(debit) as debit, sum(credit) as credit
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			group by account""",
+			pi,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -493,92 +494,25 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			self.assertEqual(expected_values[gle.account][1], gle.debit)
 			self.assertEqual(expected_values[gle.account][2], gle.credit)
 
-	def test_full_actual_charge_capitalized_on_stock_items_only(self):
-		"""On a stock-updating Purchase Invoice, an actual valuation charge (e.g. Freight) with
-		"Allocate Full Amount to Stock Items" checked is fully capitalized onto stock/asset items
-		only. For 2 stock items + 1 service item (each net 100) and a 30 freight charge, the charge
-		is distributed over the 200 stock net only (15 per stock item) and the entire 30 is
-		capitalized; nothing is lost to the non-stock item."""
-		from erpnext.stock import get_warehouse_account_map
-		from erpnext.stock.doctype.item.test_item import make_item
-		from erpnext.stock.doctype.purchase_receipt.test_purchase_receipt import get_gl_entries
-
-		company = "_Test Company with perpetual inventory"
-		warehouse = "Stores - TCP1"
-
-		stock_item1 = make_item(properties={"is_stock_item": 1}).name
-		stock_item2 = make_item(properties={"is_stock_item": 1}).name
-		service_item = make_item(properties={"is_stock_item": 0}).name
-
-		pi = frappe.new_doc("Purchase Invoice")
-		pi.company = company
-		pi.supplier = "_Test Supplier"
-		pi.currency = "INR"
-		pi.update_stock = 1
-		pi.credit_to = "Creditors - TCP1"
-		# Order matters: stock, service, stock (service item in the middle)
-		for code in (stock_item1, service_item, stock_item2):
-			pi.append(
-				"items",
-				{
-					"item_code": code,
-					"qty": 1,
-					"rate": 100,
-					"warehouse": warehouse,
-					"cost_center": "Main - TCP1",
-					"expense_account": "Cost of Goods Sold - TCP1",
-				},
-			)
-
-		pi.append(
-			"taxes",
-			{
-				"charge_type": "Actual",
-				"account_head": "_Test Account Shipping Charges - TCP1",
-				"category": "Valuation and Total",
-				"cost_center": "Main - TCP1",
-				"description": "Freight",
-				"tax_amount": 30,
-				# Default behavior: allocate the full amount to stock/asset items only
-				"allocate_full_amount_to_stock_items": 1,
-			},
-		)
-
-		pi.insert()
-
-		# 30 freight / 200 stock net = 15 per stock item. The service item carries nothing.
-		self.assertAlmostEqual(pi.items[0].item_tax_amount, 15.0, places=2)
-		self.assertAlmostEqual(pi.items[1].item_tax_amount, 0.0, places=2)
-		self.assertAlmostEqual(pi.items[2].item_tax_amount, 15.0, places=2)
-
-		pi.submit()
-
-		gl_entries = get_gl_entries("Purchase Invoice", pi.name, skip_cancelled=True, as_dict=True)
-		# Sum per account - the same account can appear in multiple GL rows (e.g. the stock account
-		# is debited once per item), so aggregate rather than keeping only the last row.
-		gl_map = {}
-		for row in gl_entries:
-			acc = gl_map.setdefault(row.account, {"debit": 0.0, "credit": 0.0})
-			acc["debit"] += row.debit
-			acc["credit"] += row.credit
-
-		warehouse_account = get_warehouse_account_map(company)
-		stock_account = warehouse_account[warehouse]["account"]
-
-		# Stock asset = 200 (goods) + 30 (the entire freight charge)
-		self.assertAlmostEqual(gl_map[stock_account]["debit"], 230.0, places=2)
-		# The whole freight charge (30) is capitalized
-		self.assertAlmostEqual(gl_map["_Test Account Shipping Charges - TCP1"]["credit"], 30.0, places=2)
-
 	@ERPNextTestSuite.change_settings(
 		"Accounts Settings", {"allow_multi_currency_invoices_against_single_party_account": 1}
 	)
 	def test_purchase_invoice_with_exchange_rate_difference(self):
-		from erpnext.stock.doctype.purchase_receipt.mapper import (
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_invoice as create_purchase_invoice,
 		)
 
+		original_value = frappe.db.get_single_value(
+			"Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate"
+		)
+
 		frappe.db.set_single_value("Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate", 0)
+		self.addCleanup(
+			frappe.db.set_single_value,
+			"Buying Settings",
+			"set_landed_cost_based_on_purchase_invoice_rate",
+			original_value,
+		)
 
 		pr = make_purchase_receipt(
 			company="_Test Company with perpetual inventory",
@@ -602,16 +536,25 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		)
 
 	def test_purchase_invoice_with_exchange_rate_difference_for_non_stock_item(self):
-		from erpnext.stock.doctype.purchase_receipt.mapper import (
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_invoice as create_purchase_invoice,
 		)
 
+		original_value = frappe.db.get_single_value(
+			"Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate"
+		)
 		frappe.db.set_single_value("Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate", 0)
+		self.addCleanup(
+			frappe.db.set_single_value,
+			"Buying Settings",
+			"set_landed_cost_based_on_purchase_invoice_rate",
+			original_value,
+		)
 
 		pr = frappe.new_doc("Purchase Receipt")
 		pr.currency = "USD"
 		pr.company = "_Test Company with perpetual inventory"
-		pr.conversion_rate = 80
+		pr.conversion_rate = (70,)
 		pr.supplier = "_Test Supplier USD"
 		pr.append(
 			"items",
@@ -625,7 +568,7 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		pr.submit()
 
 		pi = create_purchase_invoice(pr.name)
-		pi.conversion_rate = 70
+		pi.conversion_rate = 80
 		pi.credit_to = "_Test Payable USD - TCP1"
 		pi.insert()
 		pi.submit()
@@ -662,11 +605,12 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 
 		self.assertTrue(pi.status, "Unpaid")
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=["account", "debit", "credit"],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, debit, credit
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 		self.assertTrue(gl_entries)
 
@@ -675,11 +619,10 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			["Creditors - TCP1", 0, 250],
 		]
 
-		# DB account collation isn't portable across MariaDB/Postgres; compare order-independently.
-		self.assertEqual(
-			sorted((gle.account, gle.debit, gle.credit) for gle in gl_entries),
-			sorted((e[0], e[1], e[2]) for e in expected_values),
-		)
+		for i, gle in enumerate(gl_entries):
+			self.assertEqual(expected_values[i][0], gle.account)
+			self.assertEqual(expected_values[i][1], gle.debit)
+			self.assertEqual(expected_values[i][2], gle.credit)
 
 	def test_purchase_invoice_calculation(self):
 		pi = frappe.copy_doc(self.globalTestRecords["Purchase Invoice"][0])
@@ -747,24 +690,21 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		pi.load_from_db()
 
 		self.assertTrue(
-			frappe.get_all(
-				"Journal Entry Account",
-				filters={
-					"reference_type": "Purchase Invoice",
-					"reference_name": pi.name,
-					"debit_in_account_currency": 300,
-				},
-				pluck="name",
+			frappe.db.sql(
+				"""select name from `tabJournal Entry Account`
+			where reference_type='Purchase Invoice'
+			and reference_name=%s and debit_in_account_currency=300""",
+				pi.name,
 			)
 		)
 
 		pi.cancel()
 
 		self.assertFalse(
-			frappe.get_all(
-				"Journal Entry Account",
-				filters={"reference_type": "Purchase Invoice", "reference_name": pi.name},
-				pluck="name",
+			frappe.db.sql(
+				"""select name from `tabJournal Entry Account`
+			where reference_type='Purchase Invoice' and reference_name=%s""",
+				pi.name,
 			)
 		)
 
@@ -808,14 +748,10 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		pi.load_from_db()
 
 		self.assertTrue(
-			frappe.get_all(
-				"Journal Entry Account",
-				filters={
-					"reference_type": "Purchase Invoice",
-					"reference_name": pi.name,
-					"debit_in_account_currency": 300,
-				},
-				pluck="name",
+			frappe.db.sql(
+				"select name from `tabJournal Entry Account` where reference_type='Purchase Invoice' and "
+				"reference_name=%s and debit_in_account_currency=300",
+				pi.name,
 			)
 		)
 
@@ -824,10 +760,10 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		pi.cancel()
 
 		self.assertFalse(
-			frappe.get_all(
-				"Journal Entry Account",
-				filters={"reference_type": "Purchase Invoice", "reference_name": pi.name},
-				pluck="name",
+			frappe.db.sql(
+				"select name from `tabJournal Entry Account` where reference_type='Purchase Invoice' and "
+				"reference_name=%s",
+				pi.name,
 			)
 		)
 
@@ -837,12 +773,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		else:
 			project = frappe.get_doc("Project", {"project_name": "_Test Project for Purchase"})
 
-		existing_purchase_cost = frappe.get_all(
-			"Purchase Invoice Item",
-			filters={"project": project.name, "docstatus": 1},
-			fields=[{"SUM": "base_net_amount", "as": "base_net_amount"}],
+		existing_purchase_cost = frappe.db.sql(
+			f"""select sum(base_net_amount)
+			from `tabPurchase Invoice Item`
+			where project = '{project.name}'
+			and docstatus=1"""
 		)
-		existing_purchase_cost = existing_purchase_cost and existing_purchase_cost[0].base_net_amount or 0
+		existing_purchase_cost = existing_purchase_cost and existing_purchase_cost[0][0] or 0
 
 		pi = make_purchase_invoice(currency="USD", conversion_rate=60, project=project.name)
 		self.assertEqual(
@@ -886,11 +823,12 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		)
 
 		# check gl entries for return
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": return_pi.name},
-			fields=["account", "debit", "credit"],
-			order_by="account desc",
+		gl_entries = frappe.db.sql(
+			"""select account, debit, credit
+			from `tabGL Entry` where voucher_type=%s and voucher_no=%s
+			order by account desc""",
+			("Purchase Invoice", return_pi.name),
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -979,18 +917,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			conversion_rate=50,
 		)
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=[
-				"account",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1032,10 +965,10 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		# cancel
 		pi.cancel()
 
-		gle = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Sales Invoice", "voucher_no": pi.name},
-			pluck="name",
+		gle = frappe.db.sql(
+			"""select name from `tabGL Entry`
+			where voucher_type='Sales Invoice' and voucher_no=%s""",
+			pi.name,
 		)
 
 		self.assertFalse(gle)
@@ -1053,18 +986,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			expense_account="_Test Account Cost for Goods Sold - TCP1",
 		)
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=[
-				"account",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1093,16 +1021,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			expense_account="_Test Account Cost for Goods Sold - TCP1",
 		)
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=[
-				"account",
-				{"SUM": "debit", "as": "debit"},
-				{"SUM": "credit", "as": "credit"},
-			],
-			group_by="account, voucher_no",
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, account_currency, sum(debit) as debit,
+				sum(credit) as credit, debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			group by account, voucher_no order by account asc;""",
+			pi.name,
+			as_dict=1,
 		)
 
 		stock_in_hand_account = get_inventory_account(pi.company, pi.get("items")[0].warehouse)
@@ -1364,19 +1289,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			"_Test Account Cost for Goods Sold - _TC": {"cost_center": cost_center},
 		}
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=[
-				"account",
-				"cost_center",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, cost_center, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1393,19 +1312,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			"_Test Account Cost for Goods Sold - _TC": {"cost_center": cost_center},
 		}
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=[
-				"account",
-				"cost_center",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, cost_center, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1440,20 +1353,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			"_Test Account Cost for Goods Sold - _TC": {"project": item_project.name},
 		}
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=[
-				"account",
-				"cost_center",
-				"project",
-				"account_currency",
-				"debit",
-				"credit",
-				"debit_in_account_currency",
-				"credit_in_account_currency",
-			],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, cost_center, project, account_currency, debit, credit,
+			debit_in_account_currency, credit_in_account_currency
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 
 		self.assertTrue(gl_entries)
@@ -1507,15 +1413,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			[deferred_account, 23.07, 0.0, "2019-03-15"],
 		]
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={
-				"voucher_type": "Journal Entry",
-				"voucher_detail_no": pi.items[0].name,
-				"posting_date": ["<=", pi.posting_date],
-			},
-			fields=["account", "debit", "credit", "posting_date"],
-			order_by="posting_date asc, account asc",
+		gl_entries = gl_entries = frappe.db.sql(
+			"""select account, debit, credit, posting_date
+			from `tabGL Entry`
+			where voucher_type='Journal Entry' and voucher_detail_no=%s and posting_date <= %s
+			order by posting_date asc, account asc""",
+			(pi.items[0].name, pi.posting_date),
+			as_dict=1,
 		)
 
 		for i, gle in enumerate(gl_entries):
@@ -1590,14 +1494,14 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			["_Test Payable USD - _TC", -37500.0],
 		]
 
-		gle = frappe.qb.DocType("GL Entry")
-		gl_entries = (
-			frappe.qb.from_(gle)
-			.select(gle.account, Sum(gle.debit - gle.credit).as_("balance"))
-			.where(gle.voucher_no == pi.name)
-			.groupby(gle.account)
-			.orderby(gle.account)
-			.run(as_dict=1)
+		gl_entries = frappe.db.sql(
+			"""
+			select account, sum(debit - credit) as balance from `tabGL Entry`
+			where voucher_no=%s
+			group by account
+			order by account asc""",
+			(pi.name),
+			as_dict=1,
 		)
 
 		for i, gle in enumerate(gl_entries):
@@ -1661,14 +1565,13 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			["_Test Payable USD - _TC", -36500.0],
 		]
 
-		gle = frappe.qb.DocType("GL Entry")
-		gl_entries = (
-			frappe.qb.from_(gle)
-			.select(gle.account, Sum(gle.debit - gle.credit).as_("balance"))
-			.where(gle.voucher_no == pi_2.name)
-			.groupby(gle.account)
-			.orderby(gle.account)
-			.run(as_dict=1)
+		gl_entries = frappe.db.sql(
+			"""
+			select account, sum(debit - credit) as balance from `tabGL Entry`
+			where voucher_no=%s
+			group by account order by account asc""",
+			(pi_2.name),
+			as_dict=1,
 		)
 
 		for i, gle in enumerate(gl_entries):
@@ -1677,21 +1580,18 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 
 		expected_gle = [["_Test Payable USD - _TC", 70000.0], ["Cash - _TC", -70000.0]]
 
-		gle = frappe.qb.DocType("GL Entry")
-		gl_entries = (
-			frappe.qb.from_(gle)
-			.select(gle.account, Sum(gle.debit - gle.credit).as_("balance"))
-			.where((gle.voucher_no == pay.name) & (gle.is_cancelled == 0))
-			.groupby(gle.account)
-			.orderby(gle.account)
-			.run(as_dict=1)
+		gl_entries = frappe.db.sql(
+			"""
+			select account, sum(debit - credit) as balance from `tabGL Entry`
+			where voucher_no=%s and is_cancelled=0
+			group by account order by account asc""",
+			(pay.name),
+			as_dict=1,
 		)
 
-		# DB account collation isn't portable across MariaDB/Postgres; compare order-independently.
-		self.assertEqual(
-			sorted((gle.account, gle.balance) for gle in gl_entries),
-			sorted((e[0], e[1]) for e in expected_gle),
-		)
+		for i, gle in enumerate(gl_entries):
+			self.assertEqual(expected_gle[i][0], gle.account)
+			self.assertEqual(expected_gle[i][1], gle.balance)
 
 		total_debit_amount = frappe.db.get_all(
 			"Journal Entry Account",
@@ -1733,6 +1633,96 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			"Accounts Settings", "unlink_payment_on_cancellation_of_invoice", unlink_enabled
 		)
 		frappe.db.set_value("Company", "_Test Company", "exchange_gain_loss_account", original_account)
+
+	def test_stock_adjustment_account_fallbacks_when_default_expense_account_unset(self):
+		from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseInvoice
+
+		class StockAdjustmentInvoice:
+			company = "_Test Company"
+			conversion_rate = 1
+			update_stock = 1
+			is_internal_supplier = 0
+			return_against = None
+			project = None
+
+			def __init__(self, is_return, defaults):
+				self.is_return = is_return
+				self.defaults = defaults
+
+			def get(self, fieldname):
+				return None
+
+			def get_company_default(self, fieldname, ignore_validation=False):
+				return self.defaults.get(fieldname)
+
+			def get_gl_dict(self, args, *unused_args, **unused_kwargs):
+				return frappe._dict(args)
+
+		def make_invoice(is_return, defaults):
+			return StockAdjustmentInvoice(is_return, defaults)
+
+		def make_item(is_fixed_asset=0, expense_account="Item Expense - _TC"):
+			return frappe._dict(
+				{
+					"name": "row-1",
+					"warehouse": "Stores - _TC",
+					"valuation_rate": 10,
+					"qty": 10,
+					"conversion_factor": 1,
+					"base_net_amount": 100,
+					"item_tax_amount": 0,
+					"landed_cost_voucher_amount": 0,
+					"sales_incoming_rate": 0,
+					"is_fixed_asset": is_fixed_asset,
+					"expense_account": expense_account,
+					"cost_center": "Main - _TC",
+					"project": None,
+					"precision": lambda fieldname: 2,
+				}
+			)
+
+		defaults = {
+			"default_expense_account": None,
+			"stock_received_but_not_billed": "Stock Received But Not Billed - _TC",
+			"asset_received_but_not_billed": "Asset Received But Not Billed - _TC",
+		}
+		test_cases = (
+			(
+				"company default expense",
+				0,
+				make_item(),
+				{**defaults, "default_expense_account": "Default Expense - _TC"},
+				"Default Expense - _TC",
+			),
+			("stock rbnb", 0, make_item(), defaults, "Stock Received But Not Billed - _TC"),
+			(
+				"asset rbnb",
+				0,
+				make_item(is_fixed_asset=1),
+				defaults,
+				"Asset Received But Not Billed - _TC",
+			),
+			("return item expense", 1, make_item(), defaults, "Item Expense - _TC"),
+			(
+				"return without item expense",
+				1,
+				make_item(expense_account=None),
+				defaults,
+				"Stock Received But Not Billed - _TC",
+			),
+		)
+
+		for label, is_return, item, company_defaults, expected_account in test_cases:
+			with self.subTest(label=label):
+				invoice = make_invoice(is_return, company_defaults)
+				gl_entries = []
+				PurchaseInvoice.make_stock_adjustment_entry(
+					invoice, gl_entries, item, {(item.name, item.warehouse): 90}, "INR"
+				)
+
+				self.assertEqual(gl_entries[0].account, expected_account)
+				self.assertEqual(gl_entries[0].debit, 10)
+				self.assertEqual(gl_entries[0].debit_in_transaction_currency, 10)
 
 	@ERPNextTestSuite.change_settings("Accounts Settings", {"unlink_payment_on_cancellation_of_invoice": 1})
 	def test_purchase_invoice_advance_taxes(self):
@@ -1790,18 +1780,19 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			[tds_account, 0, 3000],
 		]
 
-		gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Payment Entry", "voucher_no": payment_entry.name},
-			fields=["account", "debit", "credit"],
-			order_by="account asc",
+		gl_entries = frappe.db.sql(
+			"""select account, debit, credit
+			from `tabGL Entry`
+			where voucher_type='Payment Entry' and voucher_no=%s
+			order by account asc""",
+			(payment_entry.name),
+			as_dict=1,
 		)
 
-		# DB account collation isn't portable across MariaDB/Postgres; compare order-independently.
-		self.assertEqual(
-			sorted((gle.account, gle.debit, gle.credit) for gle in gl_entries),
-			sorted((e[0], e[1], e[2]) for e in expected_gle),
-		)
+		for i, gle in enumerate(gl_entries):
+			self.assertEqual(expected_gle[i][0], gle.account)
+			self.assertEqual(expected_gle[i][1], gle.debit)
+			self.assertEqual(expected_gle[i][2], gle.credit)
 
 		# Create Purchase Invoice against Purchase Order
 		purchase_invoice = get_mapped_purchase_invoice(po.name)
@@ -1815,21 +1806,19 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		# Zero net effect on final TDS payable on invoice
 		expected_gle = [["_Test Account Cost for Goods Sold - _TC", 30000], ["Creditors - _TC", -30000]]
 
-		gle = frappe.qb.DocType("GL Entry")
-		gl_entries = (
-			frappe.qb.from_(gle)
-			.select(gle.account, Sum(gle.debit - gle.credit).as_("amount"))
-			.where((gle.voucher_type == "Purchase Invoice") & (gle.voucher_no == purchase_invoice.name))
-			.groupby(gle.account)
-			.orderby(gle.account)
-			.run(as_dict=1)
+		gl_entries = frappe.db.sql(
+			"""select account, sum(debit - credit) as amount
+			from `tabGL Entry`
+			where voucher_type='Purchase Invoice' and voucher_no=%s
+			group by account
+			order by account asc""",
+			(purchase_invoice.name),
+			as_dict=1,
 		)
 
-		# DB account collation isn't portable across MariaDB/Postgres; compare order-independently.
-		self.assertEqual(
-			sorted((gle.account, gle.amount) for gle in gl_entries),
-			sorted((e[0], e[1]) for e in expected_gle),
-		)
+		for i, gle in enumerate(gl_entries):
+			self.assertEqual(expected_gle[i][0], gle.account)
+			self.assertEqual(expected_gle[i][1], gle.amount)
 
 		payment_entry.load_from_db()
 		tax_allocated = sum(
@@ -2322,7 +2311,7 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		return_pi = make_return_doc(pi.doctype, pi.name)
 		return_pi.save().submit()
 
-		self.assertEqual(return_pi.docstatus, 1)
+		self.assertTrue(return_pi.docstatus == 1)
 
 	def test_advance_entries_as_asset(self):
 		from erpnext.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
@@ -2407,7 +2396,7 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			create_pr_against_po,
 			create_purchase_order,
 		)
-		from erpnext.stock.doctype.purchase_receipt.mapper import (
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_invoice as make_pi_from_pr,
 		)
 
@@ -2721,11 +2710,12 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		pi.insert()
 		pi.submit()
 
-		pr_gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Receipt", "voucher_no": pr.name},
-			fields=["account", "debit", "credit"],
-			order_by="account asc",
+		pr_gl_entries = frappe.db.sql(
+			"""select account, debit, credit
+			from `tabGL Entry` where voucher_type='Purchase Receipt' and voucher_no=%s
+			order by account asc""",
+			pr.name,
+			as_dict=1,
 		)
 
 		pr_expected_values = [
@@ -2738,11 +2728,12 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 			self.assertEqual(pr_expected_values[i][1], gle.debit)
 			self.assertEqual(pr_expected_values[i][2], gle.credit)
 
-		pi_gl_entries = frappe.get_all(
-			"GL Entry",
-			filters={"voucher_type": "Purchase Invoice", "voucher_no": pi.name},
-			fields=["account", "debit", "credit"],
-			order_by="account asc",
+		pi_gl_entries = frappe.db.sql(
+			"""select account, debit, credit
+			from `tabGL Entry` where voucher_type='Purchase Invoice' and voucher_no=%s
+			order by account asc""",
+			pi.name,
+			as_dict=1,
 		)
 		pi_expected_values = [
 			["Asset Received But Not Billed - _TC", 5000, 0],
@@ -2991,10 +2982,10 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 
 	def test_invoice_against_returned_pr(self):
 		from erpnext.stock.doctype.item.test_item import make_item
-		from erpnext.stock.doctype.purchase_receipt.mapper import (
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_invoice as make_purchase_invoice_from_pr,
 		)
-		from erpnext.stock.doctype.purchase_receipt.mapper import (
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_return_against_rejected_warehouse,
 		)
 
@@ -3060,23 +3051,6 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		return_doc.items[0].qty = 0
 
 		self.assertRaises(StockOverReturnError, return_doc.save)
-
-	def test_partial_returns_ignore_received_qty_without_update_stock(self):
-		from erpnext.controllers.sales_and_purchase_return import make_return_doc
-
-		invoice = make_purchase_invoice(qty=10, received_qty=10)
-
-		first_return = make_return_doc(invoice.doctype, invoice.name)
-		first_return.items[0].qty = -4
-		first_return.save().submit()
-
-		self.assertEqual(first_return.items[0].received_qty, -10)
-
-		second_return = make_return_doc(invoice.doctype, invoice.name)
-		second_return.items[0].qty = -6
-		second_return.save().submit()
-
-		self.assertEqual(second_return.docstatus, 1)
 
 	def test_apply_discount_on_grand_total(self):
 		"""
@@ -3152,7 +3126,7 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		self.assertEqual(invoice.grand_total, 300)
 
 	def test_pr_pi_over_billing(self):
-		from erpnext.stock.doctype.purchase_receipt.mapper import (
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_invoice as make_purchase_invoice_from_pr,
 		)
 
@@ -3218,7 +3192,7 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 		self.assertEqual(pi.discount_amount, discount_amount)
 
 	def test_returned_item_purchase_receipt(self):
-		from erpnext.accounts.doctype.purchase_invoice.mapper import (
+		from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import (
 			make_purchase_receipt as make_purchase_receipt_from_pi,
 		)
 
@@ -3286,6 +3260,14 @@ class TestPurchaseInvoice(ERPNextTestSuite, StockTestMixin):
 
 		party_link.delete()
 
+	def test_purchase_invoice_cancellation_post_account_freezing_date(self):
+		pi = make_purchase_invoice()
+		frappe.db.set_value("Company", "_Test Company", "accounts_frozen_till_date", add_days(getdate(), 1))
+		try:
+			self.assertRaises(frappe.ValidationError, pi.cancel)
+		finally:
+			frappe.db.set_value("Company", "_Test Company", "accounts_frozen_till_date", None)
+
 
 def set_advance_flag(company, flag, default_account):
 	frappe.db.set_value(
@@ -3325,25 +3307,17 @@ def check_gl_entries(
 
 	gl_entries = query.run(as_dict=True)
 
-	# MariaDB and Postgres collate `account` differently, so the DB row order isn't portable.
-	# Match each actual GL row against the expected set instead of comparing positionally; like the
-	# original loop (which iterated the actual rows), extra expected rows are tolerated.
-	cols = additional_columns or []
+	for i, gle in enumerate(gl_entries):
+		doc.assertEqual(expected_gle[i][0], gle.account)
+		doc.assertEqual(expected_gle[i][1], gle.debit)
+		doc.assertEqual(expected_gle[i][2], gle.credit)
+		doc.assertEqual(getdate(expected_gle[i][3]), gle.posting_date)
 
-	def _key(account, debit, credit, posting_date, extras):
-		return (account, flt(debit), flt(credit), getdate(posting_date), *(str(v) for v in extras))
-
-	remaining = {}
-	for e in expected_gle:
-		k = _key(e[0], e[1], e[2], e[3], e[4 : 4 + len(cols)])
-		remaining[k] = remaining.get(k, 0) + 1
-
-	for gle in gl_entries:
-		k = _key(gle.account, gle.debit, gle.credit, gle.posting_date, [gle[c] for c in cols])
-		doc.assertGreater(
-			remaining.get(k, 0), 0, msg=f"Unexpected GL entry {k}; expected one of {list(remaining)}"
-		)
-		remaining[k] -= 1
+		if additional_columns:
+			j = 4
+			for col in additional_columns:
+				doc.assertEqual(expected_gle[i][j], gle[col])
+				j += 1
 
 
 def create_tax_witholding_category(category_name, company, account):
@@ -3543,6 +3517,7 @@ def make_purchase_invoice_against_cost_center(**args):
 
 def setup_provisional_accounting(**args):
 	args = frappe._dict(args)
+	create_item("_Test Non Stock Item", is_stock_item=0)
 	company = args.company or "_Test Company"
 	provisional_account = create_account(
 		account_name=args.account_name or "Provision Account",

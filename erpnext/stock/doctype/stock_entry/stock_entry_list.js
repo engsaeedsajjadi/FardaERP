@@ -53,7 +53,7 @@ frappe.listview_settings["Stock Entry"] = {
 					" </span>";
 			}
 			// if(doc.from_warehouse || doc.to_warehouse) {
-			// 	html += '${frappe.utils.icon("arrow-right")} ';
+			// 	html += '<i class="fa fa-arrow-right text-muted"></i> ';
 			// }
 			if (doc.to_warehouse) {
 				html +=

@@ -8,7 +8,7 @@ from frappe.tests import change_settings
 from frappe.utils import add_days, add_months, flt, getdate, nowdate
 
 from erpnext.controllers.accounts_controller import InvalidQtyError, update_child_qty_rate
-from erpnext.selling.doctype.quotation.mapper import make_sales_order
+from erpnext.selling.doctype.quotation.quotation import make_sales_order
 from erpnext.tests.utils import ERPNextTestSuite
 
 
@@ -19,7 +19,7 @@ class TestQuotation(ERPNextTestSuite):
 	def test_update_child_quotation_add_item(self):
 		from erpnext.stock.doctype.item.test_item import make_item
 
-		item_1 = frappe.get_doc("Item", "_Test Item")
+		item_1 = make_item("_Test Item")
 		item_2 = make_item("_Test Item 1")
 
 		item_list = [
@@ -63,7 +63,7 @@ class TestQuotation(ERPNextTestSuite):
 	def test_update_child_rate_change(self):
 		from erpnext.stock.doctype.item.test_item import make_item
 
-		item_1 = frappe.get_doc("Item", "_Test Item")
+		item_1 = make_item("_Test Item")
 		item_2 = make_item("_Test Item 1")
 
 		item_list = [
@@ -156,46 +156,6 @@ class TestQuotation(ERPNextTestSuite):
 		qo.reload()
 		self.assertEqual(len(qo.get("items")), 1)
 
-	def test_update_child_qty_with_uom_conversion_factor(self):
-		from erpnext.stock.doctype.item.test_item import make_item
-
-		item = make_item(uoms=[{"uom": "Box", "conversion_factor": 5}])
-		quotation = make_quotation(item_code=item.item_code, qty=6, uom="Box", do_not_submit=1)
-		quotation.submit()
-
-		sales_order = make_sales_order(quotation.name)
-		sales_order.delivery_date = nowdate()
-		sales_order.items[0].qty = 2
-		sales_order.save()
-		sales_order.submit()
-
-		quotation.reload()
-		self.assertEqual(quotation.items[0].ordered_qty, 10)
-
-		def update_qty(qty, conversion_factor=None):
-			item = quotation.items[0]
-			trans_items = json.dumps(
-				[
-					{
-						"item_code": item.item_code,
-						"description": item.description,
-						"rate": item.rate,
-						"qty": qty,
-						"uom": item.uom,
-						"conversion_factor": conversion_factor or item.conversion_factor,
-						"docname": item.name,
-					}
-				]
-			)
-			update_child_qty_rate("Quotation", trans_items, quotation.name)
-
-		update_qty(5, conversion_factor=2)
-		quotation.reload()
-		self.assertEqual(quotation.items[0].conversion_factor, 2)
-		self.assertEqual(quotation.items[0].stock_qty, 10)
-
-		self.assertRaises(frappe.ValidationError, update_qty, 4)
-
 	def test_quotation_qty(self):
 		qo = make_quotation(qty=0, do_not_save=True)
 		with self.assertRaises(InvalidQtyError):
@@ -283,7 +243,7 @@ class TestQuotation(ERPNextTestSuite):
 		{"automatically_fetch_payment_terms": 1},
 	)
 	def test_make_sales_order_terms_copied(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		quotation = frappe.copy_doc(self.globalTestRecords["Quotation"][0])
 		quotation.transaction_date = nowdate()
@@ -296,7 +256,7 @@ class TestQuotation(ERPNextTestSuite):
 		self.assertTrue(sales_order.get("payment_schedule"))
 
 	def test_do_not_add_ordered_items_in_new_sales_order(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 		from erpnext.stock.doctype.item.test_item import make_item
 
 		item = make_item("_Test Item for Quotation for SO", {"is_stock_item": 1})
@@ -330,7 +290,7 @@ class TestQuotation(ERPNextTestSuite):
 	def test_gross_profit(self):
 		from erpnext.stock.doctype.item.test_item import make_item
 		from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
-		from erpnext.stock.get_item_details import insert_item_price
+		from erpnext.stock.get_item_details import ItemDetailsCtx, insert_item_price
 
 		item_doc = make_item("_Test Item for Gross Profit", {"is_stock_item": 1})
 		item_code = item_doc.name
@@ -339,7 +299,7 @@ class TestQuotation(ERPNextTestSuite):
 		selling_price_list = frappe.get_all("Price List", filters={"selling": 1}, limit=1)[0].name
 		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 		insert_item_price(
-			frappe._dict(
+			ItemDetailsCtx(
 				{
 					"item_code": item_code,
 					"price_list": selling_price_list,
@@ -361,7 +321,7 @@ class TestQuotation(ERPNextTestSuite):
 		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
 
 	def test_maintain_rate_in_sales_cycle_is_enforced(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		maintain_rate = frappe.db.get_single_value("Selling Settings", "maintain_same_sales_rate")
 		frappe.db.set_single_value("Selling Settings", "maintain_same_sales_rate", 1)
@@ -379,7 +339,7 @@ class TestQuotation(ERPNextTestSuite):
 		frappe.db.set_single_value("Selling Settings", "maintain_same_sales_rate", maintain_rate)
 
 	def test_make_sales_order_with_different_currency(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		quotation = frappe.copy_doc(self.globalTestRecords["Quotation"][0])
 		quotation.transaction_date = nowdate()
@@ -399,7 +359,7 @@ class TestQuotation(ERPNextTestSuite):
 		self.assertNotEqual(sales_order.currency, quotation.currency)
 
 	def test_make_sales_order(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		quotation = frappe.copy_doc(self.globalTestRecords["Quotation"][0])
 		quotation.transaction_date = nowdate()
@@ -431,7 +391,7 @@ class TestQuotation(ERPNextTestSuite):
 		},
 	)
 	def test_make_sales_order_with_terms(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		quotation = frappe.copy_doc(self.globalTestRecords["Quotation"][0])
 		quotation.transaction_date = nowdate()
@@ -481,7 +441,7 @@ class TestQuotation(ERPNextTestSuite):
 		self.assertRaises(frappe.ValidationError, quotation.validate)
 
 	def test_so_from_expired_quotation(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		frappe.db.set_single_value("Selling Settings", "allow_sales_order_creation_for_expired_quotation", 0)
 
@@ -497,8 +457,8 @@ class TestQuotation(ERPNextTestSuite):
 		make_sales_order(quotation.name)
 
 	def test_create_quotation_with_margin(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
-		from erpnext.selling.doctype.sales_order.mapper import (
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
+		from erpnext.selling.doctype.sales_order.sales_order import (
 			make_delivery_note,
 			make_sales_invoice,
 		)
@@ -592,7 +552,7 @@ class TestQuotation(ERPNextTestSuite):
 
 	def test_product_bundle_mapping_on_creating_so(self):
 		from erpnext.selling.doctype.product_bundle.test_product_bundle import make_product_bundle
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 		from erpnext.stock.doctype.item.test_item import make_item
 
 		make_item("_Test Product Bundle", {"is_stock_item": 0})
@@ -919,7 +879,7 @@ class TestQuotation(ERPNextTestSuite):
 		self.assertEqual(quotation.items[1].amount, 240)
 
 	def test_alternative_items_sales_order_mapping_with_stock_items(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 		from erpnext.stock.doctype.item.test_item import make_item
 
 		frappe.flags.args = frappe._dict()
@@ -964,8 +924,13 @@ class TestQuotation(ERPNextTestSuite):
 		item = "_Test Item FOR UOM Validation"
 		make_item(item, {"is_stock_item": 1})
 
+		if not frappe.db.exists("UOM", "lbs"):
+			frappe.get_doc({"doctype": "UOM", "uom_name": "lbs", "must_be_whole_number": 1}).insert()
+		else:
+			frappe.db.set_value("UOM", "lbs", "must_be_whole_number", 1)
+
 		quotation = make_quotation(item_code=item, qty=1, rate=100, do_not_submit=1)
-		quotation.items[0].uom = "_Test UOM"
+		quotation.items[0].uom = "lbs"
 		quotation.items[0].conversion_factor = 2.23
 		self.assertRaises(frappe.ValidationError, quotation.save)
 
@@ -1039,9 +1004,10 @@ class TestQuotation(ERPNextTestSuite):
 
 	@ERPNextTestSuite.change_settings("Selling Settings", {"allow_zero_qty_in_quotation": 1})
 	def test_so_from_zero_qty_quotation(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 		from erpnext.stock.doctype.item.test_item import make_item
 
+		make_item("_Test Item 2", {"is_stock_item": 1})
 		quotation = make_quotation(qty=0, do_not_save=1)
 		quotation.append("items", {"item_code": "_Test Item 2", "qty": 10, "rate": 100})
 		quotation.submit()
@@ -1071,10 +1037,12 @@ class TestQuotation(ERPNextTestSuite):
 
 	@ERPNextTestSuite.change_settings("Selling Settings", {"allow_multiple_items": 1})
 	def test_duplicate_items_in_quotation(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 		from erpnext.stock.doctype.item.test_item import make_item
 
 		# item code same but description different
+		make_item("_Test Item 2", {"is_stock_item": 1})
+
 		quotation = make_quotation(qty=10, rate=100, do_not_submit=1)
 
 		# duplicate items
@@ -1172,7 +1140,7 @@ class TestQuotation(ERPNextTestSuite):
 		{"automatically_fetch_payment_terms": 1},
 	)
 	def test_make_sales_order_with_payment_terms(self):
-		from erpnext.selling.doctype.quotation.mapper import make_sales_order
+		from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 		template = frappe.get_doc(
 			{

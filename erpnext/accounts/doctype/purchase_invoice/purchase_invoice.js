@@ -78,7 +78,7 @@ erpnext.accounts.PurchaseInvoice = class PurchaseInvoice extends erpnext.buying.
 		const me = this;
 		super.refresh();
 
-		hide_fields(this.frm);
+		hide_fields(this.frm.doc);
 		// Show / Hide button
 		this.show_general_ledger();
 		erpnext.accounts.ledger_preview.show_accounting_ledger_preview(this.frm);
@@ -156,7 +156,7 @@ erpnext.accounts.PurchaseInvoice = class PurchaseInvoice extends erpnext.buying.
 				__("Purchase Order"),
 				function () {
 					erpnext.utils.map_current_doc({
-						method: "erpnext.buying.doctype.purchase_order.mapper.make_purchase_invoice",
+						method: "erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_invoice",
 						source_doctype: "Purchase Order",
 						target: me.frm,
 						setters: {
@@ -181,7 +181,7 @@ erpnext.accounts.PurchaseInvoice = class PurchaseInvoice extends erpnext.buying.
 				__("Purchase Receipt"),
 				function () {
 					erpnext.utils.map_current_doc({
-						method: "erpnext.stock.doctype.purchase_receipt.mapper.make_purchase_invoice",
+						method: "erpnext.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice",
 						source_doctype: "Purchase Receipt",
 						target: me.frm,
 						setters: {
@@ -412,13 +412,13 @@ erpnext.accounts.PurchaseInvoice = class PurchaseInvoice extends erpnext.buying.
 
 	make_inter_company_invoice(frm) {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.accounts.doctype.purchase_invoice.mapper.make_inter_company_sales_invoice",
+			method: "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_inter_company_sales_invoice",
 			frm: frm,
 		});
 	}
 
 	is_paid() {
-		hide_fields(this.frm);
+		hide_fields(this.frm.doc);
 		if (cint(this.frm.doc.is_paid)) {
 			this.frm.set_value("allocate_advances_automatically", 0);
 			this.frm.set_value("payment_terms_template", "");
@@ -472,7 +472,7 @@ erpnext.accounts.PurchaseInvoice = class PurchaseInvoice extends erpnext.buying.
 
 	make_debit_note() {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.accounts.doctype.purchase_invoice.mapper.make_debit_note",
+			method: "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_debit_note",
 			frm: this.frm,
 		});
 	}
@@ -482,26 +482,28 @@ cur_frm.script_manager.make(erpnext.accounts.PurchaseInvoice);
 
 // Hide Fields
 // ------------
-function hide_fields(frm) {
-	const doc = frm.doc;
-	const parent_fields = ["due_date", "is_opening", "advances_section", "from_date", "to_date"];
+function hide_fields(doc) {
+	var parent_fields = ["due_date", "is_opening", "advances_section", "from_date", "to_date"];
 
 	if (cint(doc.is_paid) == 1) {
-		frm.toggle_display(parent_fields, false);
+		hide_field(parent_fields);
 	} else {
-		for (const fieldname of parent_fields) {
-			const docfield = frappe.meta.docfield_map[doc.doctype][fieldname];
-			if (!docfield.hidden) frm.toggle_display(fieldname, true);
+		for (var i in parent_fields) {
+			var docfield = frappe.meta.docfield_map[doc.doctype][parent_fields[i]];
+			if (!docfield.hidden) unhide_field(parent_fields[i]);
 		}
 	}
 
-	const item_fields_stock = ["warehouse_section", "received_qty", "rejected_qty"];
+	var item_fields_stock = ["warehouse_section", "received_qty", "rejected_qty"];
 
-	if (frm.fields_dict["items"]) {
-		frm.fields_dict["items"].grid.set_column_disp(item_fields_stock, cint(doc.update_stock) == 1);
+	if (cur_frm.fields_dict["items"]) {
+		cur_frm.fields_dict["items"].grid.set_column_disp(
+			item_fields_stock,
+			cint(doc.update_stock) == 1 || cint(doc.is_return) == 1 ? true : false
+		);
 	}
 
-	frm.refresh_fields();
+	cur_frm.refresh_fields();
 }
 
 cur_frm.fields_dict.cash_bank_account.get_query = function (doc) {
@@ -706,17 +708,21 @@ frappe.ui.form.on("Purchase Invoice", {
 	},
 
 	is_subcontracted: function (frm) {
+		if (frm.doc.is_old_subcontracting_flow) {
+			erpnext.buying.get_default_bom(frm);
+		}
+
 		frm.toggle_reqd("supplier_warehouse", frm.doc.is_subcontracted);
 	},
 
 	update_stock: function (frm) {
-		hide_fields(frm);
+		hide_fields(frm.doc);
 		frm.fields_dict.items.grid.toggle_reqd("item_code", frm.doc.update_stock ? true : false);
 	},
 
 	make_purchase_receipt: function (frm) {
 		frappe.model.open_mapped_doc({
-			method: "erpnext.accounts.doctype.purchase_invoice.mapper.make_purchase_receipt",
+			method: "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_purchase_receipt",
 			frm: frm,
 			freeze_message: __("Creating Purchase Receipt ..."),
 		});

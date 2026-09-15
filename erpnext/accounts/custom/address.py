@@ -54,7 +54,7 @@ class ERPNextAddress(Address):
 
 
 @frappe.whitelist()
-def get_shipping_address(company: str, address: str | None = None):
+def get_shipping_address(company, address=None):
 	filters = [
 		["Dynamic Link", "link_doctype", "=", "Company"],
 		["Dynamic Link", "link_name", "=", company],

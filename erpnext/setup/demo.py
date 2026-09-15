@@ -11,8 +11,8 @@ from frappe.utils import add_days, get_url_to_form, getdate
 
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from erpnext.accounts.utils import get_fiscal_year
-from erpnext.buying.doctype.purchase_order.mapper import make_purchase_invoice
-from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
+from erpnext.buying.doctype.purchase_order.purchase_order import make_purchase_invoice
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from erpnext.setup.setup_wizard.operations.install_fixtures import create_bank_account
 
 
@@ -135,7 +135,7 @@ def make_transactions(company):
 			for item in json.loads(data):
 				create_transaction(item, company, start_date)
 
-	convert_order_to_invoices(company)
+	convert_order_to_invoices()
 	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 0)
 
 
@@ -164,15 +164,12 @@ def create_transaction(doctype, company, start_date):
 	doc.submit()
 
 
-def convert_order_to_invoices(company):
+def convert_order_to_invoices():
 	for document in ["Purchase Order", "Sales Order"]:
 		# Keep some orders intentionally unbilled/unpaid
 		for i, order in enumerate(
 			frappe.db.get_all(
-				document,
-				filters={"docstatus": 1, "company": company},
-				fields=["name", "transaction_date"],
-				limit=6,
+				document, filters={"docstatus": 1}, fields=["name", "transaction_date"], limit=6
 			)
 		):
 			if document == "Purchase Order":

@@ -6,9 +6,6 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "billing_history_section",
-  "billing_heatmap",
-  "section_break_jznv",
   "party_type",
   "party",
   "cb_1",
@@ -24,16 +21,12 @@
   "generate_new_invoices_past_due_date",
   "submit_invoice",
   "column_break_11",
+  "current_invoice_start",
+  "current_invoice_end",
   "days_until_due",
   "generate_invoice_at",
   "number_of_days",
   "cancel_at_period_end",
-  "billing_period_section",
-  "current_invoice_start",
-  "current_invoice_end",
-  "billing_period_cb",
-  "next_billing_period_start",
-  "next_billing_period_end",
   "sb_4",
   "plans",
   "sb_1",
@@ -58,7 +51,7 @@
    "fieldtype": "Select",
    "label": "Status",
    "no_copy": 1,
-   "options": "\nTrialing\nActive\nGrace Period\nCancelled\nUnpaid\nCompleted\nRefunded",
+   "options": "\nTrialing\nActive\nGrace Period\nCancelled\nUnpaid\nCompleted",
    "read_only": 1
   },
   {
@@ -91,39 +84,16 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "billing_period_section",
-   "fieldtype": "Section Break",
-   "label": "Billing Period"
-  },
-  {
    "fieldname": "current_invoice_start",
    "fieldtype": "Date",
-   "label": "Current Invoice Start",
+   "label": "Current Invoice Start Date",
    "no_copy": 1,
    "read_only": 1
   },
   {
    "fieldname": "current_invoice_end",
    "fieldtype": "Date",
-   "label": "Current Invoice End",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "billing_period_cb",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "next_billing_period_start",
-   "fieldtype": "Date",
-   "label": "Next Billing Period Start",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "next_billing_period_end",
-   "fieldtype": "Date",
-   "label": "Next Billing Period End",
+   "label": "Current Invoice End Date",
    "no_copy": 1,
    "read_only": 1
   },
@@ -138,18 +108,7 @@
    "default": "0",
    "fieldname": "cancel_at_period_end",
    "fieldtype": "Check",
-   "label": "Cancel When Period Ends"
-  },
-  {
-   "depends_on": "eval:!doc.__islocal",
-   "fieldname": "billing_history_section",
-   "fieldtype": "Section Break",
-   "label": "Billing History"
-  },
-  {
-   "fieldname": "billing_heatmap",
-   "fieldtype": "HTML",
-   "label": "Billing Heatmap"
+   "label": "Cancel At End Of Period"
   },
   {
    "allow_on_submit": 1,
@@ -247,7 +206,7 @@
    "description": "New invoices will be generated as per schedule even if current invoices are unpaid or past due date",
    "fieldname": "generate_new_invoices_past_due_date",
    "fieldtype": "Check",
-   "label": "Bill Even If Previous Invoice Unpaid"
+   "label": "Generate New Invoices Past Due Date"
   },
   {
    "fieldname": "end_date",
@@ -280,23 +239,19 @@
    "label": "Submit Generated Invoices"
   },
   {
-   "default": "Postpaid (bill at period end)",
+   "default": "End of the current subscription period",
    "fieldname": "generate_invoice_at",
    "fieldtype": "Select",
    "label": "Generate Invoice At",
-   "options": "Postpaid (bill at period end)\nPrepaid (bill at period start)\nBill N days before period start",
+   "options": "End of the current subscription period\nBeginning of the current subscription period\nDays before the current subscription period",
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.generate_invoice_at === \"Bill N days before period start\"",
+   "depends_on": "eval:doc.generate_invoice_at === \"Days before the current subscription period\"",
    "fieldname": "number_of_days",
    "fieldtype": "Int",
    "label": "Number of Days",
-   "mandatory_depends_on": "eval:doc.generate_invoice_at === \"Bill N days before period start\""
-  },
-  {
-   "fieldname": "section_break_jznv",
-   "fieldtype": "Section Break"
+   "mandatory_depends_on": "eval:doc.generate_invoice_at === \"Days before the current subscription period\""
   }
  ],
  "index_web_pages_for_search": 1,
@@ -312,11 +267,11 @@
    "link_fieldname": "subscription"
   }
  ],
- "modified": "2026-06-04 07:21:15.938170",
+ "modified": "2025-12-23 19:42:52.036034",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Subscription",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
