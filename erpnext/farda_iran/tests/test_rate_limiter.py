@@ -4,15 +4,19 @@ import os
 import sys
 import unittest
 
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-_ADDED_PATH = _ROOT not in sys.path
-if _ADDED_PATH:
-	sys.path.insert(0, _ROOT)
+# load by file path: erpnext/__init__ imports frappe (not available standalone),
+# but limiter.py itself is dependency-free at import time.
+import importlib.util
 
-if _ADDED_PATH:
-	sys.path.remove(_ROOT)
+_LIMITER_PATH = os.path.abspath(
+	os.path.join(os.path.dirname(__file__), "..", "api", "limiter.py")
+)
+_spec = importlib.util.spec_from_file_location("farda_rate_limiter", _LIMITER_PATH)
+_mod = importlib.util.module_from_spec(_spec)
+sys.modules["farda_rate_limiter"] = _mod
+_spec.loader.exec_module(_mod)
 
-from erpnext.farda_iran.api.limiter import is_allowed
+is_allowed = _mod.is_allowed
 
 
 class FakeCache:
