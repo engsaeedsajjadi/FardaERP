@@ -40,7 +40,7 @@ class Smoke:
 			print(f"  PASS  {name} — {detail}")
 		except Exception:
 			frappe.db.rollback(save_point=sp)
-			err = traceback.format_exc(limit=2).strip().splitlines()[-1]
+			err = " | ".join(traceback.format_exc().strip().splitlines()[-3:])
 			self.results.append((name, "FAIL", err))
 			print(f"  FAIL  {name} — {err}")
 
@@ -260,6 +260,7 @@ def sales_chain(s: Smoke):
 
 	item = f"{RESULT_PREFIX} ITEM-001"
 	customer = f"{RESULT_PREFIX} Customer"
+	wh = _main_warehouse()
 	so = frappe.get_doc(
 		{
 			"doctype": "Sales Order",
@@ -269,7 +270,7 @@ def sales_chain(s: Smoke):
 			"selling_price_list": "Farda Smoke Selling",
 			"transaction_date": nowdate(),
 			"delivery_date": add_days(nowdate(), 7),
-			"items": [{"item_code": item, "qty": 2, "rate": 1_000_000}],
+			"items": [{"item_code": item, "qty": 2, "rate": 1_000_000, "warehouse": wh}],
 		}
 	)
 	so.insert()
@@ -304,7 +305,7 @@ def purchase_chain(s: Smoke):
 			"company": COMPANY,
 			"currency": CURRENCY,
 			"schedule_date": add_days(nowdate(), 3),
-			"items": [{"item_code": item, "qty": 5, "rate": 600_000}],
+			"items": [{"item_code": item, "qty": 5, "rate": 600_000, "warehouse": _main_warehouse()}],
 		}
 	)
 	po.insert()
@@ -434,6 +435,8 @@ def hrms_checks(s: Smoke):
 	desig = frappe.db.get_value("Designation", "Engineer", "name") or frappe.get_doc(
 		{"doctype": "Designation", "designation_name": "Engineer"}
 	).insert().name
+	if not frappe.db.exists("Gender", "Male"):
+		frappe.get_doc({"doctype": "Gender", "gender": "Male"}).insert()
 	emp_number = f"{RESULT_PREFIX} EMP-001"
 	if not frappe.db.exists("Employee", {"employee_number": emp_number}):
 		frappe.get_doc(
