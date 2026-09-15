@@ -55,3 +55,9 @@ or inside bench: `bench --site <site> execute erpnext.farda_iran.tests.run_unit_
 | `farda_iran/setup/install.py` | Idempotent custom fields + VAT defaults (runs on before_migrate) | integration test |
 | `farda_iran/banking/` | IBAN→بانک (registry کدهای ساتنا)، اعتبارسنجی کارت (Luhn) | `tests/test_banking.py` |
 | `farda_iran/doctype/cheque/` | چک ایرانی: دریافت/صدور، ۶ وضعیت با گذارهای قانونی، سررسید، اتصال PE | integration (pending env) |
+| `farda_iran/ui/` + `public/js/` | Desk display layer: Jalali dates + Toman currency via bootinfo flags (formatters, feature-flag gated) | JS parity tests (node, 209 vectors) |
+| `farda_iran/api/` | Whitelisted Jalali/currency conversion endpoints + sliding-window rate limiter | 4 unit tests (limiter) |
+| `farda_iran/otp/` | OTP engine: salt+pepper SHA-256, TTL, max attempts, one-time, cooldown/hourly caps + Farda OTP Log + guest endpoints | 12 unit tests |
+| `farda_iran/sms/` | SMS provider registry: Kavenegar/Melipayamak/Ghasedak/Console, env-only credentials | 11 unit tests |
+| `farda_iran/payments/` | Payment policy engine (amount-mismatch/replay/duplicate) + ZarinPal/IDPay/NextPay adapters (sandbox) | 18 unit tests |
+| `farda_iran/translations/` | fa.po audit + curated batches (empty-only fills) | audit script |
