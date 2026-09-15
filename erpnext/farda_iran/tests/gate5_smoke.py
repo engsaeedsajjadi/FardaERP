@@ -110,9 +110,11 @@ def ensure_user_and_auth(s: Smoke):
 				"roles": [{"role": "Accounts User"}, {"role": "Stock User"}, {"role": "HR User"}],
 			}
 		).insert()
-	frappe.auth.check_password(email, "FardaSmoke#2026")
+	from frappe.utils.password import check_password
+
+	check_password(email, "FardaSmoke#2026")
 	try:
-		frappe.auth.check_password(email, "wrong-password")
+		check_password(email, "wrong-password")
 		raise AssertionError("wrong password accepted!")
 	except frappe.exceptions.AuthenticationError:
 		pass
@@ -493,6 +495,10 @@ def run_all():
 	print(f"frappe {frappe.__version__} | site {frappe.local.site} | db {frappe.conf.get('db_type')}")
 	print("=" * 70)
 	frappe.set_user("Administrator")
+	if frappe.get_conf(frappe.local.site).get("db_type") == "postgres":
+		from erpnext.farda_iran.tests import pg_compat
+
+		pg_compat.apply()
 	s = Smoke()
 	s.record("Currency (IRR)", lambda: ensure_currency(s))
 	s.record("Company + default accounts", lambda: ensure_company(s))
