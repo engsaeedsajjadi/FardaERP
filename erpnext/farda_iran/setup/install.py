@@ -60,6 +60,12 @@ PAYMENT_ENTRY_FIELDS = [
 		options="Cheque",
 		insert_after="reference_date",
 	),
+	dict(
+		fieldname="farda_payment_authority",
+		label="شناسه تراکنش درگاه",
+		fieldtype="Data",
+		insert_after="reference_date",
+	),
 ]
 
 INVOICE_FIELDS = [

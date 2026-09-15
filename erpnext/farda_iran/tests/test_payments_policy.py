@@ -145,6 +145,22 @@ class TestRegistry(unittest.TestCase):
 		with self.assertRaises(ValueError):
 			paygw.resolve("unknown-gw")
 
+	def test_gateway_lowball_never_settles_unsettled_tx(self):
+		"""Gateway echoes a lower amount than logged -> FAIL_AMOUNT even if caller echoes gateway value."""
+		logged = paycore.SettledTransaction(authority="A1", settled=False, amount_irr=1_000_000)
+		report = paycore.VerificationReport(ok=True, amount_irr=500_000)
+		d = paycore.evaluate(logged, report.amount_irr, report)  # buggy-caller style: expected = echo
+		self.assertEqual(d.decision, paycore.Decision.FAIL_AMOUNT)
+		self.assertTrue(any("logged" in r for r in d.reasons), d.reasons)
+
+	def test_gateway_lowball_after_settlement_stays_idempotent_but_noted(self):
+		logged = paycore.SettledTransaction(authority="A1", settled=True, amount_irr=1_000_000)
+		report = paycore.VerificationReport(ok=True, amount_irr=500_000)
+		d = paycore.evaluate(logged, report.amount_irr, report)
+		self.assertEqual(d.decision, paycore.Decision.ALREADY_SETTLED)
+		self.assertTrue(d.already)
+		self.assertTrue(any("differs from logged" in r for r in d.reasons), d.reasons)
+
 
 if __name__ == "__main__":
 	unittest.main()

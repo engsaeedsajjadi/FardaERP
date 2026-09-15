@@ -53,7 +53,14 @@ def evaluate(
 	reported_amount_irr: int,
 	report: VerificationReport,
 ) -> PaymentDecision:
-	"""Decide what to do with a callback/verification result."""
+	"""Decide what to do with a callback/verification result.
+
+	``reported_amount_irr`` is the caller-asserted expected amount (what we asked
+	the gateway to charge). The engine ALSO checks the gateway-echoed
+	``report.amount_irr`` against the authoritative ``logged.amount_irr`` — the
+	amount recorded when the payment was started — so a tampered/low verification
+	can never settle a transaction even if a buggy caller echoes the gateway value.
+	"""
 	reasons: list[str] = []
 
 	if logged is None:
@@ -64,6 +71,12 @@ def evaluate(
 	if report.amount_irr is not None and int(report.amount_irr) != int(reported_amount_irr):
 		reasons.append(f"amount mismatch: expected {reported_amount_irr}, got {report.amount_irr}")
 		return PaymentDecision(decision=Decision.FAIL_AMOUNT, reasons=reasons)
+
+	if report.amount_irr is not None and int(report.amount_irr) != int(logged.amount_irr):
+		reasons.append(f"gateway amount differs from logged amount: logged {logged.amount_irr}, got {report.amount_irr}")
+		if not logged.settled:
+			return PaymentDecision(decision=Decision.FAIL_AMOUNT, reasons=reasons)
+		# already-settled rows stay settled (idempotency) but the anomaly is recorded
 
 	if logged.settled:
 		# duplicate callback: accept ONLY if it repeats a settled success with same amount

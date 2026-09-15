@@ -212,6 +212,13 @@ def available() -> list[str]:
 	return sorted(_REGISTRY)
 
 
+def resolve_class(name: str) -> type[PaymentGateway]:
+	cls = _REGISTRY.get(name)
+	if cls is None:
+		raise ValueError(f"درگاه پرداخت ناشناخته است: {name}")
+	return cls
+
+
 def resolve(preferred: str | None = None) -> PaymentGateway:
 	name = preferred or os.environ.get("FARDA_PAYMENT_GATEWAY", "zarinpal")
 	cls = _REGISTRY.get(name)
