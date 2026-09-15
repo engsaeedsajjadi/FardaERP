@@ -1,0 +1,351 @@
+/*
+ * FardaERP - Iranian Localization RTL Styles
+ * Copyright (c) 2025, FardaERP Team
+ * License: GNU General Public License v3
+ */
+
+/* ==========================================================================
+   RTL Support for Persian Interface
+   ========================================================================== */
+
+/* Base RTL Direction */
+[dir="rtl"] {
+	direction: rtl;
+	text-align: right;
+}
+
+[dir="rtl"] body {
+	font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+/* Navbar RTL */
+[dir="rtl"] .navbar {
+	direction: rtl;
+}
+
+[dir="rtl"] .navbar-nav {
+	margin-right: 0;
+	margin-left: auto;
+}
+
+[dir="rtl"] .nav-item {
+	margin-left: 8px;
+	margin-right: 0;
+}
+
+/* Sidebar RTL */
+[dir="rtl"] .layout-sidebar {
+	right: auto;
+	left: 0;
+	border-left: none;
+	border-right: 1px solid var(--border-color);
+}
+
+[dir="rtl"] .sidebar-menu {
+	padding-right: 0;
+}
+
+[dir="rtl"] .sidebar-menu li {
+	text-align: right;
+}
+
+[dir="rtl"] .sidebar-menu .sidebar-item {
+	padding-left: 0;
+	padding-right: 12px;
+}
+
+/* Form RTL */
+[dir="rtl"] .form-section {
+	direction: rtl;
+}
+
+[dir="rtl"] .form-grid {
+	direction: rtl;
+}
+
+[dir="rtl"] .control-label {
+	text-align: right;
+}
+
+[dir="rtl"] .input-with-feedback {
+	direction: rtl;
+	text-align: right;
+}
+
+/* Table RTL */
+[dir="rtl"] table {
+	direction: rtl;
+}
+
+[dir="rtl"] .table th,
+[dir="rtl"] .table td {
+	text-align: right;
+}
+
+/* Buttons RTL */
+[dir="rtl"] .btn-group {
+	direction: rtl;
+}
+
+[dir="rtl"] .btn-group > .btn:not(:first-child):not(:last-child) {
+	border-radius: 0;
+}
+
+[dir="rtl"] .btn-group > .btn:first-child {
+	margin-right: 0;
+	margin-left: -1px;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	border-top-right-radius: var(--btn-border-radius);
+	border-bottom-right-radius: var(--btn-border-radius);
+}
+
+[dir="rtl"] .btn-group > .btn:last-child {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+	border-top-left-radius: var(--btn-border-radius);
+	border-bottom-left-radius: var(--btn-border-radius);
+}
+
+/* Dialog RTL */
+[dir="rtl"] .modal-content {
+	direction: rtl;
+	text-align: right;
+}
+
+[dir="rtl"] .modal-header {
+	justify-content: space-between;
+	flex-direction: row-reverse;
+}
+
+/* Dropdown RTL */
+[dir="rtl"] .dropdown-menu {
+	right: 0;
+	left: auto;
+	text-align: right;
+}
+
+/* Date Picker RTL */
+[dir="rtl"] .datepicker {
+	direction: rtl;
+}
+
+[dir="rtl"] .datepicker-dropdown {
+	right: 0 !important;
+}
+
+/* Cards RTL */
+[dir="rtl"] .card {
+	direction: rtl;
+}
+
+[dir="rtl"] .card-header {
+	text-align: right;
+}
+
+/* Dashboard RTL */
+[dir="rtl"] .dashboard-chart {
+	direction: rtl;
+}
+
+[dir="rtl"] .dashboard-widget {
+	direction: rtl;
+}
+
+/* List View RTL */
+[dir="rtl"] .list-row {
+	direction: rtl;
+}
+
+[dir="rtl"] .list-row-checkbox {
+	margin-left: 8px;
+	margin-right: 0;
+}
+
+/* Filters RTL */
+[dir="rtl"] .filter-box {
+	direction: rtl;
+}
+
+[dir="rtl"] .filter-field {
+	direction: rtl;
+}
+
+/* Number Fields RTL */
+[dir="rtl"] input[type="number"],
+[dir="rtl"] .number-input {
+	direction: ltr;
+	text-align: left;
+}
+
+/* Currency Fields */
+[dir="rtl"] .currency-input {
+	direction: ltr;
+	text-align: left;
+}
+
+/* Breadcrumbs RTL */
+[dir="rtl"] .breadcrumb {
+	direction: rtl;
+}
+
+[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before {
+	padding-left: 0;
+	padding-right: 8px;
+	content: "/";
+}
+
+/* Icons RTL */
+[dir="rtl"] .icon-before {
+	margin-left: 4px;
+	margin-right: 0;
+}
+
+[dir="rtl"] .icon-after {
+	margin-right: 4px;
+	margin-left: 0;
+}
+
+/* Margins and Paddings RTL */
+[dir="rtl"] .mr-1 {
+	margin-left: 4px !important;
+	margin-right: 0 !important;
+}
+
+[dir="rtl"] .ml-1 {
+	margin-right: 4px !important;
+	margin-left: 0 !important;
+}
+
+[dir="rtl"] .pr-1 {
+	padding-left: 4px !important;
+	padding-right: 0 !important;
+}
+
+[dir="rtl"] .pl-1 {
+	padding-right: 4px !important;
+	padding-left: 0 !important;
+}
+
+/* Float RTL */
+[dir="rtl"] .float-left {
+	float: right !important;
+}
+
+[dir="rtl"] .float-right {
+	float: left !important;
+}
+
+/* Text Alignment RTL */
+[dir="rtl"] .text-left {
+	text-align: right !important;
+}
+
+[dir="rtl"] .text-right {
+	text-align: left !important;
+}
+
+/* ==========================================================================
+   Persian Font Styling
+   ========================================================================== */
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('/assets/erpnext/fonts/Vazirmatn-Regular.woff2') format('woff2'),
+		 url('/assets/erpnext/fonts/Vazirmatn-Regular.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('/assets/erpnext/fonts/Vazirmatn-Bold.woff2') format('woff2'),
+		 url('/assets/erpnext/fonts/Vazirmatn-Bold.woff') format('woff');
+	font-weight: bold;
+	font-style: normal;
+	font-display: swap;
+}
+
+body,
+.form-control,
+.btn,
+.navbar-brand,
+.sidebar-menu a {
+	font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+/* ==========================================================================
+   Persian Number Display
+   ========================================================================== */
+
+.persian-number {
+	font-feature-settings: "ss01";
+}
+
+/* ==========================================================================
+   FardaERP Branding Colors
+   ========================================================================== */
+
+:root {
+	--farda-primary: #1abc9c;
+	--farda-primary-dark: #16a085;
+	--farda-secondary: #34495e;
+	--farda-accent: #e74c3c;
+	--farda-success: #27ae60;
+	--farda-warning: #f39c12;
+	--farda-info: #3498db;
+}
+
+.farda-brand {
+	color: var(--farda-primary);
+}
+
+.farda-bg-primary {
+	background-color: var(--farda-primary);
+}
+
+/* ==========================================================================
+   Print Format Specific Styles
+   ========================================================================== */
+
+@media print {
+	[dir="rtl"] .print-format {
+		direction: rtl;
+		text-align: right;
+	}
+	
+	[dir="rtl"] .print-format table {
+		direction: rtl;
+	}
+	
+	[dir="rtl"] .print-format th,
+	[dir="rtl"] .print-format td {
+		text-align: right;
+	}
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+
+[data-theme="dark"] [dir="rtl"] {
+	--bg-color: #1a1a1a;
+	--text-color: #ffffff;
+	--border-color: #333333;
+}
+
+/* ==========================================================================
+   Mobile Responsive RTL
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	[dir="rtl"] .sidebar {
+		right: -100%;
+		left: auto;
+	}
+	
+	[dir="rtl"] .sidebar.open {
+		right: 0;
+	}
+}

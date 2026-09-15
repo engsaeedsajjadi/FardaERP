@@ -1,19 +1,19 @@
-app_name = "erpnext"
-app_title = "ERPNext"
-app_publisher = "Frappe Technologies Pvt. Ltd."
-app_description = """ERP made simple"""
+app_name = "fardaerp"
+app_title = "FardaERP"
+app_publisher = "FardaERP Team"
+app_description = """سامانه جامع مدیریت کسب‌وکار ایرانی"""
 app_icon = "fa fa-th"
-app_color = "#e74c3c"
-app_email = "hello@frappe.io"
+app_color = "#1abc9c"
+app_email = "info@fardaerp.ir"
 app_license = "GNU General Public License (v3)"
-source_link = "https://github.com/frappe/erpnext"
-app_logo_url = "/assets/erpnext/images/erpnext-logo.svg"
+source_link = "https://github.com/engsaeedsajjadi/FardaERP"
+app_logo_url = "/assets/erpnext/images/fardaerp-logo.svg"
 app_home = "/desk/home"
 
 add_to_apps_screen = [
 	{
 		"name": app_name,
-		"logo": "/assets/erpnext/images/erpnext-logo.svg",
+		"logo": "/assets/erpnext/images/fardaerp-logo.svg",
 		"title": app_title,
 		"route": app_home,
 		"has_permission": "erpnext.check_app_permission",
@@ -134,8 +134,8 @@ calendars = ["Task", "Work Order", "Sales Order", "Holiday List", "ToDo"]
 website_generators = ["BOM", "Sales Partner"]
 
 website_context = {
-	"favicon": "/assets/erpnext/images/erpnext-favicon.svg",
-	"splash_image": "/assets/erpnext/images/erpnext-logo.svg",
+	"favicon": "/assets/erpnext/images/fardaerp-favicon.svg",
+	"splash_image": "/assets/erpnext/images/fardaerp-logo.svg",
 }
 
 # nosemgrep
@@ -554,13 +554,13 @@ scheduler_events = {
 	],
 }
 
-email_brand_image = "assets/erpnext/images/erpnext-logo.jpg"
+email_brand_image = "assets/erpnext/images/fardaerp-logo.jpg"
 
 default_mail_footer = """
 	<span>
-		Sent via
-		<a class="text-muted" href="https://frappe.io/erpnext?source=via_email_footer" target="_blank">
-			ERPNext
+		ارسال شده توسط
+		<a class="text-muted" href="https://fardaerp.ir" target="_blank">
+			FardaERP
 		</a>
 	</span>
 """
@@ -772,3 +772,66 @@ repost_allowed_doctypes = [
 	"Payment Entry",
 	"Purchase Receipt",
 ]
+
+# =============================================================================
+# FardaERP - Iranian Localization Hooks
+# =============================================================================
+
+# Include Iranian localization utilities
+jinja_methods = [
+    "erpnext.regional.iran.utils.gregorian_to_jalali",
+    "erpnext.regional.iran.utils.jalali_to_gregorian",
+    "erpnext.regional.iran.utils.format_jalali_date",
+    "erpnext.regional.iran.utils.toman_to_rial",
+    "erpnext.regional.iran.utils.rial_to_toman",
+    "erpnext.regional.iran.utils.to_persian_digits",
+    "erpnext.regional.iran.utils.to_english_digits",
+    "erpnext.regional.iran.utils.format_currency",
+    "erpnext.regional.iran.utils.validate_iranian_mobile",
+    "erpnext.regional.iran.utils.validate_iranian_national_code",
+    "erpnext.regional.iran.utils.validate_iranian_iban",
+    "erpnext.regional.iran.utils.validate_iranian_economic_code",
+    "erpnext.regional.iran.utils.normalize_persian_text",
+]
+
+# Additional JS for Iranian features
+app_include_js = [
+    "erpnext.bundle.js",
+    "/assets/erpnext/js/iran/jalali_date_picker.js",
+]
+
+# Additional CSS for RTL and Persian styling
+app_include_css = [
+    "erpnext.bundle.css",
+    "/assets/erpnext/scss/farda-rtl.css",
+]
+
+# Iranian-specific doc events
+doc_events.update({
+    "Customer": {
+        "validate": "erpnext.regional.iran.utils.validate_customer_data"
+    },
+    "Supplier": {
+        "validate": "erpnext.regional.iran.utils.validate_supplier_data"
+    },
+    "Sales Invoice": {
+        "validate": "erpnext.regional.iran.utils.validate_invoice_data",
+        "on_submit": "erpnext.regional.iran.utils.on_invoice_submit"
+    },
+    "Purchase Invoice": {
+        "validate": "erpnext.regional.iran.utils.validate_invoice_data"
+    },
+    "Payment Entry": {
+        "validate": "erpnext.regional.iran.utils.validate_payment_data"
+    },
+    "Address": {
+        "validate": "erpnext.regional.iran.utils.validate_iranian_address"
+    }
+})
+
+# Default currency for Iran
+default_currency = "IRT"
+
+# Iranian fiscal year settings
+fiscal_year_start = "01-01"  # Farvardin 1st (Jalali)
+
