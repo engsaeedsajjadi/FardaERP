@@ -429,7 +429,14 @@ def accounting_checks(s: Smoke):
 	)
 	if not res or "result" not in res:
 		raise AssertionError("trial balance returned no result")
-	res2 = frappe.desk.query_report.run("General Ledger", filters={"company": COMPANY})
+	res2 = frappe.desk.query_report.run(
+		"General Ledger",
+		filters={
+			"company": COMPANY,
+			"from_date": fy_dates.year_start_date,
+			"to_date": fy_dates.year_end_date,
+		},
+	)
 	if not res2 or "result" not in res2:
 		raise AssertionError("general ledger report returned no result")
 	return f"COA {accounts} accounts, JE {je.name}, GL {gl} entries, TB+GL reports OK"
