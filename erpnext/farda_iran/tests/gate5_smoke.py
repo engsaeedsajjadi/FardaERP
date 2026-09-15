@@ -415,8 +415,17 @@ def accounting_checks(s: Smoke):
 	gl = frappe.db.count("GL Entry", {"company": COMPANY})
 	if gl < 5:
 		raise AssertionError(f"only {gl} GL entries")
+	fy_dates = frappe.get_cached_value(
+		"Fiscal Year", fiscal_year_name(), ["year_start_date", "year_end_date"], as_dict=True
+	)
 	res = frappe.desk.query_report.run(
-		"Trial Balance", filters={"company": COMPANY, "fiscal_year": fiscal_year_name()}
+		"Trial Balance",
+		filters={
+			"company": COMPANY,
+			"fiscal_year": fiscal_year_name(),
+			"from_date": fy_dates.year_start_date,
+			"to_date": fy_dates.year_end_date,
+		},
 	)
 	if not res or "result" not in res:
 		raise AssertionError("trial balance returned no result")
