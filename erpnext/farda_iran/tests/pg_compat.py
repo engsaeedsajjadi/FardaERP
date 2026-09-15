@@ -148,6 +148,27 @@ def _patch_validate_against_pcv():
 	general_ledger.validate_against_pcv = validate_against_pcv
 
 
+def _patch_get_held_invoices():
+	from erpnext.accounts import utils as accounts_utils
+
+	def get_held_invoices(party_type, party):
+		"""PG-7: CURDATE() is MySQL-only; bind today's date as a parameter instead."""
+		held_invoices = None
+		if party_type == "Supplier":
+			held_invoices = frappe.db.sql(
+				"select name from `tabPurchase Invoice`"
+				" where on_hold = 1"
+				" and release_date IS NOT NULL"
+				" and release_date > %s",
+				(frappe.utils.nowdate(),),
+				as_dict=1,
+			)
+			held_invoices = set(d["name"] for d in held_invoices)
+		return held_invoices
+
+	accounts_utils.get_held_invoices = get_held_invoices
+
+
 def _patch_get_sre_reserved_warehouses_for_voucher():
 	import erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry as sre_mod
 
@@ -411,5 +432,6 @@ def apply():
 	_patch_get_closing_entry_for_closed_period()
 	_patch_get_sre_reserved_warehouses_for_voucher()
 	_patch_query_payment_ledger()
+	_patch_get_held_invoices()
 	_APPLIED = True
-	print("pg_compat: applied 6 upstream strict-PostgreSQL shims (PG-1..PG-6)")
+	print("pg_compat: applied 7 upstream strict-PostgreSQL shims (PG-1..PG-7)")
