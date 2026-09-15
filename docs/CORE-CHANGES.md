@@ -28,3 +28,4 @@
 | Date | Section | Addition | Reason |
 |---|---|---|---|
 | 2026-09-15 | `jinja.methods` | 6 methods: `farda_iran.invoice.persian.{fa, format_jalali_date, money_words_irr, money_words_toman, toman_str}` + `farda_iran.tax.service.invoice_totals` | Persian print formats (Farda Persian Invoice) need Jalali/Toman/Persian-digits/amount-in-words/VAT summary inside server-side Jinja rendering. |
+| 2026-09-15 | `app_include_css` | `"erpnext.bundle.css"` → list + `/assets/erpnext/farda_iran/css/farda_rtl.css` | H8 RTL layer for fa-locale Desk; CSS scoped to `html[lang="fa"]` only. |

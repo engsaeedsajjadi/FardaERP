@@ -1,0 +1,31 @@
+/* FardaERP RTL layer — scoped to Persian locale only (html[lang="fa"]),
+   so non-fa sites are untouched. Loaded via app_include_css. */
+html[lang="fa"] body {
+	direction: rtl;
+	text-align: right;
+}
+html[lang="fa"] .page-head,
+html[lang="fa"] .navbar .nav-link {
+	text-align: right;
+}
+html[lang="fa"] .form-column,
+html[lang="fa"] .section-head {
+	text-align: right;
+}
+html[lang="fa"] input,
+html[lang="fa"] select,
+html[lang="fa"] textarea,
+html[lang="fa"] .form-control,
+html[lang="fa"] .link-field {
+	direction: rtl;
+	text-align: right;
+}
+/* numeric/monetary fields stay LTR for readable digits */
+html[lang="fa"] .input-xs.input-number,
+html[lang="fa"] input[type="number"],
+html[lang="fa"] .text-right,
+html[lang="fa"] .list-row .list-subject + .list-row-col.text-right {
+	direction: ltr;
+	text-align: right;
+}
+/* print format container inherits RTL naturally; pdf/print unchanged */

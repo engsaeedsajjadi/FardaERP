@@ -105,10 +105,11 @@ def ensure_ui_assets() -> None:
 	"""Copy client JS into sites/assets (no node build step required)."""
 	import shutil
 
-	src = frappe.get_app_path("erpnext", "farda_iran", "public", "js", "farda_ui.js")
-	assets = os.path.join(frappe.local.sites_path, "assets", "erpnext", "farda_iran", "js")
-	os.makedirs(assets, exist_ok=True)
-	shutil.copy2(src, os.path.join(assets, "farda_ui.js"))
+	public = frappe.get_app_path("erpnext", "farda_iran", "public")
+	assets = os.path.join(frappe.local.sites_path, "assets", "erpnext", "farda_iran")
+	for sub, fname in (("js", "farda_ui.js"), ("css", "farda_rtl.css")):
+		os.makedirs(os.path.join(assets, sub), exist_ok=True)
+		shutil.copy2(os.path.join(public, sub, fname), os.path.join(assets, sub, fname))
 
 
 def before_migrate(**_kwargs) -> None:
