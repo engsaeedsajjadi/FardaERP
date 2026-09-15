@@ -188,7 +188,7 @@ def _patch_get_negative_outstanding_invoices():
 			from
 				`tab{voucher_type}`
 			where
-				{scrub(party_type)} = %s and {party_account} = %s and docstatus = 1 and
+				{scrub(party_type)} = %s and {"debit_to" if party_type == "Customer" else "credit_to"} = %s and docstatus = 1 and
 				outstanding_amount < 0
 				{supplier_condition}
 				{condition or ""}
