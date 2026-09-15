@@ -76,6 +76,7 @@ def _sync_doctypes() -> bool:
 def run() -> str:
 	frappe.set_user("Administrator")
 	from erpnext.farda_iran.tests import pg_compat
+	from frappe.database.database import savepoint as db_savepoint
 
 	pg_compat.apply()  # this smoke site runs PostgreSQL; shims are test-scoped
 	if not frappe.db.exists("DocType", "Farda VAT Settings"):
@@ -88,40 +89,36 @@ def run() -> str:
 	vat_account = _setup_vat_settings(company)
 
 	# ---------- 1) invalid national id must raise, isolated in a savepoint ----
-	sp = frappe.db.savepoint("farda_integ_neg")
-	try:
-		frappe.get_doc(
-			{
-				"doctype": "Customer",
-				"customer_name": _unique("INTG BAD"),
-				"customer_type": "Individual",
-				"farda_national_id": "1234567890",  # invalid check digit
-			}
-		).insert()
-	except frappe.exceptions.ValidationError:
-		results.append("PASS: invalid کد ملی rejected by real validate hook")
-	else:
-		raise AssertionError("invalid national id was accepted")
-	finally:
-		frappe.db.rollback(save_point=sp)
+	with db_savepoint(catch=()):
+		try:
+			frappe.get_doc(
+				{
+					"doctype": "Customer",
+					"customer_name": _unique("INTG BAD"),
+					"customer_type": "Individual",
+					"farda_national_id": "1234567890",  # invalid check digit
+				}
+			).insert()
+		except frappe.exceptions.ValidationError:
+			results.append("PASS: invalid کد ملی rejected by real validate hook")
+		else:
+			raise AssertionError("invalid national id was accepted")
 
 	# ---------- 2) invalid IBAN must raise ----
-	sp = frappe.db.savepoint("farda_integ_iban")
-	try:
-		frappe.get_doc(
-			{
-				"doctype": "Supplier",
-				"supplier_name": _unique("INTG BAD IBAN"),
-				"supplier_type": "Company",
-				"farda_iban": "IR200170000000000123456788",  # one digit off
-			}
-		).insert()
-	except frappe.exceptions.ValidationError:
-		results.append("PASS: invalid شبا rejected by real validate hook")
-	else:
-		raise AssertionError("invalid IBAN was accepted")
-	finally:
-		frappe.db.rollback(save_point=sp)
+	with db_savepoint(catch=()):
+		try:
+			frappe.get_doc(
+				{
+					"doctype": "Supplier",
+					"supplier_name": _unique("INTG BAD IBAN"),
+					"supplier_type": "Company",
+					"farda_iban": "IR200170000000000123456788",  # one digit off
+				}
+			).insert()
+		except frappe.exceptions.ValidationError:
+			results.append("PASS: invalid شبا rejected by real validate hook")
+		else:
+			raise AssertionError("invalid IBAN was accepted")
 
 	# ---------- 3) valid party fields accepted ----
 	customer_code = "0499370899"
