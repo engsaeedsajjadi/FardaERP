@@ -485,6 +485,92 @@ def _patch_trial_balance_get_opening_balance():
 	tb_mod.get_opening_balance = get_opening_balance
 
 
+def _patch_financial_statements_get_accounting_entries():
+	from erpnext.accounts.report import financial_statements as fs_mod
+
+	def get_accounting_entries(
+		doctype,
+		from_date,
+		to_date,
+		filters,
+		root_lft=None,
+		root_rgt=None,
+		root_type=None,
+		ignore_closing_entries=None,
+		period_closing_voucher=None,
+		ignore_opening_entries=False,
+		group_by_account=False,
+		ignore_reporting_currency=True,
+	):
+		"""PG-12: FORCE INDEX is MySQL-only (SyntaxError on PostgreSQL) and the
+		grouped path selects non-aggregated columns it does not group by."""
+		from frappe.query_builder.functions import Sum
+		from pypika.terms import Bracket, ExistsCriterion, LiteralValue
+
+		gl_entry = frappe.qb.DocType(doctype)
+		query = (
+			frappe.qb.from_(gl_entry)
+			.select(
+				gl_entry.account,
+				gl_entry.debit if not group_by_account else Sum(gl_entry.debit).as_("debit"),
+				gl_entry.credit if not group_by_account else Sum(gl_entry.credit).as_("credit"),
+				gl_entry.debit_in_account_currency
+				if not group_by_account
+				else Sum(gl_entry.debit_in_account_currency).as_("debit_in_account_currency"),
+				gl_entry.credit_in_account_currency
+				if not group_by_account
+				else Sum(gl_entry.credit_in_account_currency).as_("credit_in_account_currency"),
+				gl_entry.account_currency,
+			)
+			.where(gl_entry.company == filters.company)
+		)
+
+		if not ignore_reporting_currency:
+			query = query.select(
+				gl_entry.debit_in_reporting_currency
+				if not group_by_account
+				else Sum(gl_entry.debit_in_reporting_currency).as_("debit_in_reporting_currency"),
+				gl_entry.credit_in_reporting_currency
+				if not group_by_account
+				else Sum(gl_entry.credit_in_reporting_currency).as_("credit_in_reporting_currency"),
+			)
+
+		ignore_is_opening = frappe.get_single_value(
+			"Accounts Settings", "ignore_is_opening_check_for_reporting"
+		)
+
+		if doctype == "GL Entry":
+			if not group_by_account:
+				query = query.select(gl_entry.posting_date, gl_entry.is_opening, gl_entry.fiscal_year)
+			query = query.where(gl_entry.is_cancelled == 0)
+			query = query.where(gl_entry.posting_date <= to_date)
+			# PG-12: upstream force_index("posting_date_company_index") dropped —
+			# FORCE INDEX does not exist in PostgreSQL; the planner is fine.
+			if ignore_opening_entries and not ignore_is_opening:
+				query = query.where(gl_entry.is_opening == "No")
+		else:
+			query = query.select(gl_entry.closing_date.as_("posting_date"))
+			query = query.where(gl_entry.period_closing_voucher == period_closing_voucher)
+
+		query = fs_mod.apply_additional_conditions(doctype, query, from_date, ignore_closing_entries, filters)
+
+		if (root_lft and root_rgt) or root_type:
+			account_filter_query = fs_mod.get_account_filter_query(root_lft, root_rgt, root_type, gl_entry)
+			query = query.where(ExistsCriterion(account_filter_query))
+
+		if group_by_account:
+			query = query.groupby(gl_entry.account, gl_entry.account_currency)
+
+		from frappe.desk.reportview import build_match_conditions
+
+		if match_conditions := build_match_conditions(doctype):
+			query = query.where(Bracket(LiteralValue(match_conditions)))
+
+		return query.run(as_dict=True)
+
+	fs_mod.get_accounting_entries = get_accounting_entries
+
+
 def _patch_get_held_invoices():
 	from erpnext.accounts import utils as accounts_utils
 
@@ -776,5 +862,6 @@ def apply():
 	_patch_get_orders_to_be_billed()
 	_patch_get_matched_payment_request_of_references()
 	_patch_trial_balance_get_opening_balance()
+	_patch_financial_statements_get_accounting_entries()
 	_APPLIED = True
-	print("pg_compat: applied 11 upstream strict-PostgreSQL shims (PG-1..PG-11)")
+	print("pg_compat: applied 12 upstream strict-PostgreSQL shims (PG-1..PG-12)")
