@@ -149,7 +149,7 @@ def _patch_validate_against_pcv():
 
 
 def _patch_get_sre_reserved_warehouses_for_voucher():
-	from erpnext.stock.doctype import stock_reservation_entry as sre_mod
+	import erpnext.stock.doctype.stock_reservation_entry.stock_reservation_entry as sre_mod
 
 	def get_sre_reserved_warehouses_for_voucher(
 		voucher_type: str, voucher_no: str, voucher_detail_no: str | None = None
@@ -200,7 +200,7 @@ def _patch_query_payment_ledger():
 
 
 def _patch_get_closing_entry_for_closed_period():
-	from erpnext.stock.doctype.stock_closing_entry import stock_closing_entry as sce
+	import erpnext.stock.doctype.stock_closing_entry.stock_closing_entry as sce
 
 	def get_closing_entry_for_closed_period(company):
 		closed_upto = frappe.db.get_value(
