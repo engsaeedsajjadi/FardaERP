@@ -467,16 +467,20 @@ def hrms_checks(s: Smoke):
 				"is_lwp": 0,
 			}
 		).insert()
-	frappe.get_doc(
-		{
-			"doctype": "Leave Allocation",
-			"employee": emp,
-			"leave_type": lt,
-			"from_date": nowdate(),
-			"to_date": add_days(nowdate(), 300),
-			"new_leaves_allocated": 10,
-		}
-	).insert().submit()
+	if not frappe.db.exists(
+		"Leave Allocation",
+		{"employee": emp, "leave_type": lt, "docstatus": 1},
+	):
+		frappe.get_doc(
+			{
+				"doctype": "Leave Allocation",
+				"employee": emp,
+				"leave_type": lt,
+				"from_date": nowdate(),
+				"to_date": add_days(nowdate(), 300),
+				"new_leaves_allocated": 10,
+			}
+		).insert().submit()
 	frappe.get_doc(
 		{
 			"doctype": "Attendance",

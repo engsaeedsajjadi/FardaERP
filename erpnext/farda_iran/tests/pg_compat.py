@@ -17,6 +17,9 @@ modified — so the full smoke suite can run on PostgreSQL:
   PG-3  erpnext/accounts/general_ledger.py::validate_against_pcv
         aggregate get_value + implicit ORDER BY creation → order_by=""
 
+  PG-4  erpnext/stock/doctype/stock_closing_entry/stock_closing_entry.py::
+        get_closing_entry_for_closed_period — same aggregate + ORDER BY issue
+
 Each patch documents the upstream finding so it can be reported upstream
 and dropped when fixed. Applied only when site db_type == "postgres".
 """
@@ -41,7 +44,7 @@ def _patch_get_reserved_qty():
 		reserved_qty = frappe.db.sql(
 			f"""
 			select
-				sum(dnpi_qty * ((so_item_qty - so_item_delivered_qty - CASE WHEN dont_reserve_qty_on_return THEN so_item_returned_qty ELSE 0 END) / so_item_qty))
+				sum(dnpi_qty * ((so_item_qty - so_item_delivered_qty - CASE WHEN dont_reserve_qty_on_return <> 0 THEN so_item_returned_qty ELSE 0 END) / so_item_qty))
 			from
 				(
 					(select
@@ -145,6 +148,23 @@ def _patch_validate_against_pcv():
 	general_ledger.validate_against_pcv = validate_against_pcv
 
 
+def _patch_get_closing_entry_for_closed_period():
+	from erpnext.stock.doctype.stock_closing_entry import stock_closing_entry as sce
+
+	def get_closing_entry_for_closed_period(company):
+		closed_upto = frappe.db.get_value(
+			"Period Closing Voucher",
+			{"docstatus": 1, "company": company},
+			[{"MAX": "period_end_date"}],
+			order_by="",
+		)
+		if not closed_upto:
+			return None
+		return sce._get_completed_closing_entry(company, str(closed_upto))
+
+	sce.get_closing_entry_for_closed_period = get_closing_entry_for_closed_period
+
+
 def apply():
 	"""Apply all PG shims (idempotent, postgres-only)."""
 	global _APPLIED
@@ -153,5 +173,6 @@ def apply():
 	_patch_get_reserved_qty()
 	_patch_set_landed_cost_voucher_amount()
 	_patch_validate_against_pcv()
+	_patch_get_closing_entry_for_closed_period()
 	_APPLIED = True
-	print("pg_compat: applied 3 upstream strict-PostgreSQL shims (PG-1, PG-2, PG-3)")
+	print("pg_compat: applied 4 upstream strict-PostgreSQL shims (PG-1..PG-4)")
