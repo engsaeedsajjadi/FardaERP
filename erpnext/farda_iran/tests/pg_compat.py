@@ -148,6 +148,60 @@ def _patch_validate_against_pcv():
 	general_ledger.validate_against_pcv = validate_against_pcv
 
 
+def _patch_get_negative_outstanding_invoices():
+	from erpnext.accounts.doctype.payment_entry import payment_entry as pe_mod
+
+	def get_negative_outstanding_invoices(
+		party_type,
+		party,
+		party_account,
+		party_account_currency,
+		company_currency,
+		cost_center=None,
+		condition=None,
+	):
+		"""PG-8: upstream builds raw SQL with MySQL-only constructs:
+		"..." double-quoted string literal and if(a, b, c)."""
+		scrub = frappe.scrub
+
+		if party_type not in ["Customer", "Supplier"]:
+			return []
+		voucher_type = "Sales Invoice" if party_type == "Customer" else "Purchase Invoice"
+		account = "debit_to" if voucher_type == "Sales Invoice" else "credit_to"
+		supplier_condition = ""
+		if voucher_type == "Purchase Invoice":
+			supplier_condition = "and (release_date is null or release_date <= CURRENT_DATE)"
+		if party_account_currency == company_currency:
+			rounded_total_field = "base_rounded_total"
+			grand_total_field = "base_grand_total"
+		else:
+			rounded_total_field = "rounded_total"
+			grand_total_field = "grand_total"
+
+		return frappe.db.sql(
+			f"""
+			select
+				%s as voucher_type, name as voucher_no, %s as account,
+				case when {rounded_total_field} then {rounded_total_field} else {grand_total_field} end as invoice_amount,
+				outstanding_amount, posting_date,
+				due_date, conversion_rate as exchange_rate
+			from
+				`tab{voucher_type}`
+			where
+				{scrub(party_type)} = %s and {party_account} = %s and docstatus = 1 and
+				outstanding_amount < 0
+				{supplier_condition}
+				{condition or ""}
+			order by
+				posting_date, name
+			""",
+			(voucher_type, account, party, party_account),
+			as_dict=True,
+		)
+
+	pe_mod.get_negative_outstanding_invoices = get_negative_outstanding_invoices
+
+
 def _patch_get_held_invoices():
 	from erpnext.accounts import utils as accounts_utils
 
@@ -435,5 +489,6 @@ def apply():
 	_patch_get_sre_reserved_warehouses_for_voucher()
 	_patch_query_payment_ledger()
 	_patch_get_held_invoices()
+	_patch_get_negative_outstanding_invoices()
 	_APPLIED = True
-	print("pg_compat: applied 7 upstream strict-PostgreSQL shims (PG-1..PG-7)")
+	print("pg_compat: applied 8 upstream strict-PostgreSQL shims (PG-1..PG-8)")
