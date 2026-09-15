@@ -29,6 +29,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 from frappe.query_builder.functions import Sum
+from pypika import Tuple
 from frappe.utils import flt, getdate
 
 _APPLIED = False
@@ -293,6 +294,62 @@ def _patch_get_orders_to_be_billed():
 		return order_list
 
 	pe_mod.get_orders_to_be_billed = get_orders_to_be_billed
+
+
+def _patch_get_matched_payment_request_of_references():
+	from erpnext.accounts.doctype.payment_entry import payment_entry as pe_mod
+
+	def get_matched_payment_request_of_references(references=None):
+		"""PG-10: subquery selects PR.name alongside Count(*) without grouping
+		by PR.name — only legal under MySQL's permissive GROUP BY."""
+		from frappe.query_builder.functions import Count
+
+		refs = {
+			(row.reference_doctype, row.reference_name, row.allocated_amount)
+			for row in references or []
+			if row.reference_doctype and row.reference_name and row.allocated_amount
+		}
+
+		if not refs:
+			return
+
+		PR = frappe.qb.DocType("Payment Request")
+
+		subquery = (
+			frappe.qb.from_(PR)
+			.select(
+				PR.reference_doctype,
+				PR.reference_name,
+				PR.outstanding_amount.as_("allocated_amount"),
+				PR.name.as_("payment_request"),
+				Count("*").as_("count"),
+			)
+			.where(Tuple(PR.reference_doctype, PR.reference_name, PR.outstanding_amount).isin(refs))
+			.where(PR.status != "Paid")
+			.where(PR.docstatus == 1)
+			.groupby(
+				PR.reference_doctype,
+				PR.reference_name,
+				PR.outstanding_amount,
+				PR.name,
+			)
+		)
+
+		matched_prs = (
+			frappe.qb.from_(subquery)
+			.select(
+				subquery.reference_doctype,
+				subquery.reference_name,
+				subquery.allocated_amount,
+				subquery.payment_request,
+			)
+			.where(subquery.count == 1)
+			.run()
+		)
+
+		return matched_prs if matched_prs else None
+
+	pe_mod.get_matched_payment_request_of_references = get_matched_payment_request_of_references
 
 
 def _patch_get_held_invoices():
@@ -584,5 +641,6 @@ def apply():
 	_patch_get_held_invoices()
 	_patch_get_negative_outstanding_invoices()
 	_patch_get_orders_to_be_billed()
+	_patch_get_matched_payment_request_of_references()
 	_APPLIED = True
-	print("pg_compat: applied 9 upstream strict-PostgreSQL shims (PG-1..PG-9)")
+	print("pg_compat: applied 10 upstream strict-PostgreSQL shims (PG-1..PG-10)")
