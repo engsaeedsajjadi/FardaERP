@@ -19,6 +19,7 @@ MODULES = (
 	"test_currency_service",
 	"test_normalization",
 	"test_validators",
+	"test_banking",
 )
 
 

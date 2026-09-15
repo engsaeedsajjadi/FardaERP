@@ -53,3 +53,5 @@ or inside bench: `bench --site <site> execute erpnext.farda_iran.tests.run_unit_
 | `farda_iran/party.py` | Iranian ID validators wired to Customer/Supplier/Company (کد ملی، شناسه ملی، کد اقتصادی، کد پستی، شبا) | `tests/test_validators.py` + integration |
 | `farda_iran/utilities/validators.py` | Pure-Python official algorithms: national ID, legal ID, IR IBAN (MOD-97), postal code, economic code | 21 unit tests |
 | `farda_iran/setup/install.py` | Idempotent custom fields + VAT defaults (runs on before_migrate) | integration test |
+| `farda_iran/banking/` | IBAN→بانک (registry کدهای ساتنا)، اعتبارسنجی کارت (Luhn) | `tests/test_banking.py` |
+| `farda_iran/doctype/cheque/` | چک ایرانی: دریافت/صدور، ۶ وضعیت با گذارهای قانونی، سررسید، اتصال PE | integration (pending env) |

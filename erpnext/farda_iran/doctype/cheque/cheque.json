@@ -1,0 +1,180 @@
+{
+ "actions": [],
+ "autoname": "format:CHEQ-{YYYY}-{#####}",
+ "creation": "2026-09-15 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "direction",
+  "status",
+  "section_details",
+  "cheque_number",
+  "bank",
+  "bank_branch",
+  "bank_account_number",
+  "iban",
+  "column_break_1",
+  "amount",
+  "issue_date",
+  "due_date",
+  "section_party",
+  "company",
+  "party_type",
+  "party",
+  "payment_entry",
+  "section_notes",
+  "notes"
+ ],
+ "fields": [
+  {
+   "default": "Received",
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "جهت",
+   "options": "Received\nIssued",
+   "reqd": 1
+  },
+  {
+   "default": "Received",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "وضعیت",
+   "no_copy": 1,
+   "options": "Received\nIssued\nDeposited\nCleared\nReturned\nCancelled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_details",
+   "fieldtype": "Section Break",
+   "label": "مشخصات چک"
+  },
+  {
+   "fieldname": "cheque_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "شماره چک",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "بانک",
+   "options": "Bank"
+  },
+  {
+   "fieldname": "bank_branch",
+   "fieldtype": "Data",
+   "label": "شعبه"
+  },
+  {
+   "fieldname": "bank_account_number",
+   "fieldtype": "Data",
+   "label": "شماره حساب"
+  },
+  {
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "شماره شبا"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "مبلغ (ریال)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "تاریخ صدور"
+  },
+  {
+   "default": "Today",
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "تاریخ سررسید",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_party",
+   "fieldtype": "Section Break",
+   "label": "طرف حساب"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "شرکت",
+   "options": "Company"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Link",
+   "label": "نوع طرف حساب",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "label": "طرف حساب",
+   "options": "party_type"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "label": "سند پرداخت مرتبط",
+   "options": "Payment Entry"
+  },
+  {
+   "fieldname": "section_notes",
+   "fieldtype": "Section Break",
+   "label": "توضیحات"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "یادداشت"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Cheque",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Accounts User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "cheque_number"
+}

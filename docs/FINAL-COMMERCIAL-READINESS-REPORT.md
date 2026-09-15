@@ -1,0 +1,104 @@
+# FardaERP — Final Commercial Readiness Report (LIVING DOCUMENT)
+
+> Created 2026-09-15 per the master completion prompt §69. This is an HONEST,
+> continuously-updated report — it will say **NOT YET COMMERCIAL READY** until
+> every gate has real evidence. Last update: 2026-09-15 (after Banking+Cheque phase).
+
+## Verdict
+
+# FardaERP NOT YET COMMERCIAL READY
+
+## Architecture
+
+- Single repo, package `erpnext` unchanged, isolated Iranian module `erpnext/farda_iran/`.
+- Baseline: ERPNext v16.34.2 (tree byte-identical to upstream tag) · Frappe v16.33.1 · HRMS v16.18.1 (separate app).
+- Backend currency **IRR** (integral Rials); Toman display via `farda_iran/currency` (1 Toman = 10 IRR, site-config overridable).
+- Dates: DB Gregorian; Jalali via `farda_iran/jalali`.
+- VAT: `Farda VAT Settings` (default 10%, configurable, effective-date, per-party exemption) applied on real invoices via hooks.
+- Core changes: NONE to upstream code except: `modules.txt` (module registration, CORE-001) and **appended hooks** (CORE-003). Both recorded in docs/CORE-CHANGES.md.
+
+## Implemented Features (with evidence)
+
+| Feature | Evidence |
+|---|---|
+| Baseline & version integrity | Gates G1–G4 PASS (docs/VERSIONS.md §5) |
+| Real runtime smoke (auth→docs→GL→reports) | **Gate 5 = 13/13 PASS**, tag `fardainerp-gate5-pass`, on Python 3.14 + PostgreSQL 16.2 + Redis 7.4.1 |
+| Jalali central service | 24 unit tests incl. ~16k-day roundtrip + real anchors |
+| IRR/Toman central service | 18 unit tests (ratio/rounding/negative/large/format) |
+| Persian normalization/search fold | 7 unit tests |
+| Iranian ID validators (کد ملی/شناسه ملی/شبا/کد پستی/کد اقتصادی) | 21 unit tests + live negative validation on site |
+| Configurable VAT | 5 integration tests on live site: real SI, 10% tax row, totals, **GL entry**, exemption |
+| Iranian banking utilities (IBAN→bank-code registry, Luhn card check) | unit tests (86/86 suite) |
+| Cheque lifecycle DocType (دریافت/صدور، وصول، برگشت، deposoit، لغو + سررسید) | DocType + transition engine; integration test pending env rebuild |
+| Upstream PostgreSQL defects | 12 documented runtime shims (PG-1..PG-12), queued for upstream report |
+
+## Remaining Features (to Commercial v1)
+
+1. Jalali/Toman **UI integration** (forms, date pickers, list/report columns, print)
+2. Banking/IBAN + Cheque: **site integration tests** (blocked on env rebuild) + cheque↔Payment Entry wiring + reminders scheduler
+3. SMS provider abstraction + OTP (hash/rate-limit/audit)
+4. Payment gateway abstraction (ZarinPal/IDPay/NextPay) + security (idempotency/replay/amount-match)
+5. Persian invoice print formats + Persian PDF pipeline (RTL fonts)
+6. Full RTL/translation coverage (~2,488 empty fa msgids)
+7. Iranian reports (VAT return, cheque status, aging) + dashboards (real data)
+8. Security hardening audit + API surface + notifications
+9. Backup/Restore scripts + tested restore proof
+10. Docker production (pinned images, healthchecks) + **MariaDB validation** (currently NOT TESTED — PG-only evidence)
+11. CI/CD pipelines (lint/compile/unit/integration/security/build)
+12. E2E suite + performance pass + upgrade/migration rehearsal
+
+## Test Results
+
+| Suite | Result | Env |
+|---|---|---|
+| farda_iran unit suite | **86/86 PASS** | Python 3.11 sandbox (stdlib-only; 3.14 re-verify pending rebuild) |
+| Gate-5 runtime smoke | **13/13 PASS** (twice, idempotent) | Python 3.14 + PG 16.2 + Redis 7.4.1 (before sandbox restart) |
+| Iran integration (VAT+party) | **5/5 PASS** | live site `smoke.farda.local` (before sandbox restart) |
+| Docker build/runtime | NOT RUN — **DOCKER VALIDATION PENDING** (no daemon) | — |
+| MariaDB | NOT TESTED | needs Docker/runner |
+
+## Security Results
+- Negative permission tests PASS (Gate-5). OTP/payment/file-upload audit NOT YET PERFORMED (features pending). Secrets: none in repo (.env.example placeholders only).
+
+## Docker / CI/CD / Performance / Backup-Restore / Migration Results
+- NOT RUN / PENDING — see Remaining Features. No false claims.
+
+## License & Trademark
+- GPL-3.0 preserved; Frappe/ERPNext attribution intact; FardaERP not presented as an official Frappe/ERPNext product.
+
+## Known Limitations
+- PostgreSQL-only runtime evidence (MariaDB pending). 3.14 unit evidence pending env rebuild (tests are stdlib-only).
+- 2026-09-15 sandbox restart wiped the local runtime (`/opt/fardabench`, venv314) and the local git clone; history recovered from GitHub (`b520244`). Runtime gates must be re-executed after the toolchain is rebuilt.
+
+## Production Deployment Procedure
+- PENDING — will be finalized with the Docker phase (pinned images, .env.example, healthchecks, backup/restore runbook).
+
+## Area Status Table (§69)
+
+| Area | Status | Evidence |
+|---|---|---|
+| ERPNext Core | ✅ PRESENT | G1 tree identity + Gate-5 |
+| Frappe | ✅ PRESENT | v16.33.1 real runtime |
+| HRMS | ✅ PRESENT | Gate-5 HRMS step |
+| Iranian Localization | 🟡 PARTIAL | core services + VAT + IDs + banking utilities done; UI/report integration pending |
+| Accounting | ✅ PRESENT | Gate-5 (COA/JE/GL/reports) |
+| Toman | 🟡 PARTIAL | central service tested; UI layer pending |
+| VAT | 🟡 PARTIAL | live invoice integration PASS; category/return-report pending |
+| Jalali | 🟡 PARTIAL | core service tested; UI/pickers/reports pending |
+| Banking | 🟡 PARTIAL | IBAN/bank-registry/card utilities + validators; Bank Account UI fields pending |
+| Cheque | 🟡 PARTIAL | DocType + transitions; site test + PE wiring + reminders pending |
+| Payment | ❌ MISSING | adapter architecture pending (LIVE CREDENTIAL VALIDATION PENDING) |
+| SMS | ❌ MISSING | provider abstraction pending (LIVE SMS VALIDATION PENDING) |
+| OTP | ❌ MISSING | hash/rate-limit/audit pending |
+| Invoice | 🟡 PARTIAL | real invoices PASS in tests; Persian print format pending |
+| PDF | ❌ MISSING | Persian RTL PDF pipeline pending |
+| RTL | 🟡 PARTIAL | ~2,488 empty fa msgids; CSS/UX work pending |
+| Reports | 🟡 PARTIAL | upstream reports PASS; Iranian (VAT/cheque/Jalali) pending |
+| Security | 🟡 PARTIAL | framework security + negative tests; Farda audit pending |
+| Backup | 🟡 PARTIAL | bench native; scripts+restore proof pending |
+| Docker | ❌ MISSING | DOCKER VALIDATION PENDING |
+| CI/CD | ❌ MISSING | pipelines pending |
+| Tests | 🟡 PARTIAL | 86 unit + 18 smoke/integration PASS; E2E pending |
+| Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
+| Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
+| Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
