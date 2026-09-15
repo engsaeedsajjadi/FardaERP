@@ -530,7 +530,7 @@ def run_all():
 	print(f"RESULT: {passed} PASS, {failed} FAIL, total {len(s.results)}")
 	if failed:
 		print("\nFULL TRACEBACKS:")
-		for name, tb in self.tracebacks:
+		for name, tb in s.tracebacks:
 			print(f"--- {name} ---\n{tb}\n")
 		print("FAILED STEPS:")
 		for name, st, err in s.results:
