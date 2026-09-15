@@ -110,3 +110,10 @@
 - invoice/pdf.py: pure-Python Persian PDF (reportlab + arabic_reshaper + python-bidi + Vazirmatn OFL bundled) sharing the invoice façade with HTML.
 - E2E live-site 9/9 PASS incl. PDF text-layer verification (pdfminer).
 - ENV note: frappe's own weasyprint PDF needs system pango — absent in this sandbox; Docker image (DKR phase) must install pango for that path. Our renderer is independent of it.
+
+## 2026-09-15 (نوبت دوم) — H8 RTL + گزارش فارسی + دستهٔ ۲ ترجمه
+- RTL stylesheet (fa-scoped `html[lang="fa"]`) via app_include_css — live-tested (asset + scoping).
+- Farda Sales Register (Script Report): Jalali dates, Toman+Persian digits+٬, جمع self-consistency, date filters — E2E 5/5 live.
+- fa.po batch2: 121 curated translations (1,722→1,601 empty).
+- FULL REGRESSION on live site (py3.14 + PG16.2 UTF8): unit 133/133 + JS parity + Gate-5 13/13 + Iran 5/5 + Payments 9/9 + OTP 6/6 + Print/PDF 9/9 + Reports 5/5.
+- ENV rebuilt from scratch this turn via bootstrap_tools.sh + finish_env.sh (both rerun-safe, codeload/pypi-only); facts recorded in script headers.
