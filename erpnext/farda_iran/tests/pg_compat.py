@@ -148,6 +148,57 @@ def _patch_validate_against_pcv():
 	general_ledger.validate_against_pcv = validate_against_pcv
 
 
+def _patch_get_sre_reserved_warehouses_for_voucher():
+	from erpnext.stock.doctype import stock_reservation_entry as sre_mod
+
+	def get_sre_reserved_warehouses_for_voucher(
+		voucher_type: str, voucher_no: str, voucher_detail_no: str | None = None
+	) -> list:
+		"""PG-5: DISTINCT + ORDER BY creation requires creation in the select list."""
+		sre = frappe.qb.DocType("Stock Reservation Entry")
+		query = (
+			frappe.qb.from_(sre)
+			.select(sre.warehouse, sre.creation)
+			.distinct()
+			.where(
+				(sre.docstatus == 1)
+				& (sre.voucher_type == voucher_type)
+				& (sre.voucher_no == voucher_no)
+				& (sre.delivered_qty < sre.reserved_qty)
+			)
+			.orderby(sre.creation)
+		)
+		if voucher_detail_no:
+			query = query.where(sre.voucher_detail_no == voucher_detail_no)
+		warehouses = query.run(as_list=True)
+		return [d[0] for d in warehouses] if warehouses else []
+
+	sre_mod.get_sre_reserved_warehouses_for_voucher = get_sre_reserved_warehouses_for_voucher
+
+
+def _patch_query_payment_ledger():
+	from erpnext.accounts.utils import QueryPaymentLedger
+
+	_orig = QueryPaymentLedger.query_for_outstanding
+
+	def query_for_outstanding(self):
+		"""PG-6: strict GROUP BY — append non-aggregated selected columns."""
+		query = _orig(self)
+		ple = frappe.qb.DocType("Payment Ledger Entry")
+		for field in (
+			ple.account,
+			ple.posting_date,
+			ple.due_date,
+			ple.account_currency,
+			ple.cost_center,
+			ple.remarks,
+		):
+			query = query.groupby(field)
+		return query
+
+	QueryPaymentLedger.query_for_outstanding = query_for_outstanding
+
+
 def _patch_get_closing_entry_for_closed_period():
 	from erpnext.stock.doctype.stock_closing_entry import stock_closing_entry as sce
 
@@ -174,5 +225,7 @@ def apply():
 	_patch_set_landed_cost_voucher_amount()
 	_patch_validate_against_pcv()
 	_patch_get_closing_entry_for_closed_period()
+	_patch_get_sre_reserved_warehouses_for_voucher()
+	_patch_query_payment_ledger()
 	_APPLIED = True
-	print("pg_compat: applied 4 upstream strict-PostgreSQL shims (PG-1..PG-4)")
+	print("pg_compat: applied 6 upstream strict-PostgreSQL shims (PG-1..PG-6)")
