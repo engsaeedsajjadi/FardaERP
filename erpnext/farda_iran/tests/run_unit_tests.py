@@ -24,6 +24,7 @@ MODULES = (
 	"test_rate_limiter",
 	"test_otp_core",
 	"test_sms_providers",
+	"test_payments_policy",
 )
 
 
