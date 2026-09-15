@@ -182,7 +182,7 @@ def _patch_get_negative_outstanding_invoices():
 			f"""
 			select
 				%s as voucher_type, name as voucher_no, %s as account,
-				case when {rounded_total_field} then {rounded_total_field} else {grand_total_field} end as invoice_amount,
+				case when {rounded_total_field} <> 0 then {rounded_total_field} else {grand_total_field} end as invoice_amount,
 				outstanding_amount, posting_date,
 				due_date, conversion_rate as exchange_rate
 			from
