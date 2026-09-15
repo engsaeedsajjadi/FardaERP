@@ -1,177 +1,176 @@
-
 <div align="center">
-    <a href="https://frappe.io/erpnext">
-	<img src="./erpnext/public/images/v16/erpnext.svg" alt="ERPNext Logo" height="80px" width="80px"/>
+    <a href="https://fardaerp.ir">
+        <img src="./erpnext/public/images/fardaerp-logo.svg" alt="FardaERP Logo" height="80px"/>
     </a>
-    <h2>ERPNext</h2>
+    <h2>FardaERP | فردا ERP</h2>
     <div align="center">
-        <p>Powerful, Intuitive and Open-Source ERP</p>
+        <p>سامانه جامع مدیریت کسب‌وکار ایرانی | Iranian Business Management ERP System</p>
+        <p>ERP ایرانی برای فروش، خرید، انبار، تولید و مالی</p>
     </div>
 
-[![Learn on Frappe School](https://img.shields.io/badge/Frappe%20School-Learn%20ERPNext-blue?style=flat-square)](https://frappe.school)<br><br>
-[![CI](https://github.com/frappe/erpnext/actions/workflows/server-tests-mariadb.yml/badge.svg?event=schedule)](https://github.com/frappe/erpnext/actions/workflows/server-tests-mariadb.yml)
-[![docker pulls](https://img.shields.io/docker/pulls/frappe/erpnext.svg)](https://hub.docker.com/r/frappe/erpnext)
+[![Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://github.com/engsaeedsajjadi/FardaERP)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](./license.txt)
 
 </div>
 
 <div align="center">
-	<img src="./erpnext/public/images/v16/hero_image.png" alt="ERPNext Hero Image"/>
+        <img src="./erpnext/public/images/v16/hero_image.png" alt="FardaERP Hero Image"/>
 </div>
 
 <div align="center">
-	<a href="https://erpnext-demo.frappe.cloud/api/method/erpnext_demo.erpnext_demo.auth.login_demo">Live Demo</a>
-	-
-	<a href="https://frappe.io/erpnext">Website</a>
-	-
-	<a href="https://docs.frappe.io/erpnext/">Documentation</a>
+        <a href="#ویژگی‌ها">ویژگی‌ها</a>
+        -
+        <a href="#نصب">نصب</a>
+        -
+        <a href="#مستندات">مستندات</a>
+        -
+        <a href="#مشارکت">مشارکت</a>
 </div>
 
-## ERPNext
+---
 
-100% Open-Source ERP System to help you run your business.
+## درباره FardaERP
 
-### Motivation
+**FardaERP** یک سامانه جامع مدیریت کسب‌وکار (ERP) بومی‌شده برای بازار ایران است که بر پایه ERPNext ساخته شده است.
 
-Running a business is a complex task - handling invoices, tracking stock, managing personnel, and other daily operations. In a market where software is sold separately to manage each of these tasks, ERPNext does all of the above and more, for free.
+این سیستم به‌طور خاص برای نیازهای شرکت‌ها، فروشگاه‌ها، کارخانه‌ها، شرکت‌های بازرگانی و کسب‌وکارهای ایرانی طراحی شده است.
 
-### Key Features
+### ویژگی‌های کلیدی
 
-- **Accounting**: All the tools you need to manage cash flow in one place, right from recording transactions to summarizing and analyzing financial reports.
-- **Order Management**: Track inventory levels, replenish stock, and manage sales orders, customers, suppliers, shipments, deliverables, and order fulfillment.
-- **Manufacturing**: Simplifies the production cycle, helps track material consumption, exhibits capacity planning, handles subcontracting, and more!
-- **Asset Management**: From purchase to disposal, IT infrastructure to equipment. Covers every branch of your organization, all in one centralized system.
-- **Projects**: Deliver both internal and external projects on time, budget and profitability. Track tasks, timesheets, and issues by project.
+#### 🇮🇷 بومی‌سازی کامل برای ایران
 
-<details open>
+- **زبان فارسی**: رابط کاربری کاملاً فارسی با پشتیبانی از راست‌چین (RTL)
+- **تقویم شمسی**: پشتیبانی کامل از تاریخ جلالی در تمام بخش‌ها
+- **واحد پول**: مدیریت تومان و ریال با تبدیل خودکار
+- **اعداد فارسی**: نمایش اعداد به فرمت فارسی
 
-<summary>More</summary>
-	<img src="https://erpnext.com/files/v16_bom.png"/>
-	<img src="https://erpnext.com/files/v16_stock_summary.png"/>
-	<img src="https://erpnext.com/files/v16_job_card.png"/>
-	<img src="https://erpnext.com/files/v16_tasks.png"/>
-</details>
+#### 💰 حسابداری ایرانی
 
-### Under the Hood
+- حساب‌های کل، معین و تفصیلی
+- دفتر روزنامه و دفتر کل
+- تراز آزمایشی، سود و زیان، ترازنامه
+- مدیریت چک‌های دریافتی و پرداختی
+- مراکز هزینه و پروژه
+- مالیات بر ارزش افزوده
 
-- [**Frappe Framework**](https://github.com/frappe/frappe): A full-stack web application framework written in Python and JavaScript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
+#### 📦 فروش و خرید
 
-- [**Frappe UI**](https://github.com/frappe/frappe-ui): A Vue-based UI library, to provide a modern user interface. The Frappe UI library provides a variety of components that can be used to build single-page applications on top of the Frappe Framework.
+- فاکتور فروش با فرمت ایرانی
+- فاکتور خرید
+- پیش‌فاکتور
+- سفارش فروش و خرید
+- رسید انبار و حواله انبار
+- برگشت از فروش و خرید
 
-## Production Setup
+#### 🏭 انبارداری و تولید
 
-### Managed Hosting
+- مدیریت چند انبار و چند شعبه
+- موجودی لحظه‌ای
+- حداقل و حداکثر موجودی
+- شماره سریال و Batch
+- دستور تولید
+- لیست مواد (BOM)
 
-You can try [Frappe Cloud](https://frappecloud.com), a simple, user-friendly, and sophisticated [open-source](https://github.com/frappe/press) platform to host Frappe applications reliably and securely.
+#### 🏦 بانک و خزانه‌داری
 
-It handles installation, setup, upgrades, monitoring, maintenance, and support of your Frappe deployments. It is a fully featured developer platform with an ability to manage and control multiple Frappe deployments.
+- مدیریت حساب‌های بانکی
+- مغایرت‌گیری بانکی
+- دریافت و پرداخت
+- تنخواه گردان
+- چک و اسناد مدت‌دار
 
-<div>
-	<a href="https://erpnext-demo.frappe.cloud/app/home" target="_blank" rel="noopener noreferrer">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
-			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
-		</picture>
-	</a>
-</div>
+#### 👥 CRM و فروش
 
+- مدیریت مشتریان
+- سرنخ و فرصت‌های فروش
+- پایپ‌لاین فروش
+- فعالیت‌ها و پیگیری‌ها
 
-### Self-Hosted
-#### Docker
+#### 📊 گزارش‌گیری و داشبورد
 
-See [Frappe Docker Documentation](https://github.com/frappe/frappe_docker) for full documentation & FAQ on Docker setup
+- داشبورد مدیریتی با KPIهای کلیدی
+- گزارش‌های متنوع فروش، خرید، انبار و مالی
+- خروجی Excel و PDF
+- نمودارهای تحلیلی
 
-#### Prerequisites
+### زیرساخت فنی
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose v2](https://docs.docker.com/compose/)
-- [git](https://docs.github.com/en/get-started/getting-started-with-git/set-up-git)
+- **Frappe Framework**: فریم‌ورک full-stack قدرتمند
+- **Python & JavaScript**: تکنولوژی‌های مدرن و محبوب
+- **MariaDB/PostgreSQL**: پایگاه داده رابطه‌ای
+- **Redis**: کشینگ و صف وظایف
+- **Docker**: استقرار آسان
 
-> For Docker basics and best practices refer to Docker's [documentation](https://docs.docker.com)
+---
 
-### Try on your environment
+## نصب
 
-> **⚠️ Disposable demo only**
->
-> **This setup is intended for quick evaluation. Expect to throw the environment away.** You will not be able to install custom apps to this setup. For production deployments, custom configurations, and detailed explanations, see the full documentation.
+### پیش‌نیازها
 
-First clone the repo:
+- Python 3.14+
+- Node.js 18+
+- MariaDB 10.6+ یا PostgreSQL 14+
+- Redis 6+
 
-```sh
-git clone https://github.com/frappe/frappe_docker
-cd frappe_docker
+### نصب با Docker (توصیه شده)
+
+```bash
+# کلون کردن Repository
+git clone https://github.com/engsaeedsajjadi/FardaERP.git
+cd FardaERP
+
+# اجرای Docker Compose
+docker-compose up -d
+
+# مشاهده لاگ‌ها
+docker-compose logs -f
 ```
 
-Then run:
+### نصب دستی
 
-```sh
-docker compose -f pwd.yml up -d
-```
-Wait for a couple of minutes for ERPNext site to be created or check the `create-site` container logs before opening browser on port `8080`. (username: `Administrator`, password: `admin`)
+برای راهنمای نصب کامل، به [INSTALLATION.md](./INSTALLATION.md) مراجعه کنید.
 
-See [Frappe Docker](https://github.com/frappe/frappe_docker/blob/main/docs/01-getting-started/03-arm64.md) for ARM based docker setup
+---
 
+## مستندات
 
-## Development Setup
-### Manual Install
+- [راهنمای نصب](./INSTALLATION.md)
+- [راهنمای توسعه](./DEVELOPMENT.md)
+- [راهنمای استقرار](./DEPLOYMENT.md)
+- [بومی‌سازی ایرانی](./IRAN-LOCALIZATION.md)
+- [حسابداری](./ACCOUNTING.md)
+- [درگاه‌های پرداخت](./PAYMENT-GATEWAYS.md)
+- [پیامک](./SMS.md)
+- [امنیت](./SECURITY.md)
 
-The Easy Way: our install script for bench will install all dependencies (e.g. MariaDB). See https://github.com/frappe/bench for more details.
+---
 
-New passwords will be created for the ERPNext "Administrator" user, the MariaDB root user, and the Frappe user (the script displays the passwords and saves them to ~/frappe_passwords.txt).
+## مشارکت
 
+ما از مشارکت جامعه استقبال می‌کنیم! برای اطلاعات بیشتر به [CONTRIBUTING.md](./.github/CONTRIBUTING.md) مراجعه کنید.
 
-### Local
+---
 
-To setup the repository locally follow the steps mentioned below:
+## مجوز
 
-1. Setup bench by following the [Installation Steps](https://frappeframework.com/docs/user/en/installation) and start the server
-   ```
-   bench start
-   ```
+این پروژه تحت مجوز **GNU General Public License v3** منتشر شده است. برای اطلاعات بیشتر به [license.txt](./license.txt) مراجعه کنید.
 
-2. In a separate terminal window, run the following commands:
-   ```
-   # Create a new site
-   bench new-site erpnext.localhost
-   ```
+---
 
-3. Get the ERPNext app and install it
-   ```
-   # Get the ERPNext app
-   bench get-app https://github.com/frappe/erpnext
+## قدردانی
 
-   # Install the app
-   bench --site erpnext.localhost install-app erpnext
-   ```
+این پروژه بر پایه [ERPNext](https://github.com/frappe/erpnext) و [Frappe Framework](https://github.com/frappe/frappe) ساخته شده است. ما از جامعه متن‌باز این پروژه‌ها سپاسگزاریم.
 
-4. Open the URL `http://erpnext.localhost:8000/app` in your browser, you should see the app running
+---
 
-## Learning and Community
+## تماس و پشتیبانی
 
-1. [Frappe School](https://school.frappe.io) - Learn Frappe Framework and ERPNext from the various courses by the maintainers or from the community.
-2. [Official documentation](https://docs.erpnext.com/) - Extensive documentation for ERPNext.
-3. [Discussion Forum](https://discuss.frappe.io/c/erpnext/6) - Engage with the community of ERPNext users and service providers.
-4. [Telegram Group](https://erpnext_public.t.me) - Get instant help from huge community of users.
+- وب‌سایت: [https://fardaerp.ir](https://fardaerp.ir)
+- ایمیل: info@fardaerp.ir
+- GitHub: [github.com/engsaeedsajjadi/FardaERP](https://github.com/engsaeedsajjadi/FardaERP)
 
+---
 
-## Contributing
-
-1. [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
-2. [Report Security Vulnerabilities](https://erpnext.com/security)
-3. [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
-4. [Translations](https://crowdin.com/project/frappe)
-
-
-## Logo and Trademark Policy
-
-Please read our [Logo and Trademark Policy](TRADEMARK_POLICY.md).
-
-<br />
-<br />
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
-		</picture>
-	</a>
+<div align="center">
+    <p>ساخته شده با ❤️ برای کسب‌وکارهای ایرانی</p>
 </div>

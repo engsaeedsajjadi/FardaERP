@@ -1,26 +1,65 @@
-*.pyc
-*.py~
-.DS_Store
-conf.py
-latest_updates.json
-.wnf-lang-status
-*.egg-info
+```
+# Environment files
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Dependencies
+node_modules/
+
+# Build artifacts
 dist/
-erpnext/public/dist
-erpnext/docs/current
+build/
+target/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary files
+*.tmp
 *.swp
 *.swo
-__pycache__
-*~
-.idea/
-.vscode/
-.helix/
-node_modules/
-.backportrc.json
-# Aider AI Chat
-.aider*
 
-# Banking SPA
-erpnext/public/banking
-erpnext/www/banking.html
-banking/.env.production
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Editors
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Compression files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+```

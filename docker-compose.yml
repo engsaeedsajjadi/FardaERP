@@ -1,0 +1,278 @@
+# FardaERP Docker Compose Configuration
+# Copyright (c) 2025, FardaERP Team
+# License: GNU General Public License v3
+
+version: "3.9"
+
+services:
+  # =============================================================================
+  # Database Service (MariaDB)
+  # =============================================================================
+  fardaerp-db:
+    image: mariadb:10.6
+    container_name: fardaerp-db
+    restart: unless-stopped
+    healthcheck:
+      test: mysqladmin ping -h localhost --password=${DB_PASSWORD:-admin}
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-admin}
+      MYSQL_DATABASE: ${DB_NAME:-fardaerp}
+    networks:
+      - fardaerp-network
+    command: >
+      mysqld
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=256M
+      --max-connections=200
+
+  # =============================================================================
+  # Redis Cache Service
+  # =============================================================================
+  fardaerp-redis-cache:
+    image: redis:alpine
+    container_name: fardaerp-redis-cache
+    restart: unless-stopped
+    volumes:
+      - redis-cache-data:/data
+    networks:
+      - fardaerp-network
+    command: redis-server --appendonly yes
+
+  # =============================================================================
+  # Redis Queue Service
+  # =============================================================================
+  fardaerp-redis-queue:
+    image: redis:alpine
+    container_name: fardaerp-redis-queue
+    restart: unless-stopped
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - fardaerp-network
+    command: redis-server --appendonly yes
+
+  # =============================================================================
+  # Redis SocketIO Service
+  # =============================================================================
+  fardaerp-redis-socketio:
+    image: redis:alpine
+    container_name: fardaerp-redis-socketio
+    restart: unless-stopped
+    volumes:
+      - redis-socketio-data:/data
+    networks:
+      - fardaerp-network
+    command: redis-server --appendonly yes
+
+  # =============================================================================
+  # Frappe/FardaERP Backend Service
+  # =============================================================================
+  fardaerp-backend:
+    image: frappe/bench:latest
+    container_name: fardaerp-backend
+    restart: unless-stopped
+    working_dir: /home/frappe/bench-user
+    volumes:
+      - .:/home/frappe/bench-user/sites
+      - ./apps:/home/frappe/bench-user/apps
+      - ./logs:/home/frappe/bench-user/logs
+    environment:
+      - DB_HOST=fardaerp-db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-fardaerp}
+      - DB_PASSWORD=${DB_PASSWORD:-admin}
+      - REDIS_CACHE=redis://fardaerp-redis-cache:6379
+      - REDIS_QUEUE=redis://fardaerp-redis-queue:6379
+      - REDIS_SOCKETIO=redis://fardaerp-redis-socketio:6379
+      - SOCKETIO_PORT=9000
+      - WORKERS_NUMBER=4
+      - SITES_JSON=${SITES_JSON:-{"sites": ["fardaerp.local"]}}
+    depends_on:
+      fardaerp-db:
+        condition: service_healthy
+      fardaerp-redis-cache:
+        condition: service_started
+      fardaerp-redis-queue:
+        condition: service_started
+      fardaerp-redis-socketio:
+        condition: service_started
+    networks:
+      - fardaerp-network
+    command: bash -c "
+      bench set-config -g db_host fardaerp-db &&
+      bench set-config -gp db_port 3306 &&
+      bench set-config -g redis_cache redis://fardaerp-redis-cache:6379 &&
+      bench set-config -g redis_queue redis://fardaerp-redis-queue:6379 &&
+      bench set-config -g redis_socketio redis://fardaerp-redis-socketio:6379 &&
+      bench set-config -gp socketio_port 9000 &&
+      bench setup requirements --dev &&
+      bench new-site --no-mariadb-socket --mariadb-root-password ${DB_PASSWORD:-admin} --admin-password ${ADMIN_PASSWORD:-admin} --db-root-password ${DB_PASSWORD:-admin} ${SITE_NAME:-fardaerp.local} &&
+      bench --site ${SITE_NAME:-fardaerp.local} install-app erpnext &&
+      bench --site ${SITE_NAME:-fardaerp.local} set-config language fa &&
+      bench --site ${SITE_NAME:-fardaerp.local} clear-cache &&
+      bench use ${SITE_NAME:-fardaerp.local} &&
+      bench start
+      "
+
+  # =============================================================================
+  # Frontend/Web Service (Nginx)
+  # =============================================================================
+  fardaerp-frontend:
+    image: nginx:alpine
+    container_name: fardaerp-frontend
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - .:/home/frappe/bench-user/sites
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - fardaerp-backend
+    networks:
+      - fardaerp-network
+
+  # =============================================================================
+  # Scheduler Service
+  # =============================================================================
+  fardaerp-scheduler:
+    image: frappe/bench:latest
+    container_name: fardaerp-scheduler
+    restart: unless-stopped
+    working_dir: /home/frappe/bench-user
+    volumes:
+      - .:/home/frappe/bench-user/sites
+      - ./apps:/home/frappe/bench-user/apps
+    environment:
+      - DB_HOST=fardaerp-db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-fardaerp}
+      - DB_PASSWORD=${DB_PASSWORD:-admin}
+      - REDIS_CACHE=redis://fardaerp-redis-cache:6379
+      - REDIS_QUEUE=redis://fardaerp-redis-queue:6379
+    depends_on:
+      fardaerp-db:
+        condition: service_healthy
+      fardaerp-redis-cache:
+        condition: service_started
+      fardaerp-redis-queue:
+        condition: service_started
+    networks:
+      - fardaerp-network
+    command: >
+      sh -c "bench --site ${SITE_NAME:-fardaerp.local} scheduler start"
+
+  # =============================================================================
+  # Worker Default Service
+  # =============================================================================
+  fardaerp-worker-default:
+    image: frappe/bench:latest
+    container_name: fardaerp-worker-default
+    restart: unless-stopped
+    working_dir: /home/frappe/bench-user
+    volumes:
+      - .:/home/frappe/bench-user/sites
+      - ./apps:/home/frappe/bench-user/apps
+      - ./logs:/home/frappe/bench-user/logs
+    environment:
+      - DB_HOST=fardaerp-db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-fardaerp}
+      - DB_PASSWORD=${DB_PASSWORD:-admin}
+      - REDIS_CACHE=redis://fardaerp-redis-cache:6379
+      - REDIS_QUEUE=redis://fardaerp-redis-queue:6379
+    depends_on:
+      fardaerp-db:
+        condition: service_healthy
+      fardaerp-redis-cache:
+        condition: service_started
+      fardaerp-redis-queue:
+        condition: service_started
+    networks:
+      - fardaerp-network
+    command: >
+      sh -c "bench --site ${SITE_NAME:-fardaerp.local} worker --queue default"
+
+  # =============================================================================
+  # Worker Short Service
+  # =============================================================================
+  fardaerp-worker-short:
+    image: frappe/bench:latest
+    container_name: fardaerp-worker-short
+    restart: unless-stopped
+    working_dir: /home/frappe/bench-user
+    volumes:
+      - .:/home/frappe/bench-user/sites
+      - ./apps:/home/frappe/bench-user/apps
+      - ./logs:/home/frappe/bench-user/logs
+    environment:
+      - DB_HOST=fardaerp-db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-fardaerp}
+      - DB_PASSWORD=${DB_PASSWORD:-admin}
+      - REDIS_CACHE=redis://fardaerp-redis-cache:6379
+      - REDIS_QUEUE=redis://fardaerp-redis-queue:6379
+    depends_on:
+      fardaerp-db:
+        condition: service_healthy
+      fardaerp-redis-cache:
+        condition: service_started
+      fardaerp-redis-queue:
+        condition: service_started
+    networks:
+      - fardaerp-network
+    command: >
+      sh -c "bench --site ${SITE_NAME:-fardaerp.local} worker --queue short"
+
+  # =============================================================================
+  # Worker Long Service
+  # =============================================================================
+  fardaerp-worker-long:
+    image: frappe/bench:latest
+    container_name: fardaerp-worker-long
+    restart: unless-stopped
+    working_dir: /home/frappe/bench-user
+    volumes:
+      - .:/home/frappe/bench-user/sites
+      - ./apps:/home/frappe/bench-user/apps
+      - ./logs:/home/frappe/bench-user/logs
+    environment:
+      - DB_HOST=fardaerp-db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-fardaerp}
+      - DB_PASSWORD=${DB_PASSWORD:-admin}
+      - REDIS_CACHE=redis://fardaerp-redis-cache:6379
+      - REDIS_QUEUE=redis://fardaerp-redis-queue:6379
+    depends_on:
+      fardaerp-db:
+        condition: service_healthy
+      fardaerp-redis-cache:
+        condition: service_started
+      fardaerp-redis-queue:
+        condition: service_started
+    networks:
+      - fardaerp-network
+    command: >
+      sh -c "bench --site ${SITE_NAME:-fardaerp.local} worker --queue long"
+
+networks:
+  fardaerp-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  redis-cache-data:
+    driver: local
+  redis-queue-data:
+    driver: local
+  redis-socketio-data:
+    driver: local
