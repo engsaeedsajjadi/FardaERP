@@ -9,6 +9,7 @@ Inside a bench:
 
 import importlib.util
 import os
+import shutil
 import sys
 import unittest
 
@@ -42,6 +43,14 @@ def run() -> str:
 	failed = len(result.failures) + len(result.errors)
 	summary = f"farda_iran unit tests: {total - failed}/{total} passed, {failed} failed"
 	print(summary)
+	# JS parity tests (real node execution) — best-effort, failure = overall failure
+	if shutil.which("node"):
+		from farda_iran.tests.js import run_js_tests
+
+		js_result = run_js_tests.run()
+		print(js_result)
+	else:
+		print("JS parity tests: SKIPPED (node not available)")
 	if not result.wasSuccessful():
 		raise SystemExit(1)
 	return summary

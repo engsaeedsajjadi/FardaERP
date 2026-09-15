@@ -720,6 +720,10 @@ repost_allowed_doctypes = [
 # ------------------------------------------------------------------
 before_migrate = ["erpnext.farda_iran.setup.install.before_migrate"]
 
+extend_bootinfo = ["erpnext.farda_iran.ui.boot.extend_bootinfo"]
+
+app_include_js = ["/assets/erpnext/farda_iran/js/farda_ui.js"]
+
 doc_events.update(
 	{
 		"Customer": {"validate": "erpnext.farda_iran.party.validate"},
