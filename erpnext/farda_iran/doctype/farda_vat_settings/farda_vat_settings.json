@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "creation": "2026-09-15 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "default_rate",
+  "effective_from",
+  "vat_account"
+ ],
+ "fields": [
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "فعال"
+  },
+  {
+   "default": "10",
+   "fieldname": "default_rate",
+   "fieldtype": "Percent",
+   "label": "نرخ پیش‌فرض مالیات بر ارزش افزوده (٪)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "تاریخ اجرا"
+  },
+  {
+   "fieldname": "vat_account",
+   "fieldtype": "Link",
+   "label": "حساب مالیات بر ارزش افزوده",
+   "options": "Account"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda VAT Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

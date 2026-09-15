@@ -18,6 +18,7 @@ MODULES = (
 	"test_jalali_service",
 	"test_currency_service",
 	"test_normalization",
+	"test_validators",
 )
 
 

@@ -49,3 +49,7 @@ Single-Repository architecture (docs/VERSION-BASELINE-AND-ARCHITECTURE.md).
 Run unit suites (no bench needed):
 `python erpnext/farda_iran/tests/run_unit_tests.py`
 or inside bench: `bench --site <site> execute erpnext.farda_iran.tests.run_unit_tests.run`
+| `farda_iran/tax/` | Configurable VAT (default 10%) — `Farda VAT Settings` single + service; applies to real invoices via hooks; per-party exemption | `tests/test_integration_iran.py` (bench) |
+| `farda_iran/party.py` | Iranian ID validators wired to Customer/Supplier/Company (کد ملی، شناسه ملی، کد اقتصادی، کد پستی، شبا) | `tests/test_validators.py` + integration |
+| `farda_iran/utilities/validators.py` | Pure-Python official algorithms: national ID, legal ID, IR IBAN (MOD-97), postal code, economic code | 21 unit tests |
+| `farda_iran/setup/install.py` | Idempotent custom fields + VAT defaults (runs on before_migrate) | integration test |

@@ -710,3 +710,22 @@ repost_allowed_doctypes = [
 	"Payment Entry",
 	"Purchase Receipt",
 ]
+
+
+# ------------------------------------------------------------------
+# FardaERP — Iranian localization (erpnext/farda_iran)
+# Appended 2026-09-15 · recorded in docs/CORE-CHANGES.md as CORE-003.
+# Everything Iranian stays inside the farda_iran module; these hooks only
+# wire it in. Validators are no-ops for documents without the custom fields.
+# ------------------------------------------------------------------
+before_migrate = ["erpnext.farda_iran.setup.install.before_migrate"]
+
+doc_events.update(
+	{
+		"Customer": {"validate": "erpnext.farda_iran.party.validate"},
+		"Supplier": {"validate": "erpnext.farda_iran.party.validate"},
+		"Company": {"validate": "erpnext.farda_iran.party.validate_company"},
+		"Sales Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
+		"Purchase Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
+	}
+)

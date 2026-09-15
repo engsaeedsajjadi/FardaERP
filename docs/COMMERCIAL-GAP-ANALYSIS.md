@@ -20,8 +20,8 @@
 | farda_iran module | **PARTIAL** | CRITICAL | only `tests/` exists (smoke harness + PG compat). No business subpackages yet |
 | Jalali central service | **PRESENT (core)** | CRITICAL | `farda_iran/jalali` service + 24 unit tests PASS (49/49 suite) — UI/report hooks still MISSING |
 | IRR/Toman central service | **PRESENT (core)** | CRITICAL | `farda_iran/currency` service + 18 unit tests PASS; UI display layer on invoices/reports still MISSING |
-| VAT configurable architecture | **MISSING** | CRITICAL | upstream Iran has no VAT template; must be built configurable (default 10%) |
-| Iranian Party fields (Company/Customer/Supplier) | **MISSING** | HIGH | کد ملی/شناسه ملی/کد اقتصادی/شبا … absent |
+| VAT configurable architecture | **PRESENT (core)** | CRITICAL | `Farda VAT Settings` + service wired to real invoices; 5 integration tests PASS on live site (net 1,000,000 → total 1,100,000 + GL). Missing: templates UI, tax category matrix, reports |
+| Iranian Party fields | **PRESENT (core)** | HIGH | custom fields + official-algorithm validators on Customer/Supplier/Company; integration PASS. Missing: UI sections polish, Address province/city |
 | Persian text normalization + search | **PRESENT (core)** | HIGH | `farda_iran/utilities/normalization` + 7 unit tests PASS; search-index integration still MISSING |
 | Banking / IBAN | **MISSING** | HIGH | upstream Bank doc exists (generic), no IR IBAN validation |
 | Cheque management | **MISSING** | HIGH | upstream v16 has no cheque lifecycle doc |
@@ -53,7 +53,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | C1 | Jalali central service | **PRESENT (core service + tests)** | UI/date-picker/report hooks, REST endpoint | `farda_iran/jalali/` pure-Python service (to/from/format/parse/leap/fiscal) + doc-type hooks for display | `erpnext/farda_iran/jalali/*` | none (DB Gregorian) | REST `farda.jalali.*` | date pickers/format v2 | roundtrip+leap+boundary unit suite | none | none | 0% |
 | C2 | IRR/Toman monetary service | **PRESENT (core service + tests)** | display integration in docs/reports/UI, REST endpoint | `farda_iran/currency/` single-source ratio + conversion + rounding + formatting | `erpnext/farda_iran/currency/*` | none | REST `farda.currency.*` | Toman display layer | financial integrity suite (1T=10R, rounding, neg, large) | none | none | 0% |
-| C3 | VAT configurable | MISSING | rate/category/template/effective-date/exemption | Tax architecture on upstream Item Tax/Tax Category + Iran defaults (10%) — configurable, never hardcoded | `erpnext/farda_iran/tax/*` | custom fields/templates via fixtures | none new | tax rows on invoices | invoice tax math suite | rate-change audit | fixtures install | 0% |
+| C3 | VAT configurable | **PRESENT (core service + live invoice test)** | Tax Category/Template matrix, exemption certificates, VAT return report | Tax architecture on upstream Item Tax/Tax Category + Iran defaults (10%) — configurable, never hardcoded | `erpnext/farda_iran/tax/*` | custom fields/templates via fixtures | none new | tax rows on invoices | invoice tax math suite | rate-change audit | fixtures install | 0% |
 | C4 | Production Docker | MISSING | Dockerfile, compose, healthchecks, pinned images | frappe-docker based pinned build + compose (mariadb/redis/backend/workers/scheduler/socketio/nginx) + healthchecks | `docker/`, `docker-compose.yml` | none | none | none | build+smoke | secrets via env only | none | 0% — **DOCKER VALIDATION PENDING** |
 | C5 | farda_iran foundation subpackages | PARTIAL | currency/jalali/tax/banking/… all absent | create on-demand per feature (no empty dirs — repo rule) | per feature | — | — | — | — | — | — | 10% (tests only) |
 
@@ -61,7 +61,7 @@
 
 | # | Feature | Current | Missing | Required implementation | Files | DB | API | UI | Tests | Security | Migration | Readiness |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| H1 | Iranian party fields + validation | MISSING | fields + validators for کد ملی/شناسه ملی/کد پستی/شبا/ثبت | custom fields + validators on Company/Customer/Supplier (+ Address state/city) | `farda_iran/customer/`, `supplier/`, `company/` | custom fields (fixtures, additive) | validation via doc API | form sections (fa labels) | validator unit tests | PII handling rules | additive only | 0% |
+| H1 | Iranian party fields + validation | **PRESENT (core + hooks + tests)** | UI grouping, Address province/city, duplicate-national-ID policy | custom fields + validators on Company/Customer/Supplier (+ Address state/city) | `farda_iran/customer/`, `supplier/`, `company/` | custom fields (fixtures, additive) | validation via doc API | form sections (fa labels) | validator unit tests | PII handling rules | additive only | 0% |
 | H2 | Persian normalization/search | **PRESENT (core service + tests)** | search-index integration | `farda_iran/utilities/normalization.py` + search hooks | utilities | none | fold API | live-search behavior | normalization suite | none | none | 0% |
 | H3 | Banking + IBAN | MISSING | IR IBAN (IR+24 check digits), bank registry | `farda_iran/banking/` validators + Bank Account extensions | banking | additive fields | validate API | bank forms | IBAN vector tests | bank data sensitivity | additive | 0% |
 | H4 | Cheque lifecycle | MISSING | Cheque doctype + statuses + links to PE/JE | `farda_iran/cheque/` DocTypes (Cheque, Cheque Book) + workflow + reminders | cheque | new doctypes (isolated) | REST + hooks | list/form/workflow | lifecycle integration tests | status-transition perms | new tables | 0% |
