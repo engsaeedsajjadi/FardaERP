@@ -25,8 +25,8 @@
 | Persian text normalization + search | **PRESENT (core)** | HIGH | `farda_iran/utilities/normalization` + 7 unit tests PASS; search-index integration still MISSING |
 | Banking / IBAN | **PARTIAL (core)** | HIGH | IBAN→bank-code registry (Satna codes), Luhn card check, IR IBAN validator; site fields/UX pending |
 | Cheque management | **PARTIAL (core)** | HIGH | `Cheque` DocType (دریافت/صدور + ۶ وضعیت + گذارهای قانونی + سررسید query); site test + Payment wiring pending |
-| Payment gateway abstraction | **PARTIAL (core)** | HIGH | policy engine (amount/replay/duplicate) + 3 adapters with sandbox + injected transport, 18 unit tests; Farda Payment Log doctype + endpoints pending; **LIVE CREDENTIAL VALIDATION PENDING** |
-| SMS provider abstraction + OTP | **PARTIAL (core)** | HIGH | OTP engine (hash/expiry/attempts/replay, 12 tests) + Farda OTP Log + guest endpoints; SMS providers (Kavenegar/Melipayamak/Ghasedak/Console, env-only creds, 11 tests); **LIVE SMS VALIDATION PENDING** |
+| Payment gateway abstraction | **PARTIAL** | HIGH | policy engine + 3 adapters + Farda Payment Log + whitelisted start/verify/status + PE builder; E2E 9/9 on live site (idempotency/replay/amount-tamper); 124 unit tests; **LIVE CREDENTIAL VALIDATION PENDING** |
+| SMS provider abstraction + OTP | **PARTIAL** | HIGH | OTP engine + Farda OTP Log + guest endpoints (E2E 6/6 live: cooldown/replay/exhaust); SMS providers (env-only creds); **LIVE SMS VALIDATION PENDING** |
 | Persian invoice print / PDF | **MISSING** | HIGH | default English print formats; Persian PDF font pipeline untested |
 | RTL / Persian UX | **PARTIAL** | HIGH | fa audit tooling + 122 core-ERP translations filled (1,722 empties remain); Jalali/Toman Desk display layer done (JS parity-tested); RTL CSS + more batches pending |
 | Reports (Jalali/Toman/Persian) | **MISSING** | HIGH | upstream reports work (TB/GL proven in G5) but are Gregorian/IRR-only |
