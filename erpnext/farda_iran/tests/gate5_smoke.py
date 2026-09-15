@@ -30,6 +30,7 @@ CURRENCY = "IRR"
 class Smoke:
 	def __init__(self):
 		self.results: list[tuple[str, str, str]] = []
+		self.tracebacks: list[tuple[str, str]] = []
 
 	def record(self, name: str, fn):
 		sp = "sp_" + "".join(ch for ch in name if ch.isalnum())[:24]
@@ -40,7 +41,8 @@ class Smoke:
 			print(f"  PASS  {name} — {detail}")
 		except Exception:
 			frappe.db.rollback(save_point=sp)
-			err = " | ".join(traceback.format_exc().strip().splitlines()[-8:])
+			self.tracebacks.append((name, traceback.format_exc()))
+			err = " | ".join(traceback.format_exc().strip().splitlines()[-4:])
 			self.results.append((name, "FAIL", err))
 			print(f"  FAIL  {name} — {err}")
 
@@ -527,7 +529,10 @@ def run_all():
 	failed = sum(1 for _, st, _ in s.results if st == "FAIL")
 	print(f"RESULT: {passed} PASS, {failed} FAIL, total {len(s.results)}")
 	if failed:
-		print("\nFAILED STEPS:")
+		print("\nFULL TRACEBACKS:")
+		for name, tb in self.tracebacks:
+			print(f"--- {name} ---\n{tb}\n")
+		print("FAILED STEPS:")
 		for name, st, err in s.results:
 			if st == "FAIL":
 				print(f"  - {name}: {err}")
