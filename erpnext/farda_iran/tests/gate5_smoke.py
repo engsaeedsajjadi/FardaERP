@@ -40,7 +40,7 @@ class Smoke:
 			print(f"  PASS  {name} — {detail}")
 		except Exception:
 			frappe.db.rollback(save_point=sp)
-			err = " | ".join(traceback.format_exc().strip().splitlines()[-3:])
+			err = " | ".join(traceback.format_exc().strip().splitlines()[-8:])
 			self.results.append((name, "FAIL", err))
 			print(f"  FAIL  {name} — {err}")
 
@@ -481,15 +481,18 @@ def hrms_checks(s: Smoke):
 				"new_leaves_allocated": 10,
 			}
 		).insert().submit()
-	frappe.get_doc(
-		{
-			"doctype": "Attendance",
-			"employee": emp,
-			"company": COMPANY,
-			"attendance_date": nowdate(),
-			"status": "Present",
-		}
-	).insert().submit()
+	if not frappe.db.exists(
+		"Attendance", {"employee": emp, "attendance_date": nowdate(), "docstatus": ("!=", 2)}
+	):
+		frappe.get_doc(
+			{
+				"doctype": "Attendance",
+				"employee": emp,
+				"company": COMPANY,
+				"attendance_date": nowdate(),
+				"status": "Present",
+			}
+		).insert().submit()
 	return f"employee {emp}, dept, designation, leave allocation + attendance submitted"
 
 
