@@ -36,3 +36,16 @@ Single-Repository architecture (docs/VERSION-BASELINE-AND-ARCHITECTURE.md).
   (Frappe scrubs the module name to the folder name).
 - The technical package remains `erpnext` (upstream sync compatibility).
   Product branding is applied via `app_title`, UI, logo and docs only.
+
+## Packages (implemented)
+
+| Package | Purpose | Tests |
+|---|---|---|
+| `farda_iran/jalali/` | THE single Gregorian↔Jalali service (conversion/format/parse/leap). DB stays Gregorian. | `tests/test_jalali_service.py` (24 tests incl. ~16k-day roundtrip) |
+| `farda_iran/currency/` | THE single IRR↔Toman monetary service (1 Toman = 10 IRR, site-config overridable). Storage = integral Rials. | `tests/test_currency_service.py` (18 tests) |
+| `farda_iran/utilities/` | Persian text normalization / search fold (ي↔ی, ك↔ک, digits, ZWNJ). | `tests/test_normalization.py` (7 tests) |
+| `farda_iran/tests/` | Gate-5 runtime smoke harness + PG compat shims + unit suites + runner | `tests/run_unit_tests.py` |
+
+Run unit suites (no bench needed):
+`python erpnext/farda_iran/tests/run_unit_tests.py`
+or inside bench: `bench --site <site> execute erpnext.farda_iran.tests.run_unit_tests.run`
