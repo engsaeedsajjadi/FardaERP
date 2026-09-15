@@ -52,6 +52,16 @@ COMPANY_FIELDS = [
 	dict(fieldname="farda_postal_code", label="کد پستی", fieldtype="Data", insert_after="tax_id"),
 ]
 
+PAYMENT_ENTRY_FIELDS = [
+	dict(
+		fieldname="farda_cheque",
+		label="چک مرتبط",
+		fieldtype="Link",
+		options="Cheque",
+		insert_after="reference_date",
+	),
+]
+
 INVOICE_FIELDS = [
 	dict(
 		fieldname="farda_apply_vat",
@@ -71,6 +81,7 @@ def ensure_custom_fields() -> None:
 		"Company": COMPANY_FIELDS,
 		"Sales Invoice": INVOICE_FIELDS,
 		"Purchase Invoice": INVOICE_FIELDS,
+		"Payment Entry": PAYMENT_ENTRY_FIELDS,
 	}
 	create_custom_fields(custom_fields, ignore_validate=True, update=True)
 

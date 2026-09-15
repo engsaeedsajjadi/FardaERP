@@ -731,5 +731,13 @@ doc_events.update(
 		"Company": {"validate": "erpnext.farda_iran.party.validate_company"},
 		"Sales Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
 		"Purchase Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
+		"Payment Entry": {
+			"on_submit": "erpnext.farda_iran.cheque.payment_link.on_payment_entry_submit",
+			"on_cancel": "erpnext.farda_iran.cheque.payment_link.on_payment_entry_cancel",
+		},
 	}
 )
+
+scheduler_events = {
+	"daily": ["erpnext.farda_iran.cheque.reminders.notify_cheques_due"],
+}
