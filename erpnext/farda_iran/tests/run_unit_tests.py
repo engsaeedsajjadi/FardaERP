@@ -21,6 +21,7 @@ MODULES = (
 	"test_normalization",
 	"test_validators",
 	"test_banking",
+	"test_rate_limiter",
 )
 
 
