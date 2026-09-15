@@ -22,6 +22,8 @@ MODULES = (
 	"test_validators",
 	"test_banking",
 	"test_rate_limiter",
+	"test_otp_core",
+	"test_sms_providers",
 )
 
 
@@ -48,8 +50,7 @@ def run() -> str:
 	if shutil.which("node"):
 		from farda_iran.tests.js import run_js_tests
 
-		js_result = run_js_tests.run()
-		print(js_result)
+		run_js_tests.run()  # prints its own summary
 	else:
 		print("JS parity tests: SKIPPED (node not available)")
 	if not result.wasSuccessful():

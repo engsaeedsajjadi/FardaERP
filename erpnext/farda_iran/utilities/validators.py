@@ -18,7 +18,7 @@ from __future__ import annotations
 try:  # works both as erpnext.farda_iran.* and standalone farda_iran.*
 	from .normalization import to_english_digits
 except ImportError:  # pragma: no cover
-	from farda_iran.utilities.normalization import to_english_digits
+	from farda_iran.utilities.normalization import to_english_digits  # type: ignore
 
 __all__ = [
 	"is_valid_national_id",
