@@ -51,8 +51,12 @@ if __name__ == "__main__":
 	if "--fill-batch" in sys.argv:
 		sys.path.insert(0, str(Path(__file__).parent))
 		from batch1 import AUTONOMOUS_BATCH as BATCH1
+		try:
+			from batch2 import BATCH2
+		except ImportError:
+			BATCH2 = {}
 
-		n = fill(BATCH1)
-		print(f"filled {n} translations from BATCH1")
+		n = fill({**BATCH1, **BATCH2})
+		print(f"filled {n} translations from BATCH1+BATCH2")
 		stats = audit()
 		print(f"after: {stats['total']} entries, {stats['empty']} empty")
