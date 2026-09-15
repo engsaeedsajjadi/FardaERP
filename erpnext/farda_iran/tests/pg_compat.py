@@ -183,8 +183,8 @@ def _patch_query_payment_ledger():
 		"""PG-6: strict GROUP BY for the payment-ledger CTE (upstream omits
 		non-aggregated selected columns; MariaDB tolerates, PostgreSQL does not)."""
 		from frappe.query_builder import Criterion
-		from frappe.query_builder.functions import Case, Max, Sum
-		from pypika import AliasedQuery, Table
+		from frappe.query_builder.functions import Max, Sum
+		from pypika import AliasedQuery, Case, Table
 
 		qb = frappe.qb
 		ple = self.ple
