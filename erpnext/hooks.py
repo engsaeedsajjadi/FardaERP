@@ -737,7 +737,10 @@ doc_events.update(
 		"Supplier": {"validate": "erpnext.farda_iran.party.validate"},
 		"Company": {"validate": "erpnext.farda_iran.party.validate_company"},
 		"Item": {"validate": "erpnext.farda_iran.item.validate"},
-		"Bank Account": {"validate": "erpnext.farda_iran.banking.hooks.validate_bank_account"},
+		"Bank Account": {
+			"validate": "erpnext.farda_iran.banking.hooks.validate_bank_account",
+			"before_insert": "erpnext.farda_iran.banking.hooks.validate_bank_account",
+		},
 		"Sales Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
 		"Purchase Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
 		"Payment Entry": {

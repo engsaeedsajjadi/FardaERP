@@ -10,8 +10,8 @@ Pure Python; no frappe import.
 from __future__ import annotations
 
 try:
-	from .validators import is_valid_iriban, normalize_national_id
-except ImportError:  # pragma: no cover
+	from ..utilities.validators import is_valid_iriban, normalize_national_id
+except ImportError:  # pragma: no cover - path-loaded tests (farda_iran as top-level)
 	from farda_iran.utilities.validators import is_valid_iriban, normalize_national_id
 
 __all__ = [

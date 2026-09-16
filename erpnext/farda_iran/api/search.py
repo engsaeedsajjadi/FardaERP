@@ -41,7 +41,7 @@ def _search(doctype: str, name_field: str, query: str, limit: int) -> list[dict]
 		doctype,
 		filters={"disabled": 0} if frappe.get_meta(doctype).has_field("disabled") else [],
 		or_filters=or_filters,
-		fields=[f"`{name_field}` as title"],
+		fields=["name", f"`{name_field}` as title"],
 		limit_page_length=max(1, min(int(limit), 50)),
 		order_by=f"`tab{doctype}`.{name_field} asc",
 		ignore_permissions=False,
