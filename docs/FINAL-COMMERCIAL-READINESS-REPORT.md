@@ -101,8 +101,8 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 166 unit + 95 live asserts (incl. R16 security audit); dedicated perf pass pending |
-| Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
+| Tests | 🟡 PARTIAL | 166 unit + 99 live asserts (incl. R16 security + R17 monitoring); dedicated perf pass pending |
+| Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
 
@@ -285,3 +285,22 @@
 - رگرسیون پس از تغییر فرمت‌ها: Print 9/9 + R15 4/4 + unit 166/166 + JS parity — جمع زندهٔ
   امنیتی/چاپ: **95 assert**. (CSRF تصمیم مستند: گیت فریم‌ورک برای session‌های authed؛
   endpointهای guest با توکن یک‌بارمصرف + بررسی مبلغ محافظت می‌شوند.)
+
+## 2026-09-16 — §30 Monitoring/health (R17 4/4 live)
+- `erpnext.farda_iran.monitoring.api.health` — GET، مهمان‌خوان (برای LB/uptime)،
+  rate-limit ۶۰/دقیقه، unhealthy → HTTP 503 از طریق mapping فریم‌ورک.
+- چک‌ها (fast/read-only): db (SELECT 1) · redis (PING روی queue+cache با timeout 2s) ·
+  workers (رجیستری RQ فراپه) · scheduler (heartbeat فراپه)؛ کش ۵ ثانیه‌ای برای هموارسازی
+  پرس‌وجوی انبوه.
+- **قرارداد payload (ادعا شده با تست):** فقط {status, checks, durations_ms} (+failed در
+  وضعیت ناسالم)؛ مقادیر = ok/fail + میلی‌ثانیه. **بدون secret/PII** — sweep تضمین می‌کند
+  هیچ host/cred/port/نسخه/نام کاربری در payload نیست.
+- fail-open: مرگ وابستگی‌ها → status unhealthy + فهرست failed؛ endpoint هرگز raise
+  نمی‌کند (اثبات با قطع برنامه‌ای workers/scheduler).
+- نکتهٔ محیطی صادقانه: در sandbox دایمون worker/scheduler اجرا نمی‌شود → آن دو چک «fail»
+  صحیح گزارش می‌شوند (M2 همین مسیر را تست می‌کند)؛ در استک Docker §26 هر دو سرویس واقعی‌اند
+  و healthcheckها می‌توانند همین endpoint را مصرف کنند.
+- **گیت drift سطح guest (R16) به‌روزرسانی شد**: سطح guest حالا دقیقاً ۴ متد است (OTP×2 +
+  payment verify + health probe)؛ هر surface جدید = FAIL آگاهانه.
+- رگرسیون: unit 166/166 + JS parity + R16 5/5 + pipeline 7/7 GREEN (lint گیر F401 خودش را
+  هم گرفت و بست). جمع زنده: **۹۹ assert**.

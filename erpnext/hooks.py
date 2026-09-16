@@ -727,6 +727,11 @@ repost_allowed_doctypes = [
 # ------------------------------------------------------------------
 before_migrate = ["erpnext.farda_iran.setup.install.before_migrate"]
 
+# § Monitoring: guest-readable health endpoint for load balancers / uptime probes:
+#   GET /api/method/erpnext.farda_iran.monitoring.api.health
+# returns {"status","checks","durations_ms"} only — never secrets/PII
+# (contract asserted by erpnext/farda_iran/tests/test_monitoring_runtime.py).
+
 extend_bootinfo = ["erpnext.farda_iran.ui.boot.extend_bootinfo"]
 
 app_include_js = ["/assets/erpnext/farda_iran/js/farda_ui.js"]

@@ -29,6 +29,7 @@ def _farda_whitelisted():
 	import erpnext.farda_iran.dashboard.kpis  # noqa: F401
 	import erpnext.farda_iran.cheque.payment_link  # noqa: F401
 	import erpnext.farda_iran.doctype.cheque.cheque  # noqa: F401
+	import erpnext.farda_iran.monitoring.api  # noqa: F401
 	import erpnext.farda_iran.otp.api  # noqa: F401
 	import erpnext.farda_iran.payments.api  # noqa: F401
 
@@ -115,6 +116,7 @@ def run() -> str:
 			"erpnext.farda_iran.otp.api.request_otp",
 			"erpnext.farda_iran.otp.api.verify_otp",
 			"erpnext.farda_iran.payments.api.verify_payment",
+			"erpnext.farda_iran.monitoring.api.health",  # § Monitoring probe (LB/uptime)
 		}
 		actual = {getattr(f, "__name__", "") and f"{f.__module__}.{f.__name__}" for f in fg}
 		assert actual == expected_guest, f"guest surface drift: {actual ^ expected_guest}"
