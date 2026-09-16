@@ -1,0 +1,28 @@
+# --- VCS / CI ---
+.git
+.github
+.greptile
+.mergify.yml
+.coderabbit.yml
+.git-blame-ignore-revs
+
+# --- docs & tests (not needed inside the image) ---
+docs/
+*.md
+!LICENSE
+erpnext/farda_iran/tests/
+
+# --- python / node build residue ---
+__pycache__/
+*.pyc
+node_modules/
+env/
+.venv/
+
+# --- docker stack (only entrypoint.sh + nginx template are COPYed; keep those) ---
+docker-compose.yml
+.env
+.env.example
+
+# --- OS noise ---
+.DS_Store

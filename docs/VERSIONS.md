@@ -90,3 +90,16 @@ in the current dev sandbox, which has Python 3.11). Execute via:
 > NOTE (honesty): G5 passed on PostgreSQL. MariaDB was not available in this
 > sandbox; MariaDB path remains covered by upstream CI and must be re-verified
 > in the Phase "Production Docker" gate (DOCKER VALIDATION PENDING).
+
+### §9 — Docker production stack pins (§26, 2026-09-16)
+
+| Component | Pin | Where |
+|---|---|---|
+| Base (python) | `python:3.14-slim-bookworm` (tag; digest-pin at deploy) | docker/Dockerfile |
+| Node | `node:24-bookworm` | docker/Dockerfile |
+| Frontend | `nginx:1.27-alpine` | docker/Dockerfile |
+| Database | `mariadb:10.6` (utf8mb4 cnf mounted) | docker-compose.yml |
+| Redis | `redis:7.4.1-alpine` ×2 (cache LRU / queue AOF) | docker-compose.yml |
+| Apps | Frappe `v16.33.1` · ERPNext `v16.34.2` (this repo) · HRMS `v16.18.1` | build args |
+| bench CLI | `frappe-bench==5.31.0` + `click==8.4.1` re-pin (bench 5.31 metadata wants ~=8.2 — conflicts with frappe v16; verified working under 8.4) | docker/Dockerfile |
+| Validation state | compose-spec schema VALID; entrypoint config-phase executed on real Frappe v16 CLI; `docker build/up` NOT RUN (BLOCKED-ENV, no daemon) | docs/DOCKER.md §9 |

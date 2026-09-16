@@ -1,0 +1,173 @@
+# FardaERP production stack (§26)
+#
+#   mariadb 10.6 (pinned) · redis-cache 7.4.1 · redis-queue 7.4.1 ·
+#   backend (gunicorn) · workers · scheduler · websocket (node socketio) ·
+#   frontend (nginx: assets + reverse proxy + socketio upgrade)
+#
+# Usage — see docs/DOCKER.md. Secrets come ONLY from .env (never committed).
+# At deploy time replace tag pins with digest pins after registry verification.
+
+name: fardaerp
+
+x-farda-env: &farda-env
+  SITE_NAME: ${SITE_NAME:?set SITE_NAME in .env}
+  DB_HOST: mariadb
+  DB_PORT: "3306"
+  REDIS_CACHE_URL: redis://redis-cache:6379
+  REDIS_QUEUE_URL: redis://redis-queue:6379
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./docker/mariadb/99farda.cnf:/etc/mysql/mariadb.conf.d/99farda.cnf:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  redis-cache:
+    image: redis:7.4.1-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  redis-queue:
+    image: redis:7.4.1-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - queue-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  backend:
+    image: fardaerp:16.34.2
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: final
+    restart: unless-stopped
+    environment:
+      <<: *farda-env
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-0}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+
+  workers:
+    image: fardaerp:16.34.2
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: final
+    restart: unless-stopped
+    command: ["bench", "worker", "--queue", "short,default,long"]
+    environment: *farda-env
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "bench worker"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 60s
+
+  scheduler:
+    image: fardaerp:16.34.2
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: final
+    restart: unless-stopped
+    command: ["bench", "schedule"]
+    environment: *farda-env
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "bench schedule"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 60s
+
+  websocket:
+    image: fardaerp:16.34.2
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: final
+    restart: unless-stopped
+    command: ["node", "apps/frappe/socketio.js"]
+    environment: *farda-env
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      redis-queue:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/socket.io/?EIO=4&transport=polling"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 30s
+
+  frontend:
+    image: fardaerp-frontend:16.34.2
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: frontend
+    restart: unless-stopped
+    ports:
+      - "80:8080"
+    environment:
+      # `$$host` escapes to a literal "$host" for nginx (multi-site by Host header)
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
+    volumes:
+      - sites:/var/www/sites
+    depends_on:
+      backend:
+        condition: service_healthy
+      websocket:
+        condition: service_started
+
+volumes:
+  db-data:
+  queue-data:
+  sites:

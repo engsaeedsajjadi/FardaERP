@@ -18,7 +18,8 @@ VENV="${FARDA_VENV:-/opt/tools/venv314}"
 PGBIN="${FARDA_PGBIN:-/opt/tools/pgserver-extracted/pgserver/pginstall/bin}"
 PGLIBS="${FARDA_PGLIBS:-/opt/tools/pgserver-extracted/pgserver/pgserver.libs}"
 
-export PATH="$VENV/bin:$PGBIN:$PATH"
+export PATH="$VENV/bin:$PATH"
+[ -d "$PGBIN" ] && export PATH="$PGBIN:$PATH"   # optional (PostgreSQL sandbox toolchain)
 export LD_LIBRARY_PATH="$PGLIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 TMP=$(mktemp -d)
@@ -44,7 +45,8 @@ SHIMEOF
 	chmod +x "$SHIM/file"
 	export PATH="$SHIM:$PATH"
 }
-make_file_shim
+# inject the shim only when the real file(1) is absent (Docker image installs it)
+command -v file >/dev/null 2>&1 || make_file_shim
 
 
 decrypt() { # decrypt <file> <outdir> -> prints plaintext path

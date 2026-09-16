@@ -54,15 +54,16 @@
 | farda_iran unit suite | **86/86 PASS** | Python 3.11 sandbox (stdlib-only; 3.14 re-verify pending rebuild) |
 | Gate-5 runtime smoke | **13/13 PASS** (twice, idempotent) | Python 3.14 + PG 16.2 + Redis 7.4.1 (before sandbox restart) |
 | Iran integration (VAT+party) | **5/5 PASS** | live site `smoke.farda.local` (before sandbox restart) |
-| Docker build/runtime | NOT RUN — **DOCKER VALIDATION PENDING** (no daemon) | — |
-| MariaDB | NOT TESTED | needs Docker/runner |
+| Docker build/runtime | NOT RUN — **DOCKER VALIDATION PENDING** (no daemon); compose file schema-valid, entrypoint config-phase proven | — |
+| MariaDB | NOT TESTED | needs Docker/runner (G-MDB gate defined, docs/DOCKER.md §7) |
 
 ## Security Results
 - Negative permission tests PASS (Gate-5). OTP/payment/file-upload audit NOT YET PERFORMED (features pending). Secrets: none in repo (.env.example placeholders only).
 
 ## Docker / CI/CD / Performance / Backup-Restore / Migration Results
 - Backup/Restore: **IMPLEMENTED + RESTORE-VERIFIED** — see «2026-09-16 — §25» below.
-- Docker / CI/CD / Performance / Migration: NOT RUN / PENDING — see Remaining Features. No false claims.
+- Docker stack: **WRITTEN + statically validated** — see «2026-09-16 — §26» below; `docker build/up` BLOCKED-ENV (no daemon).
+- CI/CD / Performance / Migration: NOT RUN / PENDING — see Remaining Features. No false claims.
 
 ## License & Trademark
 - GPL-3.0 preserved; Frappe/ERPNext attribution intact; FardaERP not presented as an official Frappe/ERPNext product.
@@ -97,7 +98,7 @@
 | Reports | ✅ PRESENT | Iranian VAT/Cheque/Party/Purchase/Sales-Register pack live-tested |
 | Security | 🟡 PARTIAL | framework security + negative tests; Farda audit pending |
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
-| Docker | ❌ MISSING | DOCKER VALIDATION PENDING |
+| Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ❌ MISSING | pipelines pending |
 | Tests | 🟡 PARTIAL | 160 unit + 66 live asserts; dedicated E2E/perf pass pending |
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
@@ -184,3 +185,27 @@
   **160/160 روی سایت بازگردانی‌شده** + JS parity.
 - پاک‌سازی: DB/سایت تست drop و نشانه از سایت اصلی حذف شد (تأیید بعد از اجرا).
 - قاعدهٔ «بکاپ بدون اثبات restore = تأییدنشده» با همین تست بسته شد: اثبات = بازگردانی کامل در سایت تازه.
+
+## 2026-09-16 — §26 Docker production stack (written + statically validated; build BLOCKED-ENV)
+- `docker/Dockerfile` (3 stages): builder (python:3.14-slim + node 24، frappe v16.33.1 +
+  hrms v16.18.1 از tag پین‌شده + این ریپو به‌عنوان apps/erpnext + yarn build assets) →
+  final (gunicorn + workers + scheduler + socketio؛ libmariadb3/pango/file(1)/procps؛ فونت
+  Vazirmatn برای PDF) → frontend (nginx:1.27-alpine با assets پخته + قالب conf envsubst).
+- `docker-compose.yml`: mariadb:10.6 (cnf utf8mb4) + redis-cache/redis-queue 7.4.1 +
+  backend/workers/scheduler/websocket/frontend با healthcheck واقعی هر سرویس، depends_on
+  سالم، نام volume مشترک sites (frontend برای /files). فقط فرانت پورت 80 منتشر می‌کند.
+- `docker/entrypoint.sh`: ساخت اسکلت bench (apps.txt/common_site_config/config/pids) —
+  idempotent، انتظار برای DB/redis با wait_tcp، RUN_MIGRATIONS=1 برای migrate یک‌باره.
+- `.env.example` + `.gitignore ← .env` (CORE-004): رازها فقط env؛ هیچ secretی در ایمیج.
+- **اعتبارسنجی بدون daemon:** فایل compose با اسکیمای رسمی compose-spec (jsonschema)
+  معتبر؛ فاز config/wait واقعاً روی bench CLI 5.31.0 + Frappe v16.33.1 اجرا و ۶ کلید
+  دقیق نوشته شد. سه باگ واقعی که همین اجرا پیدا/بست: (۱) `bench set-config -g` مسیر
+  common_site_config را از cwd می‌گیرد → باید از sites/؛ (۲) فایل موجود را نمی‌سازد →
+  bootstrap «{}»؛ (۳) `is_bench_directory()` به config/pids و logs نیاز دارد. همچنین
+  تداخل پین click (bench 5.31 می‌خواهد ~=8.2، frappe v16 می‌خواهد ~=8.4) → Dockerfile
+  بعد از نصب bench، click==8.4.1 را دوباره پین می‌کند (اثبات‌شده که bench با 8.4
+  فرمان‌های frappe را لود می‌کند).
+- `docs/DOCKER.md`: معماری، استقرار اول، new-site، migration، بکاپ/ری‌استور داخل استک،
+  گیت G-MDB-1..5 برای MariaDB، پین digest، نکات امنیتی.
+- **وضعیت صادقانه: IMPLEMENTED-BUT-UNVERIFIED — docker build/up اجرا نشده (sandbox بدون
+  daemon). MariaDB validation همچنان BLOCKED-ENV (گیت G-MDB تعریف شد).**

@@ -59,7 +59,7 @@
 | Backup / Restore | **IMPLEMENTED** | `scripts/backup.sh` (bench-native `--with-files` + site_config staging + AES-256-CBC/PBKDF2 optional + MANIFEST.sha256 + LATEST + retention) · `scripts/restore.sh` (decrypt + bench restore + multi-tar extract `--strip-components 1` + `file(1)` shim for frappe's type sniff) | **R13 E2E 5/5 live** (`farda_iran/tests/test_backup_restore_runtime.py`): BACKUP-OK + 45d-dir pruned + manifest verify + site_config staged → fresh site `verify.farda.local` → RESTORE-OK (DB + 2 tars) → marker Customer/SI count/Custom Fields/VAT Settings identical + unit 160/160 **on the restored site**; 2 consecutive idempotent runs | R13 | — | — | no secrets in artifacts (passphrase env-only; site_config plaintext by design, documented) | pre-migration backup rule in runbook | runbook docs/BACKUP-RESTORE.md; off-site copy + RPO 24h | cron 02:30 schedule; Docker-image `file` package |
 | Monitoring / health | **MISSING** | — | — | — | — | — | — | must not expose secrets/PII | — | — | health endpoint + db/redis/worker/scheduler checks; optional Prometheus/Sentry |
 | Performance | **MISSING** | — | — | — | — | — | — | — | — | — | N+1/slow-report audit; perf regression tests on critical paths |
-| Docker production stack | **MISSING** | — | — | — | — | — | MariaDB required for prod gate | secrets via env only | migration command in stack | — | §26 stack: backend/frontend/worker/scheduler/socketio/redis/mariadb, healthchecks, pinned versions |
+| Docker production stack | **IMPLEMENTED-BUT-UNVERIFIED** | `docker/Dockerfile` (3 stages: node+python builder / final gunicorn+workers image / nginx frontend with baked assets) · `docker-compose.yml` (mariadb 10.6 + redis-cache/queue 7.4.1 + backend/workers/scheduler/websocket/frontend, healthchecks, named volumes) · `docker/entrypoint.sh` (idempotent config + wait-for-db + RUN_MIGRATIONS) · `.env.example` (secrets env-only) | compose file **validates against official compose-spec schema**; entrypoint config/wait phases executed on real bench CLI 5.31 + Frappe v16.33.1 (fresh skeleton → 6 keys exact; 3 real bugs found+fixed); `docker build`/`up` **BLOCKED-ENV (no daemon)** — G-MDB gate in docs/DOCKER.md §7 | — | nginx front only port 80 | MariaDB 10.6 in stack (G-MDB-4 VAT cross-check) | secrets via .env only (git-ignored, CORE-004) | `RUN_MIGRATIONS=1` one-shot migrate; pre-migrate backup rule §6 | docs/DOCKER.md runbook + backup/restore integration | digest pinning at deploy; TLS upstream proxy |
 | MariaDB production validation | **BLOCKED-ENV** | — | — | all runtime evidence is PostgreSQL 16.2 (documented deviation) | — | — | — | — | — | — | needs MariaDB binaries — apt mirrors blocked in sandbox; run inside Docker once built |
 | CI/CD | **MISSING** | (upstream workflows deliberately removed; only to be replaced by FardaERP-compatible pipelines) | — | — | — | — | — | gate deploys on tests | — | — | §27 stages: compile/lint/unit/integration/security/build/docker/migration-gate |
 | Migration strategy (idempotent, fresh+upgrade) | **PARTIAL** | `setup/install.py` (before_migrate ensure steps); `modules.txt` has Farda Iran; `patches.txt` has no farda entries (nothing needs one yet) | fresh install proven repeatedly (R2 after each rebuild) | R2 ×4 rebuilds | — | — | custom fields/doctypes idempotent | n/a | idempotent ensures | fresh READY | upgrade rehearsal from populated older state; patch harness; rollback notes |
@@ -69,22 +69,23 @@
 
 | Severity | Items |
 |---|---|
-| **CRITICAL MISSING** | Docker stack · CI/CD · (MariaDB validation = CRITICAL **BLOCKED-ENV**) |
-| **HIGH MISSING** | Dashboards · Audit log · Monitoring · VAT Report · Iranian report pack · Persian invoice formats (Purchase/Thermal) · normalization→search integration · item-level VAT |
-| **HIGH PARTIAL** | Iranian Party completion · Banking→Bank Account integration · Cheque live E2E · API namespaces · HRMS Iran localization |
-| **BLOCKED-ENV** | live payment gateway credentials · live SMS credentials · MariaDB binaries · frappe-weasyprint (system pango) — none of these are code gaps; each has a documented deterministic fallback already running |
+| **CRITICAL MISSING** | CI/CD · (MariaDB validation = CRITICAL **BLOCKED-ENV**; Docker stack = IMPLEMENTED-BUT-UNVERIFIED pending daemon build) |
+| **HIGH MISSING** | Audit log · Monitoring · Persian invoice formats (Purchase A4 / Thermal 80mm) · Notifications/API namespaces/feature flags |
+| **HIGH PARTIAL** | Iranian Party completion · HRMS Iran localization · Cheque↔Payment Entry wiring + reminders scheduler |
+| **BLOCKED-ENV** | live payment gateway credentials · live SMS credentials · MariaDB validation (needs Docker/daemon) · docker build/up (no daemon) · frappe-weasyprint (system pango) — none of these are code gaps; each has a documented deterministic fallback already running |
 | **STALENESS FIXES APPLIED** | older docs claiming invoice/print/reports MISSING were superseded (COMMERCIAL-GAP-ANALYSIS rows updated 2026-09-15); this matrix is now the canonical status source |
 
 ## E) EXECUTION ORDER FROM THIS MATRIX (§41)
 
 1. ~~VAT completion~~ — **DONE 2026-09-16** (item-level + templates + report + R8 8/8; commit series after bdf923e)
-2. Normalization→search integration (§10 directive)
-3. Banking→Bank Account/Payment Entry integration
-4. Iranian report pack (Purchase Register, GL, TB, AR/AP, Stock, VAT, Cheque, Bank)
-5. Persian invoice formats (Purchase A4, Thermal 80mm)
-6. Audit log → Notifications → API namespaces → Feature flags
-7. Security audit pass → Performance → Backup/Restore → Monitoring
-8. Docker (MariaDB) → CI/CD → migration rehearsal → E2E breadth → **final gate**
+2. ~~Normalization→search integration~~ — **DONE 2026-09-16** (§10, R9 7/7)
+3. ~~Banking→Bank Account/Payment Entry integration~~ — **DONE 2026-09-16** (§11, R10 7/7)
+4. ~~Iranian report pack~~ — **DONE 2026-09-16** (§17, R11 4/4) · ~~Dashboards~~ — **DONE 2026-09-16** (§18, R12 6/6)
+5. ~~Backup/Restore~~ — **DONE 2026-09-16** (§25, R13 5/5 restore-verified) · ~~Docker stack~~ — **WRITTEN 2026-09-16** (§26, IMPLEMENTED-BUT-UNVERIFIED)
+6. Persian invoice formats (Purchase A4, Thermal 80mm)
+7. Audit log → Notifications → API namespaces → Feature flags
+8. Security audit pass → Performance → Monitoring
+9. CI/CD → MariaDB validation (Docker, G-MDB) → migration rehearsal → E2E breadth → **final gate**
 
 ## PG shims register (runtime, tests/pg_compat.py — re-applied per session)
 
