@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 178 unit + 131 live asserts (R19 chain + R20 notifications + R21 namespaces + R22 flags، همه idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
+| Tests | ✅ PRESENT | 178 unit + 131+ live asserts (R13–R22 همه idempotent) + migration rehearsal (fresh PG 8/8 زنجیره روی سایت بِکِر)؛ MariaDB rehearsal = BLOCKED-ENV |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -376,3 +376,30 @@
 - unit 178/178؛ pipeline 7/7؛ R19/R20/R21 regression سبز.
 - **با این فاز، سه ردیف HIGH MISSING ماتریس صفر شد** (Notifications §33 · API
   namespaces §34 · Feature flags §35) — فقط BLOCKED-ENVها و گیت نهایی باقی است.
+
+---
+
+# 🚦 CURRENT-FINAL GATE VERDICT — 2026-09-16 (§36 / §41 نقطهٔ پایان قابل‌اجرای sandbox)
+
+## FINAL_STATUS: **NOT COMMERCIAL READY** — دقیقاً به‌سبب ۵ بلاکر محیطی زیر؛ هیچ بلاکرِ کدی باقی نیست.
+
+| # | بلاکر | نوع | گشایش |
+|---|---|---|---|
+| 1 | MariaDB 10.6 production-like validation | BLOCKED-ENV | docker daemon / باینری mariadb در sandbox نیست (G-MDB) — قرارداد تکرار: docs/MIGRATION-REHEARSAL.md §5 |
+| 2 | Docker stack build/up (IMPLEMENTED-BUT-UNVERIFIED) | BLOCKED-ENV | همان daemon؛ گیت docs/DOCKER.md §7 |
+| 3 | اعتبارنامهٔ واقعی درگاه پرداخت | BLOCKED-ENV | stop-and-ask کاربر؛ sandbox اثبات‌شده |
+| 4 | اعتبارنامهٔ واقعی SMS | BLOCKED-ENV | stop-and-ask کاربر؛ abstraction اثبات‌شده |
+| 5 | فعال‌سازی GitHub CI (workflow آماده) | BLOCKED-ENV | تنظیمات repo/runner بیرون از sandbox؛ pipeline درون‌ریپو 7/7 GREEN |
+
+## شواهد پایانی (این تاریخ)
+- unit **178/178** + JS parity ALL PASS · pipeline **7/7 GREEN** (lint/compile/security/build)
+- زنده: R3 5/5 · R4 9/9 · R5 6/6 · R13 5/5 · R14 7/7 · R16 5/5 · R17 4/4 · R18 5/5 ·
+  R19 8/8 · R20 6/6 · R21 7/7 · R22 6/6 — همگی idempotent (×3) — جمع **131+ assert**
+- **migration rehearsal**: re-migrate سایت دارای داده PASS · fresh-install PASS با
+  زنجیرهٔ کامل R19 8/8 روی سایت بِکِر · ۳ حفرهٔ واقعی کشف/بسته شد
+- **docs freeze**: ماتریس/گزارش‌ها همگام با همین کامیت؛ تنها تغییرات مجاز آینده:
+  نتایج گیت‌های BLOCKED-ENV پس از گشایش محیط، یا اصلاح ناشی از آن‌ها.
+
+**مسیر تا COMMERCIAL READY**: گشایش Docker (بند 1–2) → اجرای rehearsal روی MariaDB →
+اعتبارنامه‌های زنده (بند 3–4) با stop-and-ask → فعال‌سازی CI (بند 5) → به‌روزرسانی همین
+جدول و ثبت FINAL_STATUS جدید.

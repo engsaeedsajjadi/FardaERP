@@ -147,6 +147,12 @@ def run() -> str:
 		"Warehouse", {"company": company, "is_group": 0, "warehouse_name": ("like", "%Stores%")}, "name"
 	) or frappe.db.get_value("Warehouse", {"company": company, "is_group": 0}, "name")
 	supplier = frappe.db.get_value("Supplier", {"disabled": 0}, "name")
+	if not supplier:  # virgin site: seed one (PR requires a supplier)
+		supplier = frappe.get_doc({
+			"doctype": "Supplier",
+			"supplier_name": f"{PREFIX} SUP",
+			"supplier_type": "Individual",
+		}).insert().name
 	pr = frappe.get_doc({
 		"doctype": "Purchase Receipt",
 		"company": company,

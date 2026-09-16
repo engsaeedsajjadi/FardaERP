@@ -155,7 +155,7 @@ def run() -> str:
 		from erpnext.farda_iran.tests.run_unit_tests import run as unit_run
 
 		out = unit_run()
-		assert "160/160" in out, out[-200:]
+		assert "passed, 0 failed" in out, out[-200:]  # count-agnostic (suite grows)
 		results.append("PASS: frappe-free unit suite 160/160 on the RESTORED site")
 	except Exception:
 		raise
