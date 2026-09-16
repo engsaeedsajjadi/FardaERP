@@ -208,6 +208,63 @@ def ensure_vat_item_tax_templates() -> None:
 					tpl.save(ignore_permissions=True)
 
 
+
+
+def ensure_dashboards() -> None:
+	"""§18 real-data Number Cards + chart + Dashboard (idempotent, is_public).
+
+	Cards aggregate REAL ERP documents via frappe's own machinery (Sum over
+	Sales/Purchase Invoice / Bin). No demo numbers.
+	"""
+	cards = [
+		("فروش کل", "Sales Invoice", "base_grand_total", [["docstatus", "=", 1]]),
+		("خرید کل", "Purchase Invoice", "base_grand_total", [["docstatus", "=", 1]]),
+		("دریافتنی", "Sales Invoice", "outstanding_amount", [["docstatus", "=", 1], ["outstanding_amount", ">", 0]]),
+		("پرداختنی", "Purchase Invoice", "outstanding_amount", [["docstatus", "=", 1], ["outstanding_amount", ">", 0]]),
+		("ارزش موجودی", "Bin", "stock_value", []),
+	]
+	created = []
+	for label, doctype, based_on, filters in cards:
+		if not frappe.db.exists("Number Card", label):
+			frappe.get_doc({
+				"doctype": "Number Card",
+				"label": label,
+				"type": "Document Type",
+				"document_type": doctype,
+				"function": "Sum",
+				"aggregate_function_based_on": based_on,
+				"filters_json": frappe.as_json(filters),
+				"is_public": 1,
+			}).insert(ignore_permissions=True)
+			created.append(label)
+
+	chart_name = "فروش ماهانه"
+	if not frappe.db.exists("Dashboard Chart", chart_name):
+		frappe.get_doc({
+			"doctype": "Dashboard Chart",
+			"chart_name": chart_name,
+			"chart_type": "Sum",
+			"document_type": "Sales Invoice",
+			"based_on": "posting_date",
+			"value_based_on": "base_grand_total",
+			"group_by_type": "Sum",
+			"time_interval": "Monthly",
+			"timeseries": 1,
+			"filters_json": frappe.as_json([["docstatus", "=", 1]]),
+			"is_public": 1,
+		}).insert(ignore_permissions=True)
+
+	dash_name = "فردا — مدیریت"
+	if not frappe.db.exists("Dashboard", dash_name):
+		frappe.get_doc({
+			"doctype": "Dashboard",
+			"dashboard_name": dash_name,
+			"module": "Farda Iran",
+			"charts": [{"chart": chart_name}],
+			"cards": [{"card": label} for label, *_ in cards],
+		}).insert(ignore_permissions=True)
+
+
 def get_item_tax_template_names(company: str) -> dict:
 	"""Template names for a company (used by tests/reporting)."""
 	out = {}
@@ -245,6 +302,10 @@ def execute() -> str:
 	ensure_vat_settings_defaults()
 	ensure_vat_item_tax_templates()
 	ensure_search_keys()
+	try:
+		ensure_dashboards()
+	except Exception:
+		frappe.log_error("farda_iran: dashboard setup failed")  # non-fatal
 	try:
 		ensure_ui_assets()
 	except Exception:
