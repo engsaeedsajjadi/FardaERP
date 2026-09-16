@@ -846,6 +846,61 @@ def _patch_get_closing_entry_for_closed_period():
 	sce.get_closing_entry_for_closed_period = get_closing_entry_for_closed_period
 
 
+def _patch_delink_original_entry():
+	"""PG-14: PE cancel (delink_original_entry) sets `delinked = True` — a
+	boolean — on the smallint `delinked` column. MariaDB coerces silently;
+	strict PostgreSQL raises DatatypeMismatch. Faithful upstream copy with
+	`1` instead of `True` (exactly what upstream's own Advance-branch does —
+	identical semantics on both databases)."""
+	import erpnext.accounts.utils as acc_utils
+	from frappe import qb
+	from frappe.utils import now
+
+	def delink_original_entry(pl_entry, partial_cancel=False):
+		if not pl_entry:
+			return
+
+		if pl_entry.doctype == "Advance Payment Ledger Entry":
+			adv = qb.DocType("Advance Payment Ledger Entry")
+			(
+				qb.update(adv)
+				.set(adv.delinked, 1)
+				.set(adv.event, "Cancel")
+				.set(adv.modified, now())
+				.set(adv.modified_by, frappe.session.user)
+				.where(adv.voucher_type == pl_entry.voucher_type)
+				.where(adv.voucher_no == pl_entry.voucher_no)
+				.where(adv.against_voucher_type == pl_entry.against_voucher_type)
+				.where(adv.against_voucher_no == pl_entry.against_voucher_no)
+				.where(adv.event == pl_entry.event)
+				.run()
+			)
+		else:
+			ple = qb.DocType("Payment Ledger Entry")
+			query = (
+				qb.update(ple)
+				.set(ple.modified, now())
+				.set(ple.modified_by, frappe.session.user)
+				.set(ple.delinked, 1)  # PG-14: upstream has True (boolean->smallint fails)
+				.where(
+					(ple.company == pl_entry.company)
+					& (ple.account_type == pl_entry.account_type)
+					& (ple.account == pl_entry.account)
+					& (ple.party_type == pl_entry.party_type)
+					& (ple.party == pl_entry.party)
+					& (ple.voucher_type == pl_entry.voucher_type)
+					& (ple.voucher_no == pl_entry.voucher_no)
+					& (ple.against_voucher_type == pl_entry.against_voucher_type)
+					& (ple.against_voucher_no == pl_entry.against_voucher_no)
+				)
+			)
+			if partial_cancel:
+				query = query.where(ple.voucher_detail_no == pl_entry.voucher_detail_no)
+			query.run()
+
+	acc_utils.delink_original_entry = delink_original_entry
+
+
 def apply():
 	"""Apply all PG shims (idempotent, postgres-only)."""
 	global _APPLIED
@@ -863,5 +918,6 @@ def apply():
 	_patch_get_matched_payment_request_of_references()
 	_patch_trial_balance_get_opening_balance()
 	_patch_financial_statements_get_accounting_entries()
+	_patch_delink_original_entry()
 	_APPLIED = True
-	print("pg_compat: applied 12 upstream strict-PostgreSQL shims (PG-1..PG-12)")
+	print("pg_compat: applied 13 upstream strict-PostgreSQL shims (PG-1..PG-14)")

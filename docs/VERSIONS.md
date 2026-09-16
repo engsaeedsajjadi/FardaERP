@@ -115,3 +115,12 @@ in the current dev sandbox, which has Python 3.11). Execute via:
 | Security | bandit 1.9.4 `-ll` vs `scripts/ci/bandit-baseline.json` (17× B608 reviewed 2026-09-16) | pipeline security stage |
 | Build | `pip wheel --no-deps` (flit_core backend per upstream pyproject) → wheel must contain farda_iran | pipeline build stage |
 | Executed | ALL 7 STAGES GREEN in-repo 2026-09-16 (unit 160/160+JS; Gate-5 13 + Iran 5 live; wheel verified) | docs/CI-CD.md §6 |
+
+### §11 — PG shims register update (2026-09-16)
+
+| ID | Upstream | Trigger | Fix |
+|---|---|---|---|
+| PG-13 | `accounts/utils.py::QueryPaymentLedger.query_for_outstanding` | PE submit → invoice outstanding never reduced (strict GROUP BY split PLE rows) | group by upstream's 4 keys + MAX() for non-keyed columns |
+| PG-14 | `accounts/utils.py::delink_original_entry` | PE cancel → DatatypeMismatch (`delinked = True` boolean on smallint) | faithful upstream copy with `1` (Advance-branch style) |
+
+pg_compat applies **13 shims (PG-1..PG-14)**, postgres-only, per-process (`apply()`).

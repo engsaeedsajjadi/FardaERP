@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-09-16 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "subject_doctype",
+  "subject_name",
+  "action",
+  "old_value",
+  "new_value",
+  "details",
+  "ip_address"
+ ],
+ "fields": [
+  {
+   "fieldname": "subject_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "نوع سند موضوع",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subject_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "نام سند موضوع",
+   "reqd": 1
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "رویداد",
+   "options": "Create\nUpdate\nSubmit\nCancel\nStatusChange\nSettingsChange\nIdentityChange",
+   "reqd": 1
+  },
+  {
+   "fieldname": "old_value",
+   "fieldtype": "Long Text",
+   "label": "مقادیر قبلی (JSON ماسک‌شده)"
+  },
+  {
+   "fieldname": "new_value",
+   "fieldtype": "Long Text",
+   "label": "مقادیر جدید (JSON ماسک‌شده)"
+  },
+  {
+   "fieldname": "details",
+   "fieldtype": "Small Text",
+   "label": "توضیحات"
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-16 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Audit Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

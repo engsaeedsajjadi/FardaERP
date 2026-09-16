@@ -733,19 +733,43 @@ app_include_js = ["/assets/erpnext/farda_iran/js/farda_ui.js"]
 
 doc_events.update(
 	{
-		"Customer": {"validate": "erpnext.farda_iran.party.validate"},
-		"Supplier": {"validate": "erpnext.farda_iran.party.validate"},
+		"Customer": {
+			"validate": "erpnext.farda_iran.party.validate",
+			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
+			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
+		},
+		"Supplier": {
+			"validate": "erpnext.farda_iran.party.validate",
+			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
+			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
+		},
 		"Company": {"validate": "erpnext.farda_iran.party.validate_company"},
 		"Item": {"validate": "erpnext.farda_iran.item.validate"},
 		"Bank Account": {
 			"validate": "erpnext.farda_iran.banking.hooks.validate_bank_account",
 			"before_insert": "erpnext.farda_iran.banking.hooks.validate_bank_account",
+			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
+			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
 		},
 		"Sales Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
 		"Purchase Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
 		"Payment Entry": {
-			"on_submit": "erpnext.farda_iran.cheque.payment_link.on_payment_entry_submit",
-			"on_cancel": "erpnext.farda_iran.cheque.payment_link.on_payment_entry_cancel",
+			"on_submit": [
+				"erpnext.farda_iran.cheque.payment_link.on_payment_entry_submit",
+				"erpnext.farda_iran.audit.service.on_payment_entry",
+			],
+			"on_cancel": [
+				"erpnext.farda_iran.cheque.payment_link.on_payment_entry_cancel",
+				"erpnext.farda_iran.audit.service.on_payment_entry",
+			],
+		},
+		"Cheque": {
+			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
+			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
+		},
+		"Farda VAT Settings": {
+			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
+			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
 		},
 	}
 )

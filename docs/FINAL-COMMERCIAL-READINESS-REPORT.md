@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 160 unit + 79 live asserts (post-§27 full regression); dedicated perf pass pending |
+| Tests | 🟡 PARTIAL | 166 unit + 86 live asserts (post-§24 regression incl. R14 7/7); dedicated perf pass pending |
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -232,3 +232,24 @@
   Iran 5 + Pay 9 + OTP 6 + Search 7 + Bank 7 + Pack 4 + Rep 5 + VAT 8 + Print 9 + Dash 6
   = **۷۹ assert زنده ALL PASS**.
 - docs/CI-CD.md (طراحی/مراحل/فعال‌سازی/شواهد) · VERSIONS §10 (پین‌های CI).
+
+## 2026-09-16 — §24 Audit log (append-only, R14 7/7 live)
+- `Farda Audit Log` DocType (append-only): فقط System Manager read؛ هیچ create/write/delete
+  برای هیچ نقشی؛ کنترلر ویرایش/حذف ORM را حتی برای Administrator می‌بندد؛ ثبت فقط از
+  `farda_iran/audit/service.py` (fail-open: خطای ممیزی هرگز عملیات کسب‌وکار را نمی‌شکند —
+  در error log می‌رود).
+- چه چیزی ممیزی می‌شود (hooks CORE-005): Payment Entry submit/cancel · گذار وضعیت چک
+  (Create + StatusChange old→new) · تغییر Farda VAT Settings (SettingsChange با old/new) ·
+  تغییر داده‌های هویتی (farda_*/iban روی Customer/Supplier/Bank Account → IdentityChange).
+- هر ردیف: موضوع، رویداد، old/new JSON، **user (owner)، timestamp (creation)، IP**.
+- **Sanitizer** (۶ تست واحد + پوشش زنده): کلیدهای secret (password/token/key/otp/auth/
+  merchant/hash/…) → `***`؛ کلیدهای هویتی → ماسک ۴ رقم آخر (مقدار کامل هرگز ذخیره
+  نمی‌شود — در R14 اثبات منفی شد)؛ OTP plaintext هرگز (فقط hash؛ که هم ماسک می‌شود).
+- **R14 7/7 زنده** (idempotent): سناریوهای بالا + Guest نمی‌خواند/نمی‌سازد + Administrator
+  نمی‌تواند edit/delete کند + IP ثبتشده در بافت درخواست.
+- **PG-14 کشف و شیم شد**: PE cancel روی PG سخت‌گیر خطای DatatypeMismatch می‌داد (upstream
+  `delinked = True` بولین روی smallint — شاخهٔ Advance خود upstream عدد `1` می‌نویسد)؛
+  کپی faithful با `1`؛ pg_compat اکنون ۱۳ شیم (PG-1..PG-14).
+- رگرسیون کامل: Gate-5 13 + Iran 5 + Pay 9 + OTP 6 + Search 7 + Bank 7 + Pack 4 + Rep 5 +
+  VAT 8 + Print 9 + Dash 6 + Audit 7 = **86 live asserts ALL PASS** · unit **166/166** +
+  JS parity · pipeline 7/7 GREEN.

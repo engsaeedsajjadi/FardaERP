@@ -29,6 +29,7 @@ MODULES = (
 	"test_vat_planner",
 	"test_search_keys",
 	"test_dashboard_pure",
+	"test_audit_pure",
 )
 
 

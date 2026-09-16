@@ -19,7 +19,7 @@
 | `deps` | git/bash + py modules (yaml/jsonschema) present; prints toolchain | informational |
 | `lint` | flake8 over `erpnext/farda_iran` + `scripts/` with **upstream `.flake8` code set** (parsed from `.flake8` and passed via CLI because the in-value comment is rejected by flake8≥7) **+ E117** (fork tab-continuation idiom — the ONE documented deviation); `bash -n` all shell scripts; YAML parse compose | zero findings |
 | `compile` | `compileall` every farda module; **compose-spec official schema validation** of docker-compose.yml (when schema cached) | exit 0 |
-| `unit` | 160-test frappe-free unit suite + JS-parity suite via real bench_helper on the live site | summary `N/N passed, 0 failed` + `JS parity tests: ALL PASS` |
+| `unit` | 166-test frappe-free unit suite + JS-parity suite via real bench_helper on the live site | summary `N/N passed, 0 failed` + `JS parity tests: ALL PASS` |
 | `integration` | Gate-5 smoke (13) + Iran integration (5) on live site | exit 0 (BLOCKED-ENV without runtime) |
 | `security` | bandit `-ll` (medium+) against **reviewed baseline** `scripts/ci/bandit-baseline.json` — only NEW findings fail; current baseline = 17× B608 (SQL built exclusively from `frappe.db.escape`d/validated inputs or internal constants; negative/permission tests live) | no new findings |
 | `build` | `pip wheel --no-deps` → wheel must contain `farda_iran` (+tax service); `docker build` when a daemon exists | wheel gate |
@@ -57,7 +57,7 @@ dead `bank_account` lookup removed from cheque/payment_link. Remaining 659× E11
 deps PASS · lint PASS · compile PASS · unit PASS · integration PASS · security PASS · build PASS
 CI: ALL REQUESTED STAGES GREEN
 ```
-- unit = 160/160 + «JS parity tests: ALL PASS»; integration = Gate-5 13/13 + Iran 5/5
+- unit = 166/166 + «JS parity tests: ALL PASS»; integration = Gate-5 13/13 + Iran 5/5
   (live site); build = `erpnext-16.34.2-py3-none-any.whl` (5067 files, farda_iran +
   tax service + 3 Vazirmatn fonts verified inside).
 - Full live regression re-run after the lint cleanup (each suite its own process):
