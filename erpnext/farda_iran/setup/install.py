@@ -293,6 +293,14 @@ def ensure_ui_assets() -> None:
 		shutil.copy2(os.path.join(public, sub, fname), os.path.join(assets, sub, fname))
 
 
+def ensure_audit_index() -> None:
+	"""Composite index for audit lookups (subject filters + retention sweeps)."""
+	try:
+		frappe.db.add_index("Farda Audit Log", ["subject_doctype", "subject_name"])
+	except Exception:
+		frappe.log_error("farda_iran: audit index ensure failed")  # non-fatal
+
+
 def before_migrate(**_kwargs) -> None:
 	execute()
 
@@ -302,6 +310,7 @@ def execute() -> str:
 	ensure_vat_settings_defaults()
 	ensure_vat_item_tax_templates()
 	ensure_search_keys()
+	ensure_audit_index()
 	try:
 		ensure_dashboards()
 	except Exception:

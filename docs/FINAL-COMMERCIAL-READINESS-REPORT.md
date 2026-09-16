@@ -64,7 +64,7 @@
 - Backup/Restore: **IMPLEMENTED + RESTORE-VERIFIED** — see «2026-09-16 — §25» below.
 - Docker stack: **WRITTEN + statically validated** — see «2026-09-16 — §26» below; `docker build/up` BLOCKED-ENV (no daemon).
 - CI/CD: **pipeline IMPLEMENTED + executed ALL GREEN in-repo** — see «2026-09-16 — §27» below; GitHub activation BLOCKED-ENV (CORE-002).
-- Performance / Migration rehearsal: NOT RUN / PENDING — see Remaining Features. No false claims.
+- Performance: **pass executed** — see «2026-09-16 — §31» below. Migration rehearsal: PENDING (needs MariaDB/Docker = BLOCKED-ENV). No false claims.
 
 ## License & Trademark
 - GPL-3.0 preserved; Frappe/ERPNext attribution intact; FardaERP not presented as an official Frappe/ERPNext product.
@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 166 unit + 99 live asserts (incl. R16 security + R17 monitoring); dedicated perf pass pending |
+| Tests | 🟡 PARTIAL | 166 unit + 104 live asserts (incl. R18 perf budgets); remaining breadth: migration rehearsal + cross-module E2E |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -304,3 +304,18 @@
   payment verify + health probe)؛ هر surface جدید = FAIL آگاهانه.
 - رگرسیون: unit 166/166 + JS parity + R16 5/5 + pipeline 7/7 GREEN (lint گیر F401 خودش را
   هم گرفت و بست). جمع زنده: **۹۹ assert**.
+
+## 2026-09-16 — §31 Performance pass (R18 5/5 live + docs/PERFORMANCE.md)
+- **ممیزی ایستای N+1** (AST: کوئری داخل حلقه، کد غیرتستی): `tax/service._get_exempt_flags`
+  batch واقعی بود (false positive — یک get_all با `in`)؛ **N+1 واقعی در `cheque/reminders`**
+  پیدا و بسته شد — یک EXISTS به‌ازای هر چک → یک کوئری batch از جفت‌های (چک، کاربر)
+  اطلاع‌داده‌شده؛ insert فقط برای جفت‌های دیده‌نشده؛ اجرای دوم = صفر ردیف (در R18 ادعا شده).
+  مسیرهای سرد (install/migrate) پذیرفتنی و مستند.
+- **گاردهای عملکرد بودجه‌دار در کد** (اجرا در هر pass کل CI): search ×25 میانگین 2.0ms ·
+  insert SI با VAT+ممیزی بیشینهٔ 295/میانگین 140ms · KPIها 13ms · رندر چاپ 24ms · ۴ گزارش
+  هرکدام ≤1.2s · audit.record 5ms · dedupe یادآورها 78ms.
+- **ایندکس ترکیبی ممیزی** (subject_doctype+subject_name) با ensure_audit_index روی
+  install+before_migrate (idempotent؛ در R18 ادعا شده).
+- docs/PERFORMANCE.md: جدول ممیزی ایستا + بودجه‌ها + روش (بازتنظیم بودجه = ویرایش آگاهانه
+  در کد، هرگز با حذف).
+- رگرسیون: Pay/Audit/VAT زنده سبز + unit 166/166. جمع زنده: **۱۰۴ assert**.
