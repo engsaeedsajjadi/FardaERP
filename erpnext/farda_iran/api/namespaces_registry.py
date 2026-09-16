@@ -43,6 +43,8 @@ REPORT_ALLOWLIST: frozenset[str] = frozenset(
 		"farda_cheque_report",
 		"farda_party_balance",
 		"farda_vat_report",
+		"farda_general_ledger",
+		"farda_trial_balance",
 	}
 )
 
@@ -53,6 +55,8 @@ REPORT_DOC_NAMES: dict[str, str] = {
 	"farda_cheque_report": "Farda Cheque Report",
 	"farda_party_balance": "Farda Party Balance",
 	"farda_vat_report": "Farda VAT Report",
+	"farda_general_ledger": "Farda General Ledger",
+	"farda_trial_balance": "Farda Trial Balance",
 }
 
 # farda.reports.run per-user sliding-window budget (heavy aggregations).

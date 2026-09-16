@@ -1,17 +1,17 @@
 {
   "errors": [],
-  "generated_at": "2026-09-16T17:24:44Z",
+  "generated_at": "2026-09-16T21:41:01Z",
   "metrics": {
     "_totals": {
-      "CONFIDENCE.HIGH": 105,
-      "CONFIDENCE.LOW": 17,
+      "CONFIDENCE.HIGH": 287,
+      "CONFIDENCE.LOW": 19,
       "CONFIDENCE.MEDIUM": 3,
       "CONFIDENCE.UNDEFINED": 0,
       "SEVERITY.HIGH": 0,
-      "SEVERITY.LOW": 108,
-      "SEVERITY.MEDIUM": 17,
+      "SEVERITY.LOW": 290,
+      "SEVERITY.MEDIUM": 19,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 7055,
+      "loc": 9909,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -80,6 +80,32 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "erpnext/farda_iran/api/namespaces.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 152,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/api/namespaces_registry.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 49,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "erpnext/farda_iran/api/search.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -90,6 +116,32 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 61,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/audit/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 0,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/audit/service.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 111,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -154,7 +206,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 74,
+      "loc": 95,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -167,7 +219,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 36,
+      "loc": 51,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -275,6 +327,19 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "erpnext/farda_iran/doctype/farda_audit_log/farda_audit_log.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 27,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "erpnext/farda_iran/doctype/farda_otp_log/__init__.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -350,6 +415,45 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 3,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/flags/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/flags/core.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 45,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/flags/service.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 72,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -441,6 +545,84 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 130,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/monitoring/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 0,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/monitoring/api.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 22,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/monitoring/service.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 74,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/notifications/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/notifications/core.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 46,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/notifications/service.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 209,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -613,6 +795,19 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "erpnext/farda_iran/report/farda_general_ledger/farda_general_ledger.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 1,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 81,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "erpnext/farda_iran/report/farda_party_balance/__init__.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -691,6 +886,19 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "erpnext/farda_iran/report/farda_trial_balance/farda_trial_balance.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 1,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 85,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "erpnext/farda_iran/report/farda_vat_report/__init__.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -739,7 +947,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 278,
+      "loc": 290,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -765,7 +973,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 166,
+      "loc": 154,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -869,7 +1077,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 3,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 743,
+      "loc": 794,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -882,7 +1090,33 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 54,
+      "loc": 58,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_audit_pure.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 55,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_audit_runtime.py": {
+      "CONFIDENCE.HIGH": 13,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 13,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 165,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -951,6 +1185,45 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "erpnext/farda_iran/tests/test_e2e_breadth_runtime.py": {
+      "CONFIDENCE.HIGH": 21,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 21,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 255,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_flags_core.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 32,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_flags_runtime.py": {
+      "CONFIDENCE.HIGH": 17,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 17,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 129,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "erpnext/farda_iran/tests/test_integration_iran.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -960,7 +1233,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 173,
+      "loc": 205,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1003,6 +1276,45 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "erpnext/farda_iran/tests/test_monitoring_runtime.py": {
+      "CONFIDENCE.HIGH": 14,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 14,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 64,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_namespaces_core.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 40,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_namespaces_runtime.py": {
+      "CONFIDENCE.HIGH": 23,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 23,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 117,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "erpnext/farda_iran/tests/test_normalization.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -1013,6 +1325,32 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 55,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_notifications_core.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 32,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_notifications_runtime.py": {
+      "CONFIDENCE.HIGH": 22,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 22,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 256,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1064,7 +1402,33 @@
       "SEVERITY.LOW": 16,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 144,
+      "loc": 146,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_performance_runtime.py": {
+      "CONFIDENCE.HIGH": 14,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 14,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 129,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_print_purchase_thermal_runtime.py": {
+      "CONFIDENCE.HIGH": 18,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 18,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 158,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1078,6 +1442,19 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 41,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_reports_gl_runtime.py": {
+      "CONFIDENCE.HIGH": 16,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 16,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 130,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1130,6 +1507,19 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 49,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "erpnext/farda_iran/tests/test_security_audit_runtime.py": {
+      "CONFIDENCE.HIGH": 24,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 24,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 178,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1259,7 +1649,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 21,
+      "loc": 23,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1298,7 +1688,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 77,
+      "loc": 89,
       "nosec": 0,
       "skipped_tests": 0
     }
@@ -1534,6 +1924,32 @@
       "test_name": "hardcoded_sql_expressions"
     },
     {
+      "code": "49 \trows = frappe.db.sql(\n50 \t\tf\"\"\"\n51 \t\tselect posting_date, account, party_type, party, voucher_type, voucher_no,\n52 \t\t       remarks, debit, credit\n53 \t\tfrom `tabGL Entry`\n54 \t\twhere coalesce(is_cancelled, 0) = 0 {conditions}\n55 \t\torder by posting_date, creation, name\n56 \t\t\"\"\",\n57 \t\tparams,\n",
+      "col_offset": 6,
+      "end_col_offset": 38,
+      "filename": "erpnext/farda_iran/report/farda_general_ledger/farda_general_ledger.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 50,
+      "line_range": [
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
       "code": "10 \treturn frappe.db.sql(\n11 \t\tf\"\"\"\n12 \t\tselect {party_field} as party,\n13 \t\t       max({name_field}) as party_name,\n14 \t\t       count(name) as inv_count,\n15 \t\t       sum(outstanding_amount) as outstanding,\n16 \t\t       min(posting_date) as oldest_date\n17 \t\tfrom `tab{doctype}`\n18 \t\twhere docstatus = 1 and outstanding_amount > 0{conditions}\n19 \t\tgroup by {party_field}\n20 \t\torder by outstanding desc\n21 \t\t\"\"\",\n22 \t\tparams,\n",
       "col_offset": 6,
       "end_col_offset": 9,
@@ -1610,6 +2026,31 @@
         24,
         25,
         26
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions"
+    },
+    {
+      "code": "22 \trows = frappe.db.sql(\n23 \t\tf\"\"\"\n24 \t\tselect account, sum(debit) as debit, sum(credit) as credit\n25 \t\tfrom `tabGL Entry`\n26 \t\twhere coalesce(is_cancelled, 0) = 0 {conditions}\n27 \t\tgroup by account\n28 \t\t\"\"\",\n29 \t\tparams,\n",
+      "col_offset": 6,
+      "end_col_offset": 38,
+      "filename": "erpnext/farda_iran/report/farda_trial_balance/farda_trial_balance.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 23,
+      "line_range": [
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
       "test_id": "B608",

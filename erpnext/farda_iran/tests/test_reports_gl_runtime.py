@@ -5,8 +5,6 @@ at the end. No demo data, no core queries replaced.
 
 from __future__ import annotations
 
-import datetime
-
 import frappe
 
 
@@ -56,14 +54,42 @@ def run() -> str:
 	if not get_settings().vat_account:
 		_setup_vat_settings(company)
 
+	# self-seed: fresh sites may lack an active Fiscal Year for the posting date
+	_posting = frappe.utils.getdate(frappe.utils.nowdate())
+	if not frappe.db.get_value(
+		"Fiscal Year",
+		{"disabled": 0, "year_start_date": ["<=", _posting], "year_end_date": [">=", _posting]},
+		"name",
+	):
+		frappe.get_doc({
+			"doctype": "Fiscal Year",
+			"year": f"FardaGL FY{_posting.year}",
+			"year_start_date": _posting.replace(month=1, day=1),
+			"year_end_date": _posting.replace(month=12, day=31),
+			"companies": [{"company": company}],
+		}).insert()
+
+	_currency = frappe.db.get_value("Company", company, "default_currency")
+	if not frappe.db.exists("Price List", {"selling": 1}):
+		frappe.get_doc({
+			"doctype": "Price List",
+			"price_list_name": "FardaGL Selling",
+			"selling": 1,
+			"buying": 0,
+			"enabled": 1,
+			"currency": _currency,
+		}).insert()
 	si = frappe.get_doc({
 		"doctype": "Sales Invoice",
 		"company": company,
 		"customer": customer,
-		"currency": frappe.db.get_value("Company", company, "default_currency"),
+		"currency": _currency,
 		"conversion_rate": 1,
 		"farda_apply_vat": 1,
 		"posting_date": frappe.utils.nowdate(),
+		"selling_price_list": frappe.db.get_value("Price List", {"selling": 1}, "name"),
+		"price_list_currency": _currency,
+		"plc_conversion_rate": 1,
 		"items": [{"item_code": item, "qty": 1, "rate": 1_000_000}],
 	}).insert()
 	si.submit()
@@ -89,14 +115,15 @@ def run() -> str:
 	ar_row = next(r for r in rows if r["account"] == ar_acc)
 	assert _p2f(ar_row["farda_debit"]) == 110_000, ar_row  # 1,100,000 IRR → 110,000 Toman
 	assert _p2f(ar_row["farda_credit"]) == 0
-	# every posted voucher is balanced: total debit == total credit
-	tot = data[-1]
-	assert tot["farda_date"] != "" and _p2f(tot["farda_debit"]) == _p2f(tot["farda_credit"]), tot
-	# running balance consistent with rows
+	# running balance consistent with rows (filter-scoped)
 	run_bal = 0.0
 	for r in rows:
 		run_bal += _p2f(r["farda_debit"]) - _p2f(r["farda_credit"])
 		assert abs(_p2f(r["farda_balance"]) - run_bal) < 0.01, r
+	# books balance company-wide: total debit == total credit (no party filter)
+	_, all_data = gl({"company": company, "from_date": from_date, "to_date": to_date})
+	tot = all_data[-1]
+	assert tot["farda_date"] != "" and _p2f(tot["farda_debit"]) == _p2f(tot["farda_credit"]) > 0, tot
 	# independent cross-check straight from GL Entry
 	direct = frappe.db.sql(
 		"select sum(debit) from `tabGL Entry` where company=%(c)s and party=%(p)s and coalesce(is_cancelled,0)=0",
@@ -112,7 +139,13 @@ def run() -> str:
 	tb_ar = next((r for r in data[:-1] if r["account"] == ar_acc), None)
 	assert tb_ar, data
 	assert tb_ar["account_name"], tb_ar
-	assert _p2f(tb_ar["farda_debit"]) == 110_000, tb_ar
+	# account-wide period debit must match a direct GL sum (contamination-proof)
+	direct_acc = frappe.utils.flt(frappe.db.sql(
+		"select sum(debit) from `tabGL Entry` where company=%(c)s and account=%(a)s"
+		" and posting_date >= %(f)s and posting_date <= %(t)s and coalesce(is_cancelled,0)=0",
+		{"c": company, "a": ar_acc, "f": from_date, "t": to_date},
+	)[0][0])
+	assert abs(_p2f(tb_ar["farda_debit"]) * 10 - direct_acc) < 0.01, (tb_ar, direct_acc)  # Toman → IRR
 	# closing = opening + dr - cr (Toman domain)
 	assert abs((_p2f(tb_ar["farda_closing"]) + _p2f(tb_ar["farda_opening"]) * 0) - (
 		_p2f(tb_ar["farda_opening"]) + _p2f(tb_ar["farda_debit"]) - _p2f(tb_ar["farda_credit"])
