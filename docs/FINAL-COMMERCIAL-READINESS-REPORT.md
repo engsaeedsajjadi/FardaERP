@@ -89,7 +89,7 @@
 | VAT | 🟡 PARTIAL | live invoice integration PASS; category/return-report pending |
 | Jalali | 🟡 PARTIAL | core service tested; UI/pickers/reports pending |
 | Banking | 🟡 PARTIAL | IBAN/bank-registry/card utilities + validators; Bank Account UI fields pending |
-| Cheque | 🟡 PARTIAL | DocType + transitions; site test + PE wiring + reminders pending |
+| Cheque | ✅ PRESENT | DocType + TRANSITIONS + PE wiring (create_payment_entry/clear/revert) + reminders; R19 live E2E legal 2-step clear + revert (2 latent bugs fixed) |
 | Payment | 🟡 PARTIAL | gateway adapter + security sandbox-verified (9/9); LIVE CREDS = BLOCKED-ENV |
 | SMS | 🟡 PARTIAL | provider abstraction + OTP delivery path sandbox-verified; LIVE SMS = BLOCKED-ENV |
 | OTP | ✅ PRESENT (sandbox) | hashed-only storage + TTL/cooldown + rate-limit, 6/6 live asserts |
@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 166 unit + 104 live asserts (incl. R18 perf budgets); remaining breadth: migration rehearsal + cross-module E2E |
+| Tests | 🟡 PARTIAL | 166 unit + 112 live asserts (incl. R19 cross-module chain ×3 idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -319,3 +319,22 @@
 - docs/PERFORMANCE.md: جدول ممیزی ایستا + بودجه‌ها + روش (بازتنظیم بودجه = ویرایش آگاهانه
   در کد، هرگز با حذف).
 - رگرسیون: Pay/Audit/VAT زنده سبز + unit 166/166. جمع زنده: **۱۰۴ assert**.
+
+## 2026-09-16 — §32 E2E breadth (R19 8/8 live — ONE Iranian order-to-cash chain)
+- زنجیرهٔ پیوستهٔ سر‌تا‌سر روی سایت واقعی: مشتری با کد ملی معتبر (+سطر audit Create) →
+  Bank Account از شبا با اتصال خودکار بانک ملی (رجیستری) → SO→DN→SI با VAT ۱۰٪
+  (grand ۲٬۲۰۰٬۰۰۰ IRR + GL) → رندر چاپ فارسی (کد ملی + ۲۲۰٬۰۰۰ تومان) → درگاه
+  sandbox با transport تزریقی از طریق endpointهای whitelisted واقعی (start→verify→ACCEPT
+  → PE submit → outstanding=0 + audit) → چک دریافتی: create_payment_entry → PE submit →
+  وصول قانونی دو‌مرحله‌ای (Received→Deposited→Cleared + ۲ سطر audit) → PE cancel → برگشت
+  به Received → انعکاس در Sales Register/VAT Report/Party Balance/KPIs + سلامت db/redis.
+- **دو باگ نهان در سیم‌کشی چک↔PE کشف و بسته شد**:
+  1. گذار مستقیم Received/Returned→Cleared با TRANSITIONS ناسازگار بود (validate
+     می‌شکست) — حالا پیشروی قانونی پله‌به‌پله با یک سطر audit به‌ازای هر پله؛
+  2. `create_payment_entry` بدون نرخ ارز/`paid_to_account_currency` و بدون fallback
+     حساب بانک/صندوق بود (MandatoryError) — نرخ ۱ برای IRR، fallback بانک→صندوق، خطای
+     فارسی اگر هیچ.
+- **بهداشت بین‌تستی**: پیشوند authority یکتا (FAKEE2E) + پاک‌سازی سطرهای Farda Payment Log
+  در ابتدا/انتهای اجرا (خود‌شفاما) — دیگر تداخلی با payments_runtime (FAKEAUTH) رخ
+  نمی‌دهد؛ PR برای بالابردن موجودی قبل از DN (الگوی gate5).
+- idempotent ×3 متوالی سبز؛ رگرسیون payments/audit/unit 166/166 + pipeline 7/7 GREEN.

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import frappe
 
-CLEARED_MAP = {"Received": "Cleared", "Deposited": "Cleared", "Issued": "Cleared"}
 REVERT_MAP = {"Cleared": None, "Deposited": "Received", "Returned": "Received"}
 
 
@@ -28,13 +27,24 @@ def on_payment_entry_submit(doc, method: str | None = None) -> None:
 	cheque = frappe.get_doc("Cheque", name)
 	if cheque.status in ("Cleared", "Cancelled"):
 		frappe.throw(frappe._(f"چک {name} در وضعیت «{cheque.status}» قابل شارژ نیست"))
-	target = CLEARED_MAP.get(cheque.status, "Cleared")
-	cheque.status = target
+	# Advance through LEGAL TRANSITIONS one step per save (§ R19 bug fix):
+	# Received/Returned → Deposited → Cleared; Issued → Cleared. A direct
+	# Received→Cleared save previously violated Cheque.TRANSITIONS and raised.
+	guard = 0
+	while cheque.status != "Cleared":
+		if cheque.status in ("Received", "Returned"):
+			cheque.status = "Deposited"
+		else:
+			cheque.status = "Cleared"
+		cheque.save(ignore_permissions=True)  # audit: one StatusChange row per legal step
+		guard += 1
+		if guard > 3:
+			frappe.throw(frappe._(f"گذار وضعیت چک {name} به «Cleared» ناممکن است"))
 	if doc.get("reference_no"):
 		cheque.notes = (cheque.notes or "") + f"\nPE {doc.name} ref {doc.reference_no}".strip()
 	cheque.payment_entry = doc.name
 	cheque.save(ignore_permissions=True)
-	frappe.msgprint(frappe._(f"چک {name} به وضعیت «{target}» رفت"), alert=True)
+	frappe.msgprint(frappe._(f"چک {name} به وضعیت «Cleared» رفت"), alert=True)
 
 
 def on_payment_entry_cancel(doc, method: str | None = None) -> None:
@@ -79,9 +89,25 @@ def create_payment_entry(cheque: str) -> str:
 	pe.party_type = party_type
 	pe.party = party
 	pe.paid_from = frappe.db.get_value("Company", company, "default_receivable_account") if pe.payment_type == "Receive" else frappe.db.get_value("Company", company, "default_payable_account")
-	pe.paid_to = frappe.db.get_value("Company", company, "default_bank_account") or frappe.db.get_value("Account", {"company": company, "account_type": "Bank", "is_group": 0}, "name")
+	pe.paid_to = (
+		frappe.db.get_value("Company", company, "default_bank_account")
+		or frappe.db.get_value("Account", {"company": company, "account_type": "Bank", "is_group": 0}, "name")
+		or frappe.db.get_value("Account", {"company": company, "account_type": "Cash", "is_group": 0}, "name")
+	)
+	if not pe.paid_to:
+		frappe.throw(frappe._("حساب بانک/صندوق برای شرکت یافت نشد"))
+	pe.paid_to_account_currency = (
+		frappe.db.get_value("Account", pe.paid_to, "account_currency")
+		or frappe.db.get_value("Company", company, "default_currency")
+	)
 	pe.paid_amount = c.amount
 	pe.received_amount = c.amount
+	# cheque amounts are integral IRR (cheque validate); set unit rates unless a
+	# multi-currency account already populated them (PE.validate requires them)
+	if not pe.get("source_exchange_rate"):
+		pe.source_exchange_rate = 1
+	if not pe.get("target_exchange_rate"):
+		pe.target_exchange_rate = 1
 	pe.reference_no = c.cheque_number
 	pe.reference_date = c.due_date
 	pe.farda_cheque = c.name
