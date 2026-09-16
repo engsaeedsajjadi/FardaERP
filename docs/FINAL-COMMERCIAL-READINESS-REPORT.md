@@ -440,3 +440,21 @@ audit/performance/order-to-cash/notifications, re-migrate 0 errors.
   to PARTIAL (no 100% claims); GATE 5 hard evidence extended: Contents-API
   `.github/workflows?ref=arena/01a0a51f-fardaerp` → **404** (no executable workflow on the
   branch; upstream workflows exist on `main` only).
+
+### 📌 وضعیت یک‌نگاهی — Reviewer consensus (2026-09-17)
+
+| بُعد | وضعیت |
+|---|---|
+| CODE | 🟢 عمدتاً آماده — ۰ باگ بازِ شناخته‌شده |
+| LOCAL/PG runtime | 🟢 شواهد گسترده و regression شده (unit ۱۷۸/۱۷۸ · ۲۱ سوئیت · ×3 idempotent) |
+| DOCUMENTATION | 🟢 Documentation Reconciliation انجام شد (snapshot واحد) |
+| RTL | 🟡 PARTIAL — ۱٬۶۰۱/۱۰٬۱۵۷ msgid خالی + QA Portal/Login/Dialog مانده |
+| Reports | 🟡 PARTIAL — ۵ گزارش ایرانی تست‌شده؛ GL/TB، Stock، Bank، CashFlow، P&L، BS باقی |
+| Docker | 🟡 آماده — runtime واقعی اثبات نشده (BLOCKED-ENV) |
+| MariaDB | 🟠 نیازمند اجرای واقعی (G-MDB) |
+| Payment Live | 🟠 نیازمند credential واقعی (G-PAY) |
+| SMS Live | 🟠 نیازمند credential واقعی (G-SMS) |
+| GitHub Actions | 🟠 نیازمند مجوز `workflows` (G-GCI) |
+| Commercial Release | 🔴 هنوز نه |
+
+**گام بعدی توافقی:** بستن ۵ گیت محیطی به محض دسترسی + تکمیل هم‌زمان RTL (batch ترجمهٔ بعدی + QA پورتال/لاگین/دیالوگ) و گزارش‌های ایرانی باقی‌مانده — بدون بازکاری روی featureهای اثبات‌شده (verify-not-rebuild همچنان حاکم است).
