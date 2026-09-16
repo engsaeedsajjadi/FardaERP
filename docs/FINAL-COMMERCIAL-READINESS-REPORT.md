@@ -39,7 +39,7 @@
 3. SMS provider abstraction + OTP (hash/rate-limit/audit)
 4. Payment gateway abstraction (ZarinPal/IDPay/NextPay) + security (idempotency/replay/amount-match)
 5. Persian invoice print formats + Persian PDF pipeline (RTL fonts)
-6. Full RTL/translation coverage (~2,488 empty fa msgids)
+6. RTL/translation coverage — **PARTIAL**: 1,601 of 10,157 fa msgids still empty (§47 recount; earlier ~2,488 figure superseded); Portal/Login/Dialog RTL QA pending
 7. Iranian reports (VAT return, cheque status, aging) + dashboards (real data)
 8. Security hardening audit + API surface + notifications
 9. Backup/Restore scripts + tested restore proof
@@ -96,7 +96,7 @@
 | Invoice | ✅ PRESENT | real invoices + Persian RTL print: Sales A4 + Purchase A4 + Thermal 80mm (H7 9 + R15 4 live) |
 | PDF | ✅ PRESENT | pure-Python Persian PDF (reportlab+Vazirmatn), text-layer verified |
 | RTL | 🟡 PARTIAL | fa-scoped CSS live-tested; ~1,601 empty fa msgids remain |
-| Reports | ✅ PRESENT | Iranian VAT/Cheque/Party/Purchase/Sales-Register pack live-tested |
+| Reports | 🟡 PARTIAL | 5 Iranian reports (VAT/Cheque/Party/Purchase/Sales-Register) live-tested; remaining per gap matrix: GL/Trial Balance Iranian layer, Stock Balance/Movement, Bank Report, Cash Flow, P&L, Balance Sheet presentation — NOT 100% |
 | Security | ✅ PRESENT (Farda surfaces) | dedicated audit R16 5/5 live (guest surface, XSS-escaped formats, SQLi, PII, escalation matrix) + docs/SECURITY-AUDIT.md; framework security gates |
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
@@ -423,3 +423,8 @@ audit/performance/order-to-cash/notifications, re-migrate 0 errors.
 - **Translations: 10,157 total / 1,601 empty msgids** (counted; not functional failures).
 - **FINAL_STATUS unchanged: NOT COMMERCIAL READY — 5 environmental blockers, 0 open
   code bugs.** Evidence: docs/PRODUCTION-VERIFICATION-REPORT.md.
+- **Post-verification doc fixes:** upstream ERPNext README replaced with the FardaERP product
+  README (CORE-008) — reviewer-identified top documentation gap; RTL & Reports rows corrected
+  to PARTIAL (no 100% claims); GATE 5 hard evidence extended: Contents-API
+  `.github/workflows?ref=arena/01a0a51f-fardaerp` → **404** (no executable workflow on the
+  branch; upstream workflows exist on `main` only).

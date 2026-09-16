@@ -1,162 +1,122 @@
-
 <div align="center">
-    <a href="https://frappe.io/erpnext">
-	<img src="./erpnext/public/images/v16/erpnext.svg" alt="ERPNext Logo" height="80px" width="80xp"/>
-    </a>
-    <h2>ERPNext</h2>
-    <p align="center">
-        <p>Powerful, Intuitive and Open-Source ERP</p>
-    </p>
 
-[![Learn on Frappe School](https://img.shields.io/badge/Frappe%20School-Learn%20ERPNext-blue?style=flat-square)](https://frappe.school)<br><br>
-[![CI](https://github.com/frappe/erpnext/actions/workflows/server-tests-mariadb.yml/badge.svg?event=schedule)](https://github.com/frappe/erpnext/actions/workflows/server-tests-mariadb.yml)
-[![docker pulls](https://img.shields.io/docker/pulls/frappe/erpnext-worker.svg)](https://hub.docker.com/r/frappe/erpnext-worker)
+# فارداERP · FardaERP
+
+**ERP متن‌باز فارسی‌اول — RTL بومی · تقویم جلالی · ریال/تومان**
+
+*FardaERP — a Persian-first, RTL-native commercial ERP built on the ERPNext v16 core*
+
+`ERPNext v16.34.2` · `Frappe v16.33.1` · `HRMS v16.18.1` · `GPL-3.0`
 
 </div>
 
-<div align="center">
-	<img src="./erpnext/public/images/v16/hero_image.png"/>
-</div>
+> **انتساب و سلب رابطه (Attribution & non-affiliation):** فارداERP یک محصول **مستقل** است که روی
+> هستهٔ ERPNext/Frappe (نسخهٔ ۱۶) ساخته شده است. این پروژه محصول رسمی **Frappe Technologies**،
+> **ERPNext** یا **Frappe** نیست و توسط هیچ‌کدام تأیید یا حمایت نمی‌شود. نام‌ها و نشان‌های
+> ERPNext/Frappe متعلق به صاحبان آن‌هاست — ببینید `TRADEMARK_POLICY.md`، `attributions.md` و
+> `license.txt` (GPL-3.0). کد پایه بدون تغییر معنایی از ERPNext v16.34.2 (کامیت `adc8f88`) است و
+> هر تغییر ثبت‌شده در [`docs/CORE-CHANGES.md`](docs/CORE-CHANGES.md) («no entry, no change»).
 
-<div align="center">
-	<a href="https://erpnext-demo.frappe.cloud/api/method/erpnext_demo.erpnext_demo.auth.login_demo">Live Demo</a>
-	-
-	<a href="https://frappe.io/erpnext">Website</a>
-	-
-	<a href="https://docs.frappe.io/erpnext/">Documentation</a>
-</div>
+---
 
-## ERPNext
+## فارداERP چیست؟
 
-100% Open-Source ERP system to help you run your business.
+یک ERP تجاری برای ایران که همان هستهٔ قدرتمند حسابداری/موجودی ERPNext را حفظ کرده و **لایهٔ
+ایرانی کامل** را در یک ماژول ایزوله — `erpnext/farda_iran/` — اضافه می‌کند:
 
-### Motivation
+| لایه | شرح |
+|---|---|
+| 🗓 **جلالی و ارقام فارسی** | سرویس مرکزی تبدیل تاریخ (DB همیشه میلادی؛ جلالی فقط لایهٔ نمایش) |
+| 💰 **ریال/تومان** | سرویس مرکزی ارز: نمایش، رقم به حروف فارسی، تبدیل کنترل‌شده |
+| 🧾 **VAT قابل‌پیکربندی** | نرخ/تاریخ اثر/معافیت/دستهٔ کالا — بدون هاردکد در منطق کسب‌وکار؛ ثبت واقعی در فاکتور و GL |
+| 🏦 **بانک و چک** | اعتبارسنجی IBAN (MOD-97)/کارت/کد ملی/شناسه حقوقی؛ چرخهٔ کامل چک + یادآورها + اتصال Payment Entry |
+| 💳 **درگاه پرداخت** | انتزاع ZarinPal / IDPay / NextPay / Sandbox — امضای دیجیتال ورودی، ضد-replay/تамper؛ اعتبارنامه فقط env |
+| 🔐 **OTP/SMS** | ذخیرهٔ **فقط-hash**، انقضا، rate-limit؛ انتزاع ارائه‌دهندهٔ SMS (Kavenegar/Melipayamak/Ghasedak/Console) |
+| 🖨 **فاکتور فارسی و PDF** | Print Formatهای RTL (فروش A4 + خرید A4 + حرارتی 80mm)، PDF فارسی pure-Python با فونت وزیرمتن، مبلغ به حروف |
+| 📊 **گزارش‌های ایرانی** | فروش/خرید Register، وضعیت چک، ماندهٔ طرف حساب، گزارش VAT + داشبورد دادهٔ واقعی |
+| 🛡 **امنیت و پایش** | سطح guest دقیقاً 4 endpoint، audit-trail، سلامت بدون secret/PII، ماسک‌کردن PII |
+| 🔔 **اعلان‌ها** | ۶ تریگر دوکاناله (in-app + SMS) با dedupe دائمی |
+| 🧯 **کلیدهای قطع (kill-switch)** | ۷ فلگ `farda_enable_*` در System Settings: `sms` · `otp` · `payment` · `vat` · `banking` · `cheque` · `reports` |
 
-Running a business is a complex task - handling invoices, tracking stock, managing personnel and even more ad-hoc activities. In a market where software is sold separately to manage each of these tasks, ERPNext does all of the above and more, for free.
+## وضعیت فعلی — صادقانه (Verification status)
 
-### Key Features
+**FINAL_STATUS فعلی: `NOT COMMERCIAL READY` — ۵ بلاکر صرفاً محیطی، ۰ باگ بازِ شناخته‌شده.**
+گزارش کامل: [`docs/PRODUCTION-VERIFICATION-REPORT.md`](docs/PRODUCTION-VERIFICATION-REPORT.md).
 
-- **Accounting**: All the tools you need to manage cash flow in one place, right from recording transactions to summarizing and analyzing financial reports.
-- **Order Management**: Track inventory levels, replenish stock, and manage sales orders, customers, suppliers, shipments, deliverables, and order fulfillment.
-- **Manufacturing**: Simplifies the production cycle, helps track material consumption, exhibits capacity planning, handles subcontracting, and more!
-- **Asset Management**: From purchase to perishment, IT infrastructure to equipment. Cover every branch of your organization, all in one centralized system.
-- **Projects**: Delivery both internal and external Projects on time, budget and Profitability. Track tasks, timesheets, and issues by project.
+اثبات‌شده با اجرا (نه ادعا): unit **178/178** + JS parity · pipeline داخلی **7/7** ·
+**21 سوئیت E2E زنده** (شامل زنجیرهٔ کامل Order-to-Cash: Company→Customer→Item→SO→VAT→SI→PE→تسویه→PDF فارسی→گزارش‌ها→audit) ·
+idempotency ×3 روی سوئیت‌های حساس · rehearsal نصب‌تازه (migrate) · `bench migrate` با 0 خطا.
 
-<details open>
+| گیت Production | وضعیت |
+|---|---|
+| 1 · Docker (build/up/health/persistence) | **BLOCKED-ENV** — compose-spec schema معتبر (8 سرویس)؛ daemon در محیط تأیید نبود |
+| 2 · MariaDB 10.6 (نصب‌تازه/migrate/E2E) | **BLOCKED-ENV** — همهٔ شواهد فعلی PostgreSQL 16.2 است (انحراف مستندشده) |
+| 3 · درگاه پرداخت Live | **BLOCKED-ENV** — credential واقعی موجود نیست؛ sandbox تأیید شده (`Sandbox success ≠ Live verified`) |
+| 4 · SMS Live | **BLOCKED-ENV** — همان سیاست بالا؛ `flags.sms=OFF` ⇒ صفر پیام |
+| 5 · GitHub Actions | **BLOCKED-ENV** — `.github/workflows` روی این شاخه وجود ندارد (API → 404) و push آن با توکن بدون مجوز `workflows` توسط GitHub رد شد؛ pipeline آمادهٔ فعال‌سازی: `scripts/ci/github-workflow.yml` |
 
-<summary>More</summary>
-	<img src="https://erpnext.com/files/v16_bom.png"/>
-	<img src="https://erpnext.com/files/v16_stock_summary.png"/>
-	<img src="https://erpnext.com/files/v16_job_card.png"/>
-	<img src="https://erpnext.com/files/v16_tasks.png"/>
-</details>
+دو مورد که **۱۰۰٪ تلقی نمی‌شوند** (طبق ماتریس گپ):
 
-### Under the Hood
+- **RTL/ترجمه — `PARTIAL`:** ۱٬۶۰۱ msgid خالی از ۱۰٬۱۵۷ (`erpnext/farda_iran/translations/audit.py`)؛ QA آنتروپورت/لاگین/دیالوگ‌ها مانده است.
+- **گزارش‌ها — `PARTIAL`:** پنج گزارش ایرانی اجرا و تست شده‌اند؛ لایهٔ ایرانی GL/Trial Balance، Stock Balance/Movement، Bank Report، Cash Flow، P&L و Balance Sheet هنوز باز است. جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
 
-- [**Frappe Framework**](https://github.com/frappe/frappe): A full-stack web application framework written in Python and Javascript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
+## راه‌اندازی سریع
 
-- [**Frappe UI**](https://github.com/frappe/frappe-ui): A Vue-based UI library, to provide a modern user interface. The Frappe UI library provides a variety of components that can be used to build single-page applications on top of the Frappe Framework.
+### Docker (Production)
 
-## Production Setup
-
-### Managed Hosting
-
-You can try [Frappe Cloud](https://frappecloud.com), a simple, user-friendly and sophisticated [open-source](https://github.com/frappe/press) platform to host Frappe applications with peace of mind.
-
-It takes care of installation, setup, upgrades, monitoring, maintenance and support of your Frappe deployments. It is a fully featured developer platform with an ability to manage and control multiple Frappe deployments.
-
-<div>
-	<a href="https://erpnext-demo.frappe.cloud/app/home" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
-			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
-		</picture>
-	</a>
-</div>
-
-
-
-### Self-Hosted
-#### Docker
-
-Prerequisites: docker, docker-compose, git. Refer [Docker Documentation](https://docs.docker.com) for more details on Docker setup.
-
-Run following commands:
-
-```
-git clone https://github.com/frappe/frappe_docker
-cd frappe_docker
-docker compose -f pwd.yml up -d
+```bash
+git clone https://github.com/engsaeedsajjadi/FardaERP.git
+cd FardaERP
+cp .env.example .env      # مقادیر secret را فقط همین‌جا پر کنید (env-only؛ هرگز commit نشود)
+docker compose up -d      # mariadb:10.6 + redis×2 + backend/workers/scheduler/websocket/nginx
 ```
 
-After a couple of minutes, site should be accessible on your localhost port: 8080. Use below default login credentials to access the site.
-- Username: Administrator
-- Password: admin
+> ⚠️ این استک هنوز در محیط تأیید build/up نشده است (BLOCKED-ENV — بدون Docker daemon).
+> فایل compose در برابر schema رسمی compose-spec معتبر است؛ runbook کامل:
+> [`docs/DOCKER.md`](docs/DOCKER.md). پس از بالا آمدن: `RUN_MIGRATIONS=1` برای migrate یک‌باره.
 
-See [Frappe Docker](https://github.com/frappe/frappe_docker?tab=readme-ov-file#to-run-on-arm64-architecture-follow-this-instructions) for ARM based docker setup.
+### Bench (توسعه)
 
+```bash
+bench get-app erpnext https://github.com/engsaeedsajjadi/FardaERP --branch main
+bench new-site mysite.local --install-app erpnext
+bench --site mysite.local install-app hrms     # اختیاری — v16.18.1
+bench start
+```
 
-## Development Setup
-### Manual Install
+پس از نصب، `erpnext.farda_iran.setup.install.execute()` فیلدهای سفارشی، VAT پیش‌فرض و
+assetهای UI را اعمال می‌کند (نصب‌تازه به‌صورت خودکار seed می‌شود).
 
-The Easy Way: our install script for bench will install all dependencies (e.g. MariaDB). See https://github.com/frappe/bench for more details.
+> **نکتهٔ دیتابیس:** هدف production، **MariaDB 10.6+** است؛ اما تا اجرای گیت ۲، تنها شواهد
+> اجراشده روی PostgreSQL است (انحراف مستندشده — ادعای تأیید MariaDB نمی‌کنیم).
 
-New passwords will be created for the ERPNext "Administrator" user, the MariaDB root user, and the frappe user (the script displays the passwords and saves them to ~/frappe_passwords.txt).
+## تست‌ها و CI
 
+```bash
+bash scripts/ci/pipeline.sh all        # deps/lint/compile/unit/integration/security/build
+```
 
-### Local
+سوئیت‌های runtime (`erpnext/farda_iran/tests/test_*_runtime.py`) روی یک سایت واقعی اجرا
+می‌شوند؛ شبه‌PG (`tests/pg_compat.py`) **فقط-تست** است و هرگز وارد کد production/MariaDB نمی‌شود.
+CI گیت‌هاب با کپی `scripts/ci/github-workflow.yml` به `.github/workflows/` (با توکن دارای مجوز
+`workflows`) فعال می‌شود.
 
-To setup the repository locally follow the steps mentioned below:
+## مستندات
 
-1. Setup bench by following the [Installation Steps](https://frappeframework.com/docs/user/en/installation) and start the server
-   ```
-   bench start
-   ```
+| سند | محتوا |
+|---|---|
+| [`docs/PRODUCTION-VERIFICATION-REPORT.md`](docs/PRODUCTION-VERIFICATION-REPORT.md) | گزارش ۱۷-بخشی تأیید production + شواهد ۵ گیت |
+| [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md) | ماتریس ویژگی‌ها با واژگان ۵وضعیتی (IMPLEMENTED … BLOCKED-ENV) |
+| [`docs/FINAL-COMMERCIAL-READINESS-REPORT.md`](docs/FINAL-COMMERCIAL-READINESS-REPORT.md) | گزارش آمادگی تجاری + تاریخچه |
+| [`docs/CORE-CHANGES.md`](docs/CORE-CHANGES.md) | دفتر کل تغییرات فایل‌های upstream |
+| [`docs/DOCKER.md`](docs/DOCKER.md) | runbook production |
+| [`docs/CI-CD.md`](docs/CI-CD.md) | pipeline و فعال‌سازی Actions |
+| [`docs/SECURITY-AUDIT.md`](docs/SECURITY-AUDIT.md) | ممیزی سطح امنیتی |
+| [`docs/VERSION-BASELINE-AND-ARCHITECTURE.md`](docs/VERSION-BASELINE-AND-ARCHITECTURE.md) | سیاست همگام‌سازی upstream (version-16 + ۵ گیت) |
 
-2. In a separate terminal window, run the following commands:
-   ```
-   # Create a new site
-   bench new-site erpnext.localhost
-   ```
+## مجوز و نشان تجاری
 
-3. Get the ERPNext app and install it
-   ```
-   # Get the ERPNext app
-   bench get-app https://github.com/frappe/erpnext
-
-   # Install the app
-   bench --site erpnext.localhost install-app erpnext
-   ```
-
-4. Open the URL `http://erpnext.localhost:8000/app` in your browser, you should see the app running
-
-## Learning and community
-
-1. [Frappe School](https://school.frappe.io) - Learn Frappe Framework and ERPNext from the various courses by the maintainers or from the community.
-2. [Official documentation](https://docs.erpnext.com/) - Extensive documentation for ERPNext.
-3. [Discussion Forum](https://discuss.frappe.io/c/erpnext/6) - Engage with community of ERPNext users and service providers.
-4. [Telegram Group](https://erpnext_public.t.me) - Get instant help from huge community of users.
-
-
-## Contributing
-
-1. [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
-1. [Report Security Vulnerabilities](https://erpnext.com/security)
-1. [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
-2. [Translations](https://crowdin.com/project/frappe)
-
-
-## Logo and Trademark Policy
-
-Please read our [Logo and Trademark Policy](TRADEMARK_POLICY.md).
-
-<br />
-<br />
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
-		</picture>
-	</a>
-</div>
+- کد تحت **GPL-3.0** است (`license.txt`) — به‌ارث‌رسیده از ERPNext.
+- فارداERP محصول رسمی Frappe/ERPNext **نیست**؛ استفاده از نام‌ها تابع
+  [`TRADEMARK_POLICY.md`](TRADEMARK_POLICY.md) و [`attributions.md`](attributions.md) است.
+- سیاست همگام‌سازی upstream: فقط `version-16`، با ۵ گیت و بدون بازنویسی تاریخچه.
