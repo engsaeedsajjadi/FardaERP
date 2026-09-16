@@ -82,3 +82,10 @@ current environment and asserts on the restored site:
 | `FARDA_RETENTION_DAYS` | `30` | prune age |
 | `FARDA_BACKUP_PASSPHRASE` | unset | enable AES-256 artifact encryption |
 | `FARDA_VENV` / `FARDA_PGBIN` / `FARDA_PGLIBS` | toolchain paths | sandbox toolchain (Docker image sets its own) |
+| `FARDA_DB_ROOT_USER` / `FARDA_DB_ROOT_PASS` | unset | DB superuser for `bench restore` (env-only; if unset, frappe prompts) |
+
+### Restore-time `file(1)` shim
+Frappe's restore shells out to `file <dump>` to detect gzip/encryption. Environments
+without binutils get a magic-byte shim injected into PATH by `restore.sh` (reports
+`gzip compressed data` / `ASCII text`, never `AES` — `.enc` decryption is handled by
+the script itself). A production Docker image should install the real `file` package.

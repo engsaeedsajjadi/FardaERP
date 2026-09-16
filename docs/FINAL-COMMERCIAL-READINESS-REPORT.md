@@ -2,7 +2,7 @@
 
 > Created 2026-09-15 per the master completion prompt §69. This is an HONEST,
 > continuously-updated report — it will say **NOT YET COMMERCIAL READY** until
-> every gate has real evidence. Last update: 2026-09-15 (after Banking+Cheque phase).
+> every gate has real evidence. Last update: 2026-09-16 (after Backup/Restore §25).
 
 ## Verdict
 
@@ -61,7 +61,8 @@
 - Negative permission tests PASS (Gate-5). OTP/payment/file-upload audit NOT YET PERFORMED (features pending). Secrets: none in repo (.env.example placeholders only).
 
 ## Docker / CI/CD / Performance / Backup-Restore / Migration Results
-- NOT RUN / PENDING — see Remaining Features. No false claims.
+- Backup/Restore: **IMPLEMENTED + RESTORE-VERIFIED** — see «2026-09-16 — §25» below.
+- Docker / CI/CD / Performance / Migration: NOT RUN / PENDING — see Remaining Features. No false claims.
 
 ## License & Trademark
 - GPL-3.0 preserved; Frappe/ERPNext attribution intact; FardaERP not presented as an official Frappe/ERPNext product.
@@ -87,18 +88,18 @@
 | Jalali | 🟡 PARTIAL | core service tested; UI/pickers/reports pending |
 | Banking | 🟡 PARTIAL | IBAN/bank-registry/card utilities + validators; Bank Account UI fields pending |
 | Cheque | 🟡 PARTIAL | DocType + transitions; site test + PE wiring + reminders pending |
-| Payment | ❌ MISSING | adapter architecture pending (LIVE CREDENTIAL VALIDATION PENDING) |
-| SMS | ❌ MISSING | provider abstraction pending (LIVE SMS VALIDATION PENDING) |
-| OTP | ❌ MISSING | hash/rate-limit/audit pending |
-| Invoice | 🟡 PARTIAL | real invoices PASS in tests; Persian print format pending |
-| PDF | ❌ MISSING | Persian RTL PDF pipeline pending |
-| RTL | 🟡 PARTIAL | ~2,488 empty fa msgids; CSS/UX work pending |
-| Reports | 🟡 PARTIAL | upstream reports PASS; Iranian (VAT/cheque/Jalali) pending |
+| Payment | 🟡 PARTIAL | gateway adapter + security sandbox-verified (9/9); LIVE CREDS = BLOCKED-ENV |
+| SMS | 🟡 PARTIAL | provider abstraction + OTP delivery path sandbox-verified; LIVE SMS = BLOCKED-ENV |
+| OTP | ✅ PRESENT (sandbox) | hashed-only storage + TTL/cooldown + rate-limit, 6/6 live asserts |
+| Invoice | ✅ PRESENT | real invoices + Persian RTL print format (H7), 9/9 live |
+| PDF | ✅ PRESENT | pure-Python Persian PDF (reportlab+Vazirmatn), text-layer verified |
+| RTL | 🟡 PARTIAL | fa-scoped CSS live-tested; ~1,601 empty fa msgids remain |
+| Reports | ✅ PRESENT | Iranian VAT/Cheque/Party/Purchase/Sales-Register pack live-tested |
 | Security | 🟡 PARTIAL | framework security + negative tests; Farda audit pending |
-| Backup | 🟡 PARTIAL | bench native; scripts+restore proof pending |
+| Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | ❌ MISSING | DOCKER VALIDATION PENDING |
 | CI/CD | ❌ MISSING | pipelines pending |
-| Tests | 🟡 PARTIAL | 86 unit + 18 smoke/integration PASS; E2E pending |
+| Tests | 🟡 PARTIAL | 160 unit + 66 live asserts; dedicated E2E/perf pass pending |
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -165,3 +166,21 @@
 - R12 زنده ۶/۶: KPIها دقیقاً با SI (+VAT ۱٬۱۰۰٬۰۰۰) و PE جزئی (−۴۰۰٬۰۰۰) حرکت کردند.
 - Live totals: unit 160/160 + JS parity + Gate-5 13/13 + Iran 5 + Pay 9 + OTP 6 + Print 9 + Rep 5
   + VAT 8 + Search 7 + Bank 7 + Pack 4 + Dash 6 = 66 runtime asserts PASS.
+
+## 2026-09-16 — §25 Backup/Restore (restore-verified)
+- `scripts/backup.sh`: bench-native `bench backup --with-files` (bench_helper از sites/) → staging
+  `$FARDA_BACKUP_DIR/<site>/<YYYYMMDD-HHMMSS>/` شامل `site_config.json` (که bench هرگز بکاپ نمی‌کند)،
+  رمزنگاری اختیاری AES-256-CBC/PBKDF2 روی آرتیفکت‌ها با `FARDA_BACKUP_PASSPHRASE` (پسوند .enc؛
+  site_config عمداً plaintext می‌ماند)، `MANIFEST.sha256`، اشاره‌گر `LATEST`، حذف دایرکتوری‌های
+  قدیمی‌تر از `FARDA_RETENTION_DAYS` (پیش‌فرض 30).
+- `scripts/restore.sh`: decrypt اختیاری → `bench restore` (با root-creds از env) → استخراج هر tar
+  فایل‌ها با `--strip-components 1` (tars بنچ مسیر `./<source-site>/…` دارند) → شیم `file(1)`
+  (binutils در sandbox نیست؛ فراپه هنگام restore نوع فایل را با `file` می‌سنحید — در ایمیج Docker
+  بستهٔ واقعی file نصب خواهد شد).
+- **R13 E2E 5/5 زنده** (`erpnext/farda_iran/tests/test_backup_restore_runtime.py`), دو اجرای متوالی idempotent:
+  1. BACKUP-OK + دایرکتوری فِیک 45روزه واقعاً حذف شد (retention) 2. MANIFEST.sha256 سالم + site_config.json
+  در staging 3. RESTORE-OK روی سایت تازهٔ `verify.farda.local` (DB + 2 tar) 4. هویت داده: Customer نشانه‌دار،
+  تعداد SI، Custom Fieldها و سه‌گانهٔ Farda VAT Settings روی سایت بازگردانی‌شده عیناً برابر 5. سوییت واحد
+  **160/160 روی سایت بازگردانی‌شده** + JS parity.
+- پاک‌سازی: DB/سایت تست drop و نشانه از سایت اصلی حذف شد (تأیید بعد از اجرا).
+- قاعدهٔ «بکاپ بدون اثبات restore = تأییدنشده» با همین تست بسته شد: اثبات = بازگردانی کامل در سایت تازه.

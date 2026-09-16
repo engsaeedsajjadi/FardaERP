@@ -28,21 +28,21 @@ DEST="$BACKUP_DIR/$SITE"
 mkdir -p "$DEST"
 
 # 1) frappe-native backup (database.sql.gz + files tarball) inside the site
-cd "$BENCH"
-BEFORE=$(ls -1 "sites/$SITE/private/backups" 2>/dev/null | sort || true)
+cd "$BENCH/sites"   # bench_helper reads ./apps.txt relative to CWD
+BEFORE=$(ls -1 "$SITE/private/backups" 2>/dev/null | sort || true)
 PYTHONIOENCODING=utf-8 "$VENV/bin/python" -m frappe.utils.bench_helper frappe \
   --site "$SITE" backup --with-files > /tmp/farda_backup_last.log 2>&1 \
   || { echo "BACKUP-FAILED: bench backup"; tail -5 /tmp/farda_backup_last.log; exit 1; }
-AFTER=$(ls -1 "sites/$SITE/private/backups" | sort)
+AFTER=$(ls -1 "$SITE/private/backups" | sort)
 NEW=$(comm -13 <(echo "$BEFORE") <(echo "$AFTER") || true)
 
 # 2) stage artifacts (site_config.json included — NOT part of bench backups)
 TS=$(date +%Y%m%d-%H%M%S)
 STAGE="$DEST/$TS"
 mkdir -p "$STAGE"
-cp "sites/$SITE/site_config.json" "$STAGE/site_config.json"
+cp "$SITE/site_config.json" "$STAGE/site_config.json"
 for f in $NEW; do
-  cp "sites/$SITE/private/backups/$f" "$STAGE/"
+  cp "$SITE/private/backups/$f" "$STAGE/"
 done
 [ -z "$(ls -A "$STAGE" --ignore=site_config.json)" ] && { echo "BACKUP-FAILED: no new artifacts"; exit 1; }
 
