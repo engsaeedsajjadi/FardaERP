@@ -58,14 +58,13 @@ def run() -> str:
 	pg_compat.apply()
 	results: list[str] = []
 
-	# setup: VAT settings + templates + parties/items
+	# setup: VAT settings FIRST (account), then templates (they need the account)
 	import erpnext.farda_iran.setup.install as farda_setup
-
-	farda_setup.execute()
 	from erpnext.farda_iran.tests.test_integration_iran import _setup_vat_settings
 
 	company = frappe.db.get_value("Company", {"is_group": 0}, "name")
 	vat_account = _setup_vat_settings(company)
+	farda_setup.execute()
 	names = farda_setup.get_item_tax_template_names(company)
 	if not names["vat"] or not names["exempt"]:
 		raise AssertionError(f"Item Tax Templates missing: {names}")
@@ -118,7 +117,7 @@ def run() -> str:
 		assert len(vat_rows3) == 2, si3.taxes  # two taxable lines → two Actual rows
 		total_vat = sum(t.tax_amount for t in vat_rows3)
 		assert abs(total_vat - 125_000) < 0.01, (total_vat, si3.taxes)
-		assert abs(si3.grand_total - 1_625_000) < 0.01, si3.grand_total  # 1,500,000 net + 125,000 VAT
+		assert abs(si3.grand_total - 1_875_000) < 0.01, si3.grand_total  # 1,750,000 net + 125,000 VAT
 		si3.submit()
 		gl = _gl_vat(si3.name, vat_account, company)
 		assert abs(gl - 125_000) < 0.01, gl
@@ -146,14 +145,19 @@ def run() -> str:
 		_ensure_report()
 		fn = frappe.get_attr("erpnext.farda_iran.report.farda_vat_report.farda_vat_report.execute")
 		columns, data = fn({"company": company, "kind": ""})
-		rows_by_voucher = {r["voucher"]: r for r in data[:-1]}
-		r3 = rows_by_voucher.get(si3.name)
-		assert r3 and r3["vat"] == "۱۲٬۵۰۰" and r3["kind"] == "فروش", r3  # 125,000 IRR = 12,500 Toman
-		r_pi = rows_by_voucher.get(pi.name)
-		assert r_pi and r_pi["vat"] == "۸٬۰۰۰" and r_pi["kind"] == "خرید", r_pi
+		# report is per tax ROW; aggregate per voucher for assertions
+		p2i = lambda s: int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+		agg: dict = {}
+		for r in data[:-1]:
+			a = agg.setdefault(r["voucher"], {"kind": r["kind"], "farda_date": r["farda_date"], "vat": 0})
+			a["vat"] += p2i(r["vat"])
+		p2i = lambda s: int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+		r3 = agg.get(si3.name)
+		assert r3 and r3["vat"] == 12_500 and r3["kind"] == "فروش", (r3,)  # 125,000 IRR = 12,500 Toman
+		r_pi = agg.get(pi.name)
+		assert r_pi and r_pi["vat"] == 8_000 and r_pi["kind"] == "خرید", r_pi
 		assert "۱۴۰۵" in r3["farda_date"], r3
 		# totals row = sum of rows
-		p2i = lambda s: int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
 		assert p2i(data[-1]["vat"]) == sum(p2i(r["vat"]) for r in data[:-1]), data[-1]
 		_, only_purchase = fn({"company": company, "kind": "Purchase"})
 		assert all(r["kind"] == "خرید" for r in only_purchase[:-1]), only_purchase

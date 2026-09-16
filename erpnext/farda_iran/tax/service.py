@@ -51,7 +51,8 @@ def _get_exempt_flags(items) -> list[bool]:
 	codes = sorted({r.item_code for r in items if r.item_code})
 	exempt_map = {}
 	if codes:
-		exempt_map = frappe.db.get_values("Item", {"name": ["in", codes]}, "farda_vat_exempt") or {}
+		for d in frappe.get_all("Item", filters={"name": ["in", codes]}, fields=["name", "farda_vat_exempt"]):
+			exempt_map[d.name] = d.farda_vat_exempt
 	return [bool(exempt_map.get(r.item_code)) for r in items]
 
 
@@ -107,6 +108,8 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 			"taxes",
 			{
 				"charge_type": "On Net Total",
+				"category": "Total",
+				"add_deduct_tax": "Add",
 				"account_head": account,
 				"rate": rate,
 				"description": VAT_DESCRIPTION,
@@ -124,11 +127,13 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 					"taxes",
 					{
 						"charge_type": "Actual",
+						"category": "Total",
+						"add_deduct_tax": "Add",
 						"account_head": account,
 						"rate": rate,
 						"tax_amount": planner.to_number(row_tax),
 						"base_tax_amount": planner.to_number(row_tax),
-						"description": f"{VAT_DESCRIPTION} — {item_row.item_name or item_row.item_code}",
+						"description": f"{VAT_DESCRIPTION} — {item_row.item_code or ''}",
 					},
 				)
 	doc.calculate_taxes_and_totals()
