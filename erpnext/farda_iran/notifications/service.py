@@ -180,7 +180,11 @@ def _collect_stale_drafts(days: int) -> list[tuple[str, str]]:
 
 
 def _send_sms(kind: str, subject: str) -> int:
+	from erpnext.farda_iran.flags.service import get_flag
 	from erpnext.farda_iran.sms import provider as sms_provider
+
+	if not get_flag("sms"):  # §35 kill-switch: OFF ⇒ zero provider calls
+		return 0
 
 	try:
 		numbers = parse_alert_numbers(os.environ.get("FARDA_ALERT_SMS_NUMBERS"))

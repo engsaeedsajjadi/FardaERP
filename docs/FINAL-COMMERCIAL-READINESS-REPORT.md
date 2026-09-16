@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 175 unit + 125 live asserts (R19 chain + R20 notifications + R21 namespaces، هر سه idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
+| Tests | 🟡 PARTIAL | 178 unit + 131 live asserts (R19 chain + R20 notifications + R21 namespaces + R22 flags، همه idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -363,3 +363,16 @@
 - سطح guest تغییر نکرده (R16 مجدد سبز)؛ سطح فقط‌خواندنی — mutation ها در لایهٔ model
   با audit trail. قرارداد کامل: docs/API-NAMESPACES.md.
 - unit 175/175؛ pipeline 7/7؛ R20/آماریت/امنیت regression سبز.
+
+## 2026-09-16 — §35 Feature flags (R22 6/6 live ×3 idempotent)
+- رجیستری مرکزی ۷ فلگ سطح‌سیستم (sms/otp/payment/vat/banking/cheque/reports) در
+  `flags/{core,service}.py` — core کاملاً pure (واژگان، نام فیلدها، پارسِ ۰/۱/on/off/ارقام فارسی).
+- ذخیره‌سازی: ۷ فیلد Check روی System Settings (farda_enable_*، پیش‌فرض روشن) با
+  ensure_flags ای‌دمپوتنت در install.py؛ خواندن fail-open (پیش‌ازmigrate=روشن)؛
+  مقدار ۰ صریحِ ادمین هیچ‌وقت بازنویسی نمی‌شود.
+- سیم‌کشی واقعی: flags.sms کانال پیامک notifications را قطع می‌کند (خاموش ⇒ صفر
+  فراخوانی provider — اثبات زنده)؛ bootinfo `modules` وضعیت را به Desk می‌برد؛
+  فلگ‌های نمایشی site_config (jalali/toman) دست‌نخورده.
+- unit 178/178؛ pipeline 7/7؛ R19/R20/R21 regression سبز.
+- **با این فاز، سه ردیف HIGH MISSING ماتریس صفر شد** (Notifications §33 · API
+  namespaces §34 · Feature flags §35) — فقط BLOCKED-ENVها و گیت نهایی باقی است.

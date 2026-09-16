@@ -301,6 +301,13 @@ def ensure_audit_index() -> None:
 		frappe.log_error("farda_iran: audit index ensure failed")  # non-fatal
 
 
+def ensure_flags() -> None:
+	"""7 subsystem Check flags on System Settings (farda_enable_*, default ON)."""
+	from erpnext.farda_iran.flags.service import ensure_flags as _ensure
+
+	_ensure()
+
+
 def before_migrate(**_kwargs) -> None:
 	execute()
 
@@ -311,6 +318,7 @@ def execute() -> str:
 	ensure_vat_item_tax_templates()
 	ensure_search_keys()
 	ensure_audit_index()
+	ensure_flags()
 	try:
 		ensure_dashboards()
 	except Exception:

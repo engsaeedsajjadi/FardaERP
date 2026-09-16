@@ -21,9 +21,12 @@ def _flag(name: str, default: bool) -> bool:
 
 def extend_bootinfo(bootinfo) -> None:
 	from erpnext.farda_iran.currency.service import get_irr_per_toman
+	from erpnext.farda_iran.flags.service import all_flags
 
 	bootinfo.farda_iran = {
 		"jalali_dates": _flag("farda_iran_ui_jalali_dates", True),
 		"toman_display": _flag("farda_iran_ui_toman_display", True),
 		"irr_per_toman": float(get_irr_per_toman()),
+		# §35 central module-level subsystem flags (System Settings-backed)
+		"modules": all_flags(),
 	}

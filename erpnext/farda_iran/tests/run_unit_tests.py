@@ -32,6 +32,7 @@ MODULES = (
 	"test_audit_pure",
 	"test_notifications_core",
 	"test_namespaces_core",
+	"test_flags_core",
 )
 
 
