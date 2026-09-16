@@ -26,15 +26,19 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.5",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.34.0",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4",
-    "tsx": "^4.20.5",
     "dotenv": "^17.2.1",
+    "eslint": "^9.34.0",
     "pg": "^8.23.0",
-    "@types/pg": "^8.15.5"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "croner": "10.0.1",
+    "pg-boss": "12.32.0"
   }
 }
