@@ -136,6 +136,33 @@ def run() -> str:
 	# ---------- 4) VAT applied to a real Sales Invoice ----
 	item = frappe.db.get_value("Item", {"item_code": ("like", "%SMOKE%")}, "item_code") or frappe.db.get_value("Item", {"disabled": 0, "is_stock_item": 1}, "item_code")
 	company_currency = frappe.db.get_value("Company", company, "default_currency")
+	# self-seed: fresh sites may lack a default selling Price List / active Fiscal Year
+	if not frappe.db.exists("Price List", {"selling": 1}):
+		frappe.get_doc(
+			{
+				"doctype": "Price List",
+				"price_list_name": _unique("INTG Selling"),
+				"selling": 1,
+				"enabled": 1,
+				"currency": company_currency,
+			}
+		).insert()
+	selling_pl = frappe.db.get_value("Price List", {"selling": 1}, "name")
+	_posting = frappe.utils.getdate(nowdate())
+	if not frappe.db.get_value(
+		"Fiscal Year",
+		{"disabled": 0, "year_start_date": ["<=", _posting], "year_end_date": [">=", _posting]},
+		"name",
+	):
+		frappe.get_doc(
+			{
+				"doctype": "Fiscal Year",
+				"year": _unique(f"INTG FY{_posting.year}"),
+				"year_start_date": _posting.replace(month=1, day=1),
+				"year_end_date": _posting.replace(month=12, day=31),
+				"companies": [{"company": company}],
+			}
+		).insert()
 	invoice = frappe.get_doc(
 		{
 			"doctype": "Sales Invoice",
@@ -145,6 +172,9 @@ def run() -> str:
 			"conversion_rate": 1,
 			"farda_apply_vat": 1,
 			"posting_date": nowdate(),
+			"selling_price_list": selling_pl,
+			"price_list_currency": company_currency,
+			"plc_conversion_rate": 1,
 			"items": [{"item_code": item, "qty": 10, "rate": 100_000}],
 		}
 	).insert()
@@ -186,6 +216,9 @@ def run() -> str:
 			"conversion_rate": 1,
 			"farda_apply_vat": 1,
 			"posting_date": nowdate(),
+			"selling_price_list": selling_pl,
+			"price_list_currency": company_currency,
+			"plc_conversion_rate": 1,
 			"items": [{"item_code": item, "qty": 1, "rate": 100_000}],
 		}
 	).insert()
