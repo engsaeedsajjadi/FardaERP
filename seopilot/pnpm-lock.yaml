@@ -42,9 +42,29 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.3)(tsx@4.23.13)
 
-  packages/aeo: {}
+  packages/aeo:
+    dependencies:
+      '@seopilot/crawler':
+        specifier: workspace:*
+        version: link:../crawler
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
 
-  packages/ai: {}
+  packages/ai:
+    dependencies:
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
+      zod:
+        specifier: ^4.1.12
+        version: 4.6.5
 
   packages/api: {}
 
@@ -113,7 +133,23 @@ importers:
         specifier: workspace:*
         version: link:../usage
 
-  packages/content: {}
+  packages/content:
+    dependencies:
+      '@seopilot/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
+      zod:
+        specifier: ^4.1.12
+        version: 4.6.5
 
   packages/crawler:
     dependencies:
@@ -186,7 +222,26 @@ importers:
         specifier: ^4.1.12
         version: 4.6.5
 
-  packages/geo: {}
+  packages/geo:
+    dependencies:
+      '@seopilot/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/security':
+        specifier: workspace:*
+        version: link:../security
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
+      zod:
+        specifier: ^4.1.12
+        version: 4.6.5
 
   packages/gsc:
     dependencies:
