@@ -742,14 +742,18 @@ def _patch_query_payment_ledger():
 		query_voucher_outstanding = (
 			qb.from_(ple)
 			.select(
-				ple.account,
+				# PG-13: group by the SAME 4 keys as upstream (MariaDB groups by a
+				# subset of selected columns; PG is strict). Non-keyed columns use
+				# MAX() so PLE rows with differing due_date/posting_date collapse
+				# into ONE outstanding row per voucher (upstream MariaDB behavior).
+				Max(ple.account).as_("account"),
 				ple.against_voucher_type.as_("voucher_type"),
 				ple.against_voucher_no.as_("voucher_no"),
 				ple.party_type,
 				ple.party,
-				ple.posting_date,
-				ple.due_date,
-				ple.account_currency.as_("currency"),
+				Max(ple.posting_date).as_("posting_date"),
+				Max(ple.due_date).as_("due_date"),
+				Max(ple.account_currency).as_("currency"),
 				Sum(ple.amount).as_("amount"),
 				Sum(ple.amount_in_account_currency).as_("amount_in_account_currency"),
 			)
@@ -757,14 +761,10 @@ def _patch_query_payment_ledger():
 			.where(Criterion.all(filter_on_against_voucher_no))
 			.where(Criterion.all(self.common_filter))
 			.groupby(
-				ple.account,
 				ple.against_voucher_type,
 				ple.against_voucher_no,
 				ple.party_type,
 				ple.party,
-				ple.posting_date,
-				ple.due_date,
-				ple.account_currency,
 			)
 		)
 
