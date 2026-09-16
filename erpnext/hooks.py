@@ -780,5 +780,8 @@ doc_events.update(
 )
 
 scheduler_events = {
-	"daily": ["erpnext.farda_iran.cheque.reminders.notify_cheques_due"],
+	"daily": [
+		"erpnext.farda_iran.cheque.reminders.notify_cheques_due",
+		"erpnext.farda_iran.notifications.service.run",
+	],
 }

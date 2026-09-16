@@ -24,9 +24,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 try:  # works as erpnext.farda_iran.* inside the app...
-	from ..utilities.validators import normalize_national_id
+	from ..utilities.validators import normalize_ir_mobile
 except ImportError:  # ...and as a path-loaded module in standalone tests
-	from farda_iran.utilities.validators import normalize_national_id
+	from farda_iran.utilities.validators import normalize_ir_mobile
 
 SMS_TIMEOUT = 15
 
@@ -58,20 +58,6 @@ class SMSProvider(ABC):
 
 	def delivery_status(self, message_id: str) -> SendResult:
 		return SendResult(ok=False, provider=self.name, error="delivery_status not supported")
-
-
-def normalize_ir_mobile(phone: str) -> str:
-	"""09xxxxxxxxx canonical form (folds persian digits, +98/98/0098 prefixes)."""
-	digits = normalize_national_id(phone).replace("-", "").replace(" ", "")
-	if digits.startswith("+98"):
-		digits = "0" + digits[3:]
-	elif digits.startswith("98") and len(digits) == 12:
-		digits = "0" + digits[2:]
-	elif digits.startswith("0098"):
-		digits = "0" + digits[4:]
-	if not (digits.isdigit() and len(digits) == 11 and digits.startswith("09")):
-		raise ValueError(f"شماره موبایل ایران معتبر نیست: {phone!r}")
-	return digits
 
 
 class ConsoleProvider(SMSProvider):

@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 166 unit + 112 live asserts (incl. R19 cross-module chain ×3 idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
+| Tests | 🟡 PARTIAL | 171 unit + 118 live asserts (R19 chain + R20 notifications, هر دو idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -338,3 +338,17 @@
   در ابتدا/انتهای اجرا (خود‌شفاما) — دیگر تداخلی با payments_runtime (FAKEAUTH) رخ
   نمی‌دهد؛ PR برای بالابردن موجودی قبل از DN (الگوی gate5).
 - idempotent ×3 متوالی سبز؛ رگرسیون payments/audit/unit 166/166 + pipeline 7/7 GREEN.
+
+## 2026-09-16 — §33 Notifications (R20 6/6 live ×3 idempotent)
+- شش تریگر با دادهٔ واقعی: cheque_due (واگذاری به reminders بهینه‌شدهٔ R18) · low_stock
+  (Item Reorder × Bin) · invoice_overdue (فاکتور واخورده با مانده) · payment_received/
+  payment_failed (Farda Payment Log) · approval_pending (پیش‌نویس راکد).
+- دو کانال: اِین‌اپ (Notification Log، کاربران مالی + fallback Administrator، dedupe
+  همیشگی per (doctype,name,user) با خواندن دسته‌ای — قانون N+1) و **پیامک** از طریق
+  abstraction موجود (resolve از env؛ گیرندگان env-only با پشتیبانی ارقام فارسی/+98؛
+  بدنهٔ یکدست «[FardaERP] برچسب: موضوع»؛ یک ارسال به‌ازای هر رویداد NEW — ledger داخلی
+  نقش dedupe پیامک را هم دارد).
+- SMS زنده = BLOCKED-ENV (بدون اعتبارنامه) — کانال با provider ضبط‌کننده اثبات شد.
+- hooks.daily ← notifications.service.run (CORE-007)؛ normalize_ir_mobile به هستهٔ
+  pure validators منتقل شد (provider بازنشر می‌کند).
+- regression: R18 perf / R19 / payments / audit همگی سبز؛ unit 171/171؛ pipeline 7/7.

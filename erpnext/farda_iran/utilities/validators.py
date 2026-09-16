@@ -97,3 +97,17 @@ def is_valid_economic_code(code: str) -> bool:
 	"""کد اقتصادی — 4..13 digits (legacy 4-11 + current 12-digit), not all same."""
 	code = normalize_national_id(code)
 	return 4 <= len(code) <= 13 and code.isdigit() and not _all_same(code)
+
+
+def normalize_ir_mobile(phone: str) -> str:
+	"""09xxxxxxxxx canonical form (folds persian digits, +98/98/0098 prefixes)."""
+	digits = normalize_national_id(phone).replace("-", "").replace(" ", "")
+	if digits.startswith("+98"):
+		digits = "0" + digits[3:]
+	elif digits.startswith("98") and len(digits) == 12:
+		digits = "0" + digits[2:]
+	elif digits.startswith("0098"):
+		digits = "0" + digits[4:]
+	if not (digits.isdigit() and len(digits) == 11 and digits.startswith("09")):
+		raise ValueError(f"شماره موبایل ایران معتبر نیست: {phone!r}")
+	return digits

@@ -30,6 +30,7 @@ MODULES = (
 	"test_search_keys",
 	"test_dashboard_pure",
 	"test_audit_pure",
+	"test_notifications_core",
 )
 
 
