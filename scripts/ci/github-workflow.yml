@@ -1,17 +1,17 @@
 # FardaERP CI (§27) — GitHub Actions wrapper around scripts/ci/pipeline.sh
 #
-# NOT ACTIVE: this environment's GitHub credential cannot push workflow files
-# (CORE-002). To activate: copy this file to .github/workflows/ci.yml with a
-# workflows-scoped token, then verify the first run green.
+# Activation: this file IS the workflow (committed under .github/workflows/).
+# Triggers: push/PR on main + the verification branch, plus manual dispatch.
 # The pipeline itself is EXECUTED AND PROVEN in-repo (docs/CI-CD.md §4).
 
 name: FardaERP CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "arena/**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   pipeline:

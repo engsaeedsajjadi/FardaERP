@@ -88,8 +88,8 @@ def ensure_flags() -> None:
 		ignore_validate=True,
 		update=True,
 	)
-	# Singles don't inherit Custom Field defaults — seed ON explicitly, but ONLY
-	# for fields created NOW (an admin-set 0 must never be clobbered on re-run).
+	# Singles don't inherit Custom Field defaults — the column arrives as 0, so
+	# seed ON explicitly for the fields created NOW. (An admin-set 0 on a field
+	# that already existed is never touched: only `missing` fields are seeded.)
 	for name in missing:
-		if frappe.db.get_single_value(_SETTINGS, field_name(name)) is None:
-			frappe.db.set_single_value(_SETTINGS, field_name(name), 1)
+		frappe.db.set_single_value(_SETTINGS, field_name(name), 1)

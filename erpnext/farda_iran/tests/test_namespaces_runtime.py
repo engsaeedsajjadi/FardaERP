@@ -38,6 +38,22 @@ def run() -> str:
 	_cleanup_probe_user()
 	frappe.db.commit()
 
+	# get-or-create the identity customer (suite-order independence: R19 also
+	# uses this party, but R21 must not REQUIRE having run before R19)
+	customer = frappe.db.get_value("Customer", {"customer_name": "FardaE2E CUST"}, "name")
+	if not customer:
+		customer = (
+			frappe.get_doc(
+				{
+					"doctype": "Customer",
+					"customer_name": "FardaE2E CUST",
+					"customer_type": "Individual",
+					"farda_national_id": "0012345601",
+				}
+			)
+			.insert()
+			.name
+		)
 	as_admin = frappe.session.user  # Administrator
 
 	# ---------- 1) tax.calculate_vat ----------
@@ -58,7 +74,6 @@ def run() -> str:
 	results.append("PASS: خطای فرمت — ورودی خراب/action ناشناخته → VALIDATION")
 
 	# ---------- 3) party.get_profile ----------
-	customer = frappe.db.get_value("Customer", {"customer_name": "FardaE2E CUST"}, "name")
 	assert customer
 	out = ns.party(action="get_profile", party_type="Customer", name=customer)
 	assert out["ok"] is True, out
