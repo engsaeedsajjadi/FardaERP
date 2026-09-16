@@ -102,7 +102,7 @@ export async function crawlSite(optionsIn: Partial<CrawlOptions> & { startUrl: s
       const page: CrawledPage = {
         url: item.url, normalizedUrl: item.url, depth: item.depth, discoveredFrom: item.from, discoverySource: item.source, statusCode: null, fetchClass: "skipped_robots",
         contentType: null, isHtml: false, redirectUrl: null, redirectChain: [], responseTimeMs: null, ttfbMs: null, byteLength: null, contentEncoding: null,
-        isHttps: item.url.startsWith("https://"), headerCanonicalUrl: null, xRobotsTag: null, renderedWithJs: false, errorMessage: "Disallowed by robots.txt", analysis: null,
+        isHttps: item.url.startsWith("https://"), headerCanonicalUrl: null, xRobotsTag: null, responseHeaders: {}, renderedWithJs: false, errorMessage: "Disallowed by robots.txt", analysis: null,
       };
       crawled++;
       await events.onPage?.(page);

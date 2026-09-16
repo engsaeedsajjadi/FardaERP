@@ -48,7 +48,14 @@ importers:
 
   packages/api: {}
 
-  packages/audit: {}
+  packages/audit:
+    dependencies:
+      '@seopilot/crawler':
+        specifier: workspace:*
+        version: link:../crawler
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/auth:
     dependencies:

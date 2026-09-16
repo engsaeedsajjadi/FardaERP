@@ -25,6 +25,17 @@ function classify(status: number): FetchClass {
   return "network_error";
 }
 
+const AUDIT_HEADERS = ["strict-transport-security", "content-security-policy", "x-content-type-options", "x-frame-options", "referrer-policy", "permissions-policy", "cache-control", "vary", "server", "x-powered-by", "content-language", "last-modified", "etag", "set-cookie"];
+
+function pickHeaders(headers: { get(name: string): string | null }): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const h of AUDIT_HEADERS) {
+    const v = headers.get(h);
+    if (v !== null) out[h] = h === "set-cookie" ? v.replace(/=[^;]*/g, "=<redacted>").slice(0, 500) : v.slice(0, 1000);
+  }
+  return out;
+}
+
 function parseLinkHeaderCanonical(header: string | null, base: string): string | null {
   if (!header) return null;
   for (const part of header.split(",")) {
@@ -57,6 +68,7 @@ export async function fetchPage(input: FetchPageInput): Promise<CrawledPage> {
     isHttps: input.url.startsWith("https://"),
     headerCanonicalUrl: null,
     xRobotsTag: null,
+    responseHeaders: {},
     renderedWithJs: false,
     errorMessage: null,
     analysis: null,
@@ -102,6 +114,7 @@ export async function fetchPage(input: FetchPageInput): Promise<CrawledPage> {
     contentEncoding: res.contentEncoding,
     headerCanonicalUrl: parseLinkHeaderCanonical(res.headers.get("link"), input.url),
     xRobotsTag: xRobots,
+    responseHeaders: pickHeaders(res.headers),
   };
 
   if (isHtml && status >= 200 && status < 300 && res.byteLength > 0) {

@@ -75,6 +75,8 @@ export interface CrawledPage {
   isHttps: boolean;
   headerCanonicalUrl: string | null;
   xRobotsTag: string | null;
+  /** Subset of response headers relevant to security/caching audits (lower-cased names). */
+  responseHeaders: Record<string, string>;
   renderedWithJs: boolean;
   errorMessage: string | null;
   analysis: PageAnalysis | null;
