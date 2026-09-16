@@ -13,3 +13,4 @@ storage-local/
 playwright-report/
 test-results/
 *.log
+.tsout/

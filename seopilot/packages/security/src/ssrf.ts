@@ -126,7 +126,7 @@ export async function resolveAndValidate(input: string | URL, policy: SsrfPolicy
   try {
     answers = await dns.promises.lookup(hostname, { all: true, verbatim: true });
   } catch (err) {
-    throw new SsrfBlockedError(`DNS resolution failed for ${hostname}`, { host: hostname, cause: err instanceof Error ? err.code ?? err.message : String(err) });
+    throw new SsrfBlockedError(`DNS resolution failed for ${hostname}`, { host: hostname, cause: err instanceof Error ? ((err as NodeJS.ErrnoException).code ?? err.message) : String(err) });
   }
   if (answers.length === 0) throw new SsrfBlockedError(`DNS returned no addresses for ${hostname}`, { host: hostname });
 

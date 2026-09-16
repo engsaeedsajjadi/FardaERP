@@ -28,8 +28,7 @@ const PRIVATE_IPV4: Array<[string, number]> = [
 const PRIVATE_IPV6: Array<[string, number]> = [
   ["::", 128], // unspecified
   ["::1", 128], // loopback
-  ["::ffff:0:0", 96], // IPv4-mapped (checked separately via the v4 table)
-  ["64:ff9b::", 96], // NAT64 well-known prefix (maps to v4; checked separately)
+  // ::ffff:0:0/96 (IPv4-mapped) and 64:ff9b::/96 (NAT64) are judged by their embedded IPv4 in embeddedIpv4().
   ["100::", 64], // discard-only
   ["2001::", 32], // Teredo (tunnels arbitrary v4)
   ["2001:db8::", 32], // documentation

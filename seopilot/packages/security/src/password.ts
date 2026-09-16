@@ -1,13 +1,13 @@
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
 
-const scryptAsync = promisify(scrypt);
+const scryptAsync = (pw: string, salt: Buffer, len: number, opts: { N: number; r: number; p: number }) =>
+  new Promise<Buffer>((resolve, reject) => scrypt(pw, salt, len, opts, (err, key) => (err ? reject(err) : resolve(key))));
 const N = 16384, r = 8, p = 1, KEYLEN = 64;
 
 /** scrypt password hashing used for API-key secrets and share-link passwords (Better Auth hashes user passwords itself). */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16);
-  const key = (await scryptAsync(password, salt, KEYLEN, { N, r, p })) as Buffer;
+  const key = await scryptAsync(password, salt, KEYLEN, { N, r, p });
   return `scrypt$${N}$${r}$${p}$${salt.toString("base64url")}$${key.toString("base64url")}`;
 }
 
@@ -15,7 +15,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const parts = stored.split("$");
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
   const [, n, rr, pp, saltB, keyB] = parts as [string, string, string, string, string, string];
-  const key = (await scryptAsync(password, Buffer.from(saltB, "base64url"), KEYLEN, { N: Number(n), r: Number(rr), p: Number(pp) })) as Buffer;
+  const key = await scryptAsync(password, Buffer.from(saltB, "base64url"), KEYLEN, { N: Number(n), r: Number(rr), p: Number(pp) });
   const expected = Buffer.from(keyB, "base64url");
   return key.length === expected.length && timingSafeEqual(key, expected);
 }

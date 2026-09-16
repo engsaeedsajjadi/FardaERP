@@ -6,9 +6,11 @@ import { z } from "zod";
  * are modelled as optional so a missing provider yields an explicit
  * "not configured" state instead of a crash or a fabricated value.
  */
-const bool = z
-  .enum(["true", "false", "1", "0"])
-  .transform((v) => v === "true" || v === "1");
+const bool = (def: "true" | "false") =>
+  z
+    .enum(["true", "false", "1", "0"])
+    .default(def)
+    .transform((v) => v === "true" || v === "1");
 
 export const coreEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
@@ -18,7 +20,7 @@ export const coreEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   DATABASE_MIGRATE_URL: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
-  SELF_HOSTED: bool.default("false"),
+  SELF_HOSTED: bool("false"),
   /** 32-byte base64 key used for AES-256-GCM encryption of stored credentials. */
   ENCRYPTION_KEY: z.string().min(32),
 });
@@ -54,7 +56,7 @@ export const storageEnvSchema = z.object({
   S3_ACCESS_KEY: z.string().optional(),
   S3_SECRET_KEY: z.string().optional(),
   S3_BUCKET: z.string().optional(),
-  S3_FORCE_PATH_STYLE: bool.default("true"),
+  S3_FORCE_PATH_STYLE: bool("true"),
   /** Local filesystem fallback for self-hosted mode when S3 is not configured. */
   STORAGE_LOCAL_DIR: z.string().optional(),
 });
@@ -64,7 +66,7 @@ export const emailEnvSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
-  SMTP_SECURE: bool.default("false"),
+  SMTP_SECURE: bool("false"),
   EMAIL_FROM: z.string().optional(),
 });
 
@@ -78,7 +80,7 @@ export const workerEnvSchema = z.object({
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(4),
   CRAWLER_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(5),
   CRAWLER_USER_AGENT: z.string().default("SEOPilotBot/1.0 (+https://seopilot.dev/bot)"),
-  PLAYWRIGHT_ENABLED: bool.default("false"),
+  PLAYWRIGHT_ENABLED: bool("false"),
 });
 
 export type CoreEnv = z.infer<typeof coreEnvSchema>;

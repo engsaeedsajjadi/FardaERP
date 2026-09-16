@@ -13,7 +13,7 @@
     "dev:worker": "pnpm --filter @seopilot/worker dev",
     "build": "pnpm -r --filter ./packages/* --filter ./apps/* build",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
-    "typecheck": "tsc -b tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && pnpm --filter @seopilot/web typecheck",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",

@@ -2,7 +2,6 @@ import { pgTable, text, timestamp, boolean, integer, jsonb, index, uniqueIndex, 
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { id, createdAt, updatedAt, deletedAt } from "./_common";
 import { users } from "./auth";
-import { users } from "./auth";
 
 export const ORG_ROLES = ["owner", "admin", "manager", "seo_manager", "analyst", "editor", "client", "viewer"] as const;
 export type OrgRole = (typeof ORG_ROLES)[number];
