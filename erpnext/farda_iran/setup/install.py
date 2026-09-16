@@ -26,6 +26,15 @@ PARTY_FIELDS = [
 	dict(fieldname="farda_postal_code", label="کد پستی", fieldtype="Data", insert_after="farda_economic_code"),
 	dict(fieldname="farda_iban", label="شماره شبا", fieldtype="Data", insert_after="farda_postal_code"),
 	dict(
+		fieldname="farda_search_key",
+		label="کلید جستجو",
+		fieldtype="Data",
+		insert_after="farda_iban",
+		hidden=1,
+		print_hide=1,
+		read_only=1,
+	),
+	dict(
 		fieldname="farda_vat_exempt",
 		label="معاف از مالیات بر ارزش افزوده",
 		fieldtype="Check",
@@ -68,6 +77,15 @@ PAYMENT_ENTRY_FIELDS = [
 	),
 ]
 
+BANK_ACCOUNT_FIELDS = [
+	dict(
+		fieldname="farda_card_number",
+		label="شماره کارت",
+		fieldtype="Data",
+		insert_after="bank_account_no",
+	),
+]
+
 INVOICE_FIELDS = [
 	dict(
 		fieldname="farda_apply_vat",
@@ -81,12 +99,30 @@ INVOICE_FIELDS = [
 
 ITEM_FIELDS = [
 	dict(
+		fieldname="farda_search_key",
+		label="کلید جستجو",
+		fieldtype="Data",
+		insert_after="farda_iban",
+		hidden=1,
+		print_hide=1,
+		read_only=1,
+	),
+	dict(
 		fieldname="farda_vat_exempt",
 		label="معاف از مالیات بر ارزش افزوده",
 		fieldtype="Check",
 		insert_after="item_group",
 		default="0",
 		print_hide=0,
+	),
+	dict(
+		fieldname="farda_search_key",
+		label="کلید جستجو",
+		fieldtype="Data",
+		insert_after="farda_vat_exempt",
+		hidden=1,
+		print_hide=1,
+		read_only=1,
 	),
 ]
 
@@ -97,11 +133,41 @@ def ensure_custom_fields() -> None:
 		"Supplier": PARTY_FIELDS,
 		"Company": COMPANY_FIELDS,
 		"Item": ITEM_FIELDS,
+		"Bank Account": BANK_ACCOUNT_FIELDS,
 		"Sales Invoice": INVOICE_FIELDS,
 		"Purchase Invoice": INVOICE_FIELDS,
 		"Payment Entry": PAYMENT_ENTRY_FIELDS,
 	}
 	create_custom_fields(custom_fields, ignore_validate=True, update=True)
+
+
+def ensure_search_keys() -> int:
+	"""§10 fold-at-rest backfill: farda_search_key for rows created before the
+	field existed. Idempotent; only touches rows with an empty key."""
+	from erpnext.farda_iran.utilities.normalization import fold_for_search
+
+	total = 0
+	for doctype, name_field in (
+		("Customer", "customer_name"),
+		("Supplier", "supplier_name"),
+		("Item", "item_name"),
+	):
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		rows = frappe.get_all(
+			doctype,
+			filters={"farda_search_key": ["in", ("", None)]},
+			fields=["name", name_field],
+			limit=10000,
+		)
+		for r in rows:
+			if r.get(name_field):
+				frappe.db.set_value(
+					doctype, r.name, "farda_search_key", fold_for_search(r[name_field]),
+					update_modified=False,
+				)
+				total += 1
+	return total
 
 
 def ensure_vat_item_tax_templates() -> None:
@@ -178,6 +244,7 @@ def execute() -> str:
 	ensure_custom_fields()
 	ensure_vat_settings_defaults()
 	ensure_vat_item_tax_templates()
+	ensure_search_keys()
 	try:
 		ensure_ui_assets()
 	except Exception:

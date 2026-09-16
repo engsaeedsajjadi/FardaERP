@@ -27,6 +27,7 @@ MODULES = (
 	"test_payments_policy",
 	"test_invoice_words",
 	"test_vat_planner",
+	"test_search_keys",
 )
 
 

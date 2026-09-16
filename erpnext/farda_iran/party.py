@@ -19,8 +19,27 @@ def _check(doc, fieldname: str, valid_fn, label_fa: str) -> None:
 		)
 
 
+def _normalize_search_fields(doc, name_field: str) -> None:
+	"""§10 fold-at-rest: canonical letters (ي→ی، ك→ك) in the title + folded
+	search key. Legacy rows keep matching via the raw-LIKE fallback in search.py."""
+	from .utilities.normalization import fold_for_search, normalize
+
+	name = doc.get(name_field) or ""
+	if not name:
+		return
+	try:
+		doc.farda_search_key = fold_for_search(name)
+	except Exception:
+		pass  # field not on meta yet (pre-migrate) — backfill covers it later
+	canon = normalize(name)
+	if canon != name:
+		doc.set(name_field, canon)
+
+
 def validate(doc, method: str | None = None) -> None:
 	"""Customer / Supplier."""
+	name_field = "customer_name" if doc.doctype == "Customer" else "supplier_name"
+	_normalize_search_fields(doc, name_field)
 	_check(doc, "farda_national_id", validators.is_valid_national_id, "کد ملی")
 	_check(doc, "farda_legal_id", validators.is_valid_legal_national_id, "شناسه ملی")
 	_check(doc, "farda_economic_code", validators.is_valid_economic_code, "کد اقتصادی")
