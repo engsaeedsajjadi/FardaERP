@@ -1,0 +1,1 @@
+ALTER TABLE "crawl_pages" ADD COLUMN "response_headers" jsonb DEFAULT '{}'::jsonb NOT NULL;
