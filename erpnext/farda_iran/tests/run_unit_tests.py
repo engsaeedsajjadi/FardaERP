@@ -31,6 +31,7 @@ MODULES = (
 	"test_dashboard_pure",
 	"test_audit_pure",
 	"test_notifications_core",
+	"test_namespaces_core",
 )
 
 

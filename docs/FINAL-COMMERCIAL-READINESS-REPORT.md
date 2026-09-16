@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 171 unit + 118 live asserts (R19 chain + R20 notifications, هر دو idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
+| Tests | 🟡 PARTIAL | 175 unit + 125 live asserts (R19 chain + R20 notifications + R21 namespaces، هر سه idempotent); remaining: migration rehearsal (BLOCKED-ENV) |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -352,3 +352,14 @@
 - hooks.daily ← notifications.service.run (CORE-007)؛ normalize_ir_mobile به هستهٔ
   pure validators منتقل شد (provider بازنشر می‌کند).
 - regression: R18 perf / R19 / payments / audit همگی سبز؛ unit 171/171؛ pipeline 7/7.
+
+## 2026-09-16 — §34 API namespaces (R21 7/7 live ×3 idempotent)
+- چهار dispatcher یکپارچه با قرارداد پاکت واحد: `farda.tax/party/bank/reports` —
+  registry pure به‌عنوان تک‌منبع حقیقت (اکشن‌ها/نقش‌ها/allowlist گزارش‌ها/کدهای خطا).
+- کدهای خطای دقیق: VALIDATION/NOT_FOUND/FORBIDDEN/RATE_LIMITED/UNKNOWN —
+  traceback هرگز برنمی‌گردد (log_error)، Guest پیش از نقش رد می‌شود، نقش‌ها per-namespace.
+- `farda.reports.run` فقط گزارش‌های فردا (allowlist=دیسک، تست unit تطبیق) + پنجرهٔ
+  لغزنده ۳۰/۶۰ثانیه؛ `calculate_vat` با نرخ پیش‌فرض قابل‌تنظیم و نرخ صفر.
+- سطح guest تغییر نکرده (R16 مجدد سبز)؛ سطح فقط‌خواندنی — mutation ها در لایهٔ model
+  با audit trail. قرارداد کامل: docs/API-NAMESPACES.md.
+- unit 175/175؛ pipeline 7/7؛ R20/آماریت/امنیت regression سبز.
