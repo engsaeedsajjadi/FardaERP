@@ -63,7 +63,8 @@
 ## Docker / CI/CD / Performance / Backup-Restore / Migration Results
 - Backup/Restore: **IMPLEMENTED + RESTORE-VERIFIED** — see «2026-09-16 — §25» below.
 - Docker stack: **WRITTEN + statically validated** — see «2026-09-16 — §26» below; `docker build/up` BLOCKED-ENV (no daemon).
-- CI/CD / Performance / Migration: NOT RUN / PENDING — see Remaining Features. No false claims.
+- CI/CD: **pipeline IMPLEMENTED + executed ALL GREEN in-repo** — see «2026-09-16 — §27» below; GitHub activation BLOCKED-ENV (CORE-002).
+- Performance / Migration rehearsal: NOT RUN / PENDING — see Remaining Features. No false claims.
 
 ## License & Trademark
 - GPL-3.0 preserved; Frappe/ERPNext attribution intact; FardaERP not presented as an official Frappe/ERPNext product.
@@ -99,8 +100,8 @@
 | Security | 🟡 PARTIAL | framework security + negative tests; Farda audit pending |
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
-| CI/CD | ❌ MISSING | pipelines pending |
-| Tests | 🟡 PARTIAL | 160 unit + 66 live asserts; dedicated E2E/perf pass pending |
+| CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
+| Tests | 🟡 PARTIAL | 160 unit + 79 live asserts (post-§27 full regression); dedicated perf pass pending |
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -209,3 +210,25 @@
   گیت G-MDB-1..5 برای MariaDB، پین digest، نکات امنیتی.
 - **وضعیت صادقانه: IMPLEMENTED-BUT-UNVERIFIED — docker build/up اجرا نشده (sandbox بدون
   daemon). MariaDB validation همچنان BLOCKED-ENV (گیت G-MDB تعریف شد).**
+
+## 2026-09-16 — §27 CI/CD pipeline (executed ALL GREEN in-repo)
+- `scripts/ci/pipeline.sh` — تنها منبع حقیقت CI: ۷ مرحله deps/lint/compile/unit/integration/
+  security/build با معنای خروجی صادقانه (PASS/BLOCKED-ENV/FAIL؛ خلاصهٔ مرحله‌ای).
+- **اجرای نهایی: هر ۷ مرحله GREEN** — unit 160/160 + JS parity؛ integration = Gate-5 13/13 +
+  Iran 5/5 روی سایت زنده؛ build = wheel واقعی `erpnext-16.34.2-py3-none-any.whl`
+  (۵۰۶۷ فایل؛ farda_iran + tax service + ۳ فونت داخل wheel تأیید شد).
+- lint: مجموعه‌کدهای `.flake8` آپ‌استریم از طریق CLI (کامنت داخل مقدار برای flake8≥7 نامعتبر
+  است) + E117 به‌عنوان تنها انحراف مستند fork؛ **۲۴ یافتهٔ واقعی اصلاح شد** (۱× F821 خطای
+  پنهان NameError در pg_compat، import/متغیر بلااستفاده، ۴× lambda→def، ۳× def تک‌خطی،
+  callback حل‌شده به درگاه پاس داده شد، lookup مردهٔ cheque/payment_link حذف) → **۰ یافته**.
+- security: bandit `-ll` در برابر baseline بررسی‌شده (`scripts/ci/bandit-baseline.json` =
+  ۱۷× B608 — SQL فقط از ورودی‌های escape/validated؛ یافتهٔ NEW بلاک می‌شود).
+- GitHub activation = **BLOCKED-ENV** (CORE-002: توکن این محیط اجازهٔ push فایل workflows
+  ندارد) — wrapper کامل در `scripts/ci/github-workflow.yml` (mariadb:10.6 + redis 7.4.1
+  serviceها + py3.14 + node24 + bench 5.31/click 8.4.1) با فعال‌سازی یک‌فایلی (§3).
+- **رفع‌عیب هارنس**: `test_payments_runtime.run()` فاقد `pg_compat.apply()` بود (شیم‌ها
+  per-process هستند) — اجرای مستقل به GroupingError سخت‌گیر PG روی payment-ledger
+  می‌خورد؛ اضافه شد (کانونشن بقیه سوییت‌ها). رگرسیون کامل پس از پاک‌سازی: Gate-5 13 +
+  Iran 5 + Pay 9 + OTP 6 + Search 7 + Bank 7 + Pack 4 + Rep 5 + VAT 8 + Print 9 + Dash 6
+  = **۷۹ assert زنده ALL PASS**.
+- docs/CI-CD.md (طراحی/مراحل/فعال‌سازی/شواهد) · VERSIONS §10 (پین‌های CI).

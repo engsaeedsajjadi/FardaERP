@@ -58,7 +58,7 @@ def start_payment(
 			frappe.throw(_("سند مرجع یافت نشد"), frappe.DoesNotExistError)
 	gw = _gateway(gateway)
 	callback = callback_url or frappe.utils.get_url("/farda_payment_callback")
-	result = gw.create_payment(amount_irr, callback_url, description=reference_name or "FardaERP payment")
+	result = gw.create_payment(amount_irr, callback, description=reference_name or "FardaERP payment")
 	if not result.ok or not result.authority:
 		frappe.throw(_("درگاه پرداخت درخواست را نپذیرفت: {0}").format(result.error or "?"))
 	store = _store()

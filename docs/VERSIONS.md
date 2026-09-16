@@ -103,3 +103,15 @@ in the current dev sandbox, which has Python 3.11). Execute via:
 | Apps | Frappe `v16.33.1` · ERPNext `v16.34.2` (this repo) · HRMS `v16.18.1` | build args |
 | bench CLI | `frappe-bench==5.31.0` + `click==8.4.1` re-pin (bench 5.31 metadata wants ~=8.2 — conflicts with frappe v16; verified working under 8.4) | docker/Dockerfile |
 | Validation state | compose-spec schema VALID; entrypoint config-phase executed on real Frappe v16 CLI; `docker build/up` NOT RUN (BLOCKED-ENV, no daemon) | docs/DOCKER.md §9 |
+
+### §10 — CI pipeline pins (§27, 2026-09-16)
+
+| Component | Pin | Where |
+|---|---|---|
+| Pipeline | `scripts/ci/pipeline.sh` (7 stages; exit semantics PASS/BLOCKED-ENV/FAIL) | scripts/ci |
+| GitHub wrapper | `scripts/ci/github-workflow.yml` (INACTIVE — CORE-002 no workflows scope; actions/checkout@v4, setup-python@v5 py3.14, setup-node@v4 node24) | activate = copy to .github/workflows/ci.yml |
+| Services (wrapper) | mariadb:10.6 + redis:7.4.1-alpine | workflow services: |
+| Lint | flake8 7.3.0 — upstream `.flake8` code set via CLI + E117 (fork idiom); target: 0 findings | pipeline lint stage |
+| Security | bandit 1.9.4 `-ll` vs `scripts/ci/bandit-baseline.json` (17× B608 reviewed 2026-09-16) | pipeline security stage |
+| Build | `pip wheel --no-deps` (flit_core backend per upstream pyproject) → wheel must contain farda_iran | pipeline build stage |
+| Executed | ALL 7 STAGES GREEN in-repo 2026-09-16 (unit 160/160+JS; Gate-5 13 + Iran 5 live; wheel verified) | docs/CI-CD.md §6 |

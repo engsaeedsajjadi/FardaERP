@@ -9,8 +9,6 @@ Savepoint-isolated and rerun-safe.
 
 from __future__ import annotations
 
-import os
-
 import frappe
 from frappe.utils import nowdate
 

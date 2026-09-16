@@ -9,7 +9,7 @@ _ADDED_PATH = _ROOT not in sys.path
 if _ADDED_PATH:
 	sys.path.insert(0, _ROOT)
 
-from farda_iran import otp as otp_pkg
+from farda_iran import otp as otp_pkg  # noqa: F401 — loads farda_iran.otp into sys.modules while _ROOT is on sys.path (needed by the from-imports below)
 
 if _ADDED_PATH:
 	sys.path.remove(_ROOT)

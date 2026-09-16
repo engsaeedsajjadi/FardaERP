@@ -49,10 +49,8 @@ class TestKpiPayload(unittest.TestCase):
 	def test_ratio_only_via_central_service(self):
 		"""IRR→Toman must match the central service exactly."""
 		try:
-			from farda_iran.currency.service import irr_to_toman_rounded
 			from farda_iran.invoice.persian import toman_str
 		except ImportError:
-			from erpnext.farda_iran.currency.service import irr_to_toman_rounded
 			from erpnext.farda_iran.invoice.persian import toman_str
 
 		raw = {"sales": 123_456_789}

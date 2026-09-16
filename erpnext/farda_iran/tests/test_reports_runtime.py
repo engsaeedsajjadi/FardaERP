@@ -82,8 +82,11 @@ def run() -> str:
 	total_row = data[-1]
 	if "فاکتور" not in (total_row["customer_name"] or ""):
 		raise AssertionError(f"total row wrong: {total_row}")
+
 	# self-consistency: total row must equal the sum of the data rows above it
-	persian_to_int = lambda s: int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+	def persian_to_int(s):
+		return int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+
 	sum_grand = sum(persian_to_int(r["farda_grand"]) for r in data[:-1])
 	if persian_to_int(total_row["farda_grand"]) != sum_grand:
 		raise AssertionError(f"total {total_row['farda_grand']} != sum of rows {sum_grand}")

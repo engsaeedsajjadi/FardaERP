@@ -8,7 +8,8 @@ import datetime
 
 import frappe
 
-P2I = lambda s: int(str(s).replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+def _p2i(s) -> int:
+	return int(str(s).replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
 
 
 def _ensure(report: str, folder: str) -> None:
@@ -92,8 +93,7 @@ def run() -> str:
 	assert "۱۴۰۵" in row["farda_date"], row
 	assert row["farda_grand"] == "۸۸٬۰۰۰", row["farda_grand"]  # 880,000 IRR = 88,000 Toman
 	assert row["farda_tax"] == "۸٬۰۰۰", row["farda_tax"]
-	p2i = P2I
-	assert p2i(data[-1]["farda_grand"]) == sum(p2i(r["farda_grand"]) for r in data[:-1])
+	assert _p2i(data[-1]["farda_grand"]) == sum(_p2i(r["farda_grand"]) for r in data[:-1])
 	results.append("PASS: Purchase Register — Jalali/Toman/VAT split + جمع self-consistent")
 
 	# ---- Farda Cheque Report ----
@@ -105,7 +105,8 @@ def run() -> str:
 			n = frappe.get_doc({"doctype": "Bank", "bank_name": name}).insert(ignore_permissions=True).name
 		return n
 
-	ch = frappe.get_doc({
+	# Cheque rows created for report data (names not referenced afterwards)
+	frappe.get_doc({
 		"doctype": "Cheque",
 		"direction": "Received",
 		"cheque_number": "PACKRT-1001",
@@ -117,7 +118,7 @@ def run() -> str:
 		"party_type": "Customer",
 		"party": customer.name,
 	}).insert()
-	ch2 = frappe.get_doc({
+	frappe.get_doc({
 		"doctype": "Cheque",
 		"direction": "Issued",
 		"cheque_number": "PACKRT-1002",
@@ -137,7 +138,7 @@ def run() -> str:
 	assert by_no["PACKRT-1001"]["farda_status"] == "دریافتی"
 	assert "معوق" in by_no["PACKRT-1002"]["days_to_due"], by_no["PACKRT-1002"]
 	assert by_no["PACKRT-1002"]["farda_amount"] == "۵۰٬۰۰۰"  # 500,000 IRR = 50,000 Toman
-	assert p2i(data[-1]["farda_amount"]) == sum(p2i(r["farda_amount"]) for r in data[:-1])
+	assert _p2i(data[-1]["farda_amount"]) == sum(_p2i(r["farda_amount"]) for r in data[:-1])
 	# filter: only Received
 	_, only_rec = fn({"company": company, "direction": "Received"})
 	assert all(r["farda_direction"] == "دریافتی" for r in only_rec[:-1]), only_rec
@@ -153,9 +154,9 @@ def run() -> str:
 	ap_row = next((r for r in ap_rows if r["party"] == supplier.name), None)
 	assert ap_row and ap_row["farda_outstanding"] == "۸۸٬۰۰۰", ap_row  # 880,000 IRR
 	summary = {r["kind"]: r for r in data[-3:]}
-	assert p2i(summary["جمع دریافتنی"]["farda_outstanding"]) >= 100_000
-	assert p2i(summary["خالص (دریافتنی − پرداختنی)"]["farda_outstanding"]) == (
-		p2i(summary["جمع دریافتنی"]["farda_outstanding"]) - p2i(summary["جمع پرداختنی"]["farda_outstanding"])
+	assert _p2i(summary["جمع دریافتنی"]["farda_outstanding"]) >= 100_000
+	assert _p2i(summary["خالص (دریافتنی − پرداختنی)"]["farda_outstanding"]) == (
+		_p2i(summary["جمع دریافتنی"]["farda_outstanding"]) - _p2i(summary["جمع پرداختنی"]["farda_outstanding"])
 	)
 	results.append("PASS: Party Balance — AR/AP outstanding in Toman + خالص row consistent")
 

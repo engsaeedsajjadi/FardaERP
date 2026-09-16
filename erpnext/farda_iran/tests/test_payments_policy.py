@@ -5,7 +5,6 @@ of success)."""
 import os
 import sys
 import unittest
-from types import SimpleNamespace
 
 import importlib.util
 

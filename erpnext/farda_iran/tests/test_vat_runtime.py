@@ -146,12 +146,14 @@ def run() -> str:
 		fn = frappe.get_attr("erpnext.farda_iran.report.farda_vat_report.farda_vat_report.execute")
 		columns, data = fn({"company": company, "kind": ""})
 		# report is per tax ROW; aggregate per voucher for assertions
-		p2i = lambda s: int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+
+		def p2i(s):
+			return int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
+
 		agg: dict = {}
 		for r in data[:-1]:
 			a = agg.setdefault(r["voucher"], {"kind": r["kind"], "farda_date": r["farda_date"], "vat": 0})
 			a["vat"] += p2i(r["vat"])
-		p2i = lambda s: int(s.replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")))
 		r3 = agg.get(si3.name)
 		assert r3 and r3["vat"] == 12_500 and r3["kind"] == "فروش", (r3,)  # 125,000 IRR = 12,500 Toman
 		r_pi = agg.get(pi.name)

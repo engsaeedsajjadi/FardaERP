@@ -2,8 +2,6 @@
 # Iranian cheque report — real Cheque rows: direction/status/party/due/amount,
 # Jalali dates, Toman amounts, Persian digits, days-to-due (منفی = معوق).
 
-import datetime
-
 import frappe
 from frappe import _
 

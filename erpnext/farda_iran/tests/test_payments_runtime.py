@@ -82,6 +82,13 @@ def _make_customer_and_invoice(unique: str, rate: int):
 
 def run() -> str:
 	frappe.set_user("Administrator")
+	# upstream strict-PostgreSQL shims (PG-1..PG-13) are per-process — apply()
+	# is REQUIRED before any SI/PE submit touches the payment-ledger outstanding
+	# query (PE submit → update_voucher_outstanding → QueryPaymentLedger).
+	from erpnext.farda_iran.tests import pg_compat
+
+	pg_compat.apply()
+
 	import os
 
 	os.environ.setdefault("ZARINPAL_MERCHANT_ID", "test-merchant-for-runtime-suite")

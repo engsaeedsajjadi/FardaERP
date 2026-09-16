@@ -45,10 +45,12 @@ class PaymentGateway(ABC):
 	name = "abstract"
 
 	@abstractmethod
-	def create_payment(self, amount_irr: int, callback_url: str, description: str) -> PaymentRequestResult: ...
+	def create_payment(self, amount_irr: int, callback_url: str, description: str) -> PaymentRequestResult:
+		...
 
 	@abstractmethod
-	def verify_payment(self, authority: str, amount_irr: int) -> VerificationReport: ...
+	def verify_payment(self, authority: str, amount_irr: int) -> VerificationReport:
+		...
 
 
 class ZarinPalGateway(PaymentGateway):

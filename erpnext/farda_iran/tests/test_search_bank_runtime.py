@@ -106,7 +106,6 @@ def run_bank() -> str:
 
 	company = frappe.db.get_value("Company", {"is_group": 0}, "name")
 	gl_account = frappe.db.get_value("Account", {"company": company, "account_type": "Bank", "is_group": 0}, "name")
-	hook = frappe.get_attr("erpnext.farda_iran.banking.hooks.validate_bank_account")
 	resolve = frappe.get_attr("erpnext.farda_iran.api.banking.resolve_iban")
 
 	# ---- API resolution ----

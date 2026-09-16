@@ -72,9 +72,6 @@ def create_payment_entry(cheque: str) -> str:
 		party = frappe.db.get_value(party_type, {"disabled": 0}, "name")
 	if not party:
 		frappe.throw(frappe._("طرف حساب برای سند پرداخت یافت نشد"))
-	bank_account = frappe.db.get_value(
-		"Bank Account", {"company": company, "disabled": 0}, "name"
-	)
 	pe = frappe.new_doc("Payment Entry")
 	pe.payment_type = "Receive" if c.direction == "Received" else "Pay"
 	pe.company = company

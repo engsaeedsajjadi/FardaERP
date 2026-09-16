@@ -61,7 +61,7 @@
 | Performance | **MISSING** | — | — | — | — | — | — | — | — | — | N+1/slow-report audit; perf regression tests on critical paths |
 | Docker production stack | **IMPLEMENTED-BUT-UNVERIFIED** | `docker/Dockerfile` (3 stages: node+python builder / final gunicorn+workers image / nginx frontend with baked assets) · `docker-compose.yml` (mariadb 10.6 + redis-cache/queue 7.4.1 + backend/workers/scheduler/websocket/frontend, healthchecks, named volumes) · `docker/entrypoint.sh` (idempotent config + wait-for-db + RUN_MIGRATIONS) · `.env.example` (secrets env-only) | compose file **validates against official compose-spec schema**; entrypoint config/wait phases executed on real bench CLI 5.31 + Frappe v16.33.1 (fresh skeleton → 6 keys exact; 3 real bugs found+fixed); `docker build`/`up` **BLOCKED-ENV (no daemon)** — G-MDB gate in docs/DOCKER.md §7 | — | nginx front only port 80 | MariaDB 10.6 in stack (G-MDB-4 VAT cross-check) | secrets via .env only (git-ignored, CORE-004) | `RUN_MIGRATIONS=1` one-shot migrate; pre-migrate backup rule §6 | docs/DOCKER.md runbook + backup/restore integration | digest pinning at deploy; TLS upstream proxy |
 | MariaDB production validation | **BLOCKED-ENV** | — | — | all runtime evidence is PostgreSQL 16.2 (documented deviation) | — | — | — | — | — | — | needs MariaDB binaries — apt mirrors blocked in sandbox; run inside Docker once built |
-| CI/CD | **MISSING** | (upstream workflows deliberately removed; only to be replaced by FardaERP-compatible pipelines) | — | — | — | — | — | gate deploys on tests | — | — | §27 stages: compile/lint/unit/integration/security/build/docker/migration-gate |
+| CI/CD | **IMPLEMENTED (pipeline) / activation BLOCKED-ENV** | `scripts/ci/pipeline.sh` — 7 stages (deps/lint/compile/unit/integration/security/build), **executed ALL GREEN in-repo** (unit 160/160+JS parity, Gate-5 13 + Iran 5 live, `erpnext-16.34.2` wheel verified to contain farda_iran); lint = upstream `.flake8` code set via CLI (in-value comment rejected by flake8≥7) + E117 documented fork idiom — **0 findings** after fixing 24 real ones incl. 1 latent F821 NameError; security = bandit `-ll` vs reviewed baseline `scripts/ci/bandit-baseline.json` (17× B608 reviewed: SQL from escaped/validated inputs; NEW findings blocked) | suite-level: pipeline runs the same live gates (Gate-5+Iran) as §40 deliveries | — | — | secrets never in pipeline (env-only; no creds in logs) | migration gate = RUN_MIGRATIONS in Docker stack §26 + pre-migrate backup rule | GitHub activation one-liner in docs/CI-CD.md §3 (**CORE-002**: no workflows scope in this env; wrapper versioned at `scripts/ci/github-workflow.yml`) | action/digest pins at activation |
 | Migration strategy (idempotent, fresh+upgrade) | **PARTIAL** | `setup/install.py` (before_migrate ensure steps); `modules.txt` has Farda Iran; `patches.txt` has no farda entries (nothing needs one yet) | fresh install proven repeatedly (R2 after each rebuild) | R2 ×4 rebuilds | — | — | custom fields/doctypes idempotent | n/a | idempotent ensures | fresh READY | upgrade rehearsal from populated older state; patch harness; rollback notes |
 | E2E breadth | **PARTIAL** | 8 live suites (iran/payments/otp/print/reports/vat/search+bank/reports-pack) + Gate-5 13 checks | R2–R11 | latest full table 2026-09-16 (60 live asserts) | — | — | — | — | — | — | cheque lifecycle E2E; HRMS payroll E2E; notification E2E; portal/E2E browser layer |
 
@@ -69,7 +69,7 @@
 
 | Severity | Items |
 |---|---|
-| **CRITICAL MISSING** | CI/CD · (MariaDB validation = CRITICAL **BLOCKED-ENV**; Docker stack = IMPLEMENTED-BUT-UNVERIFIED pending daemon build) |
+| **CRITICAL MISSING** | (MariaDB validation = CRITICAL **BLOCKED-ENV**; Docker stack = IMPLEMENTED-BUT-UNVERIFIED pending daemon build; GitHub CI activation = BLOCKED-ENV — pipeline itself IMPLEMENTED) |
 | **HIGH MISSING** | Audit log · Monitoring · Persian invoice formats (Purchase A4 / Thermal 80mm) · Notifications/API namespaces/feature flags |
 | **HIGH PARTIAL** | Iranian Party completion · HRMS Iran localization · Cheque↔Payment Entry wiring + reminders scheduler |
 | **BLOCKED-ENV** | live payment gateway credentials · live SMS credentials · MariaDB validation (needs Docker/daemon) · docker build/up (no daemon) · frappe-weasyprint (system pango) — none of these are code gaps; each has a documented deterministic fallback already running |
@@ -82,10 +82,10 @@
 3. ~~Banking→Bank Account/Payment Entry integration~~ — **DONE 2026-09-16** (§11, R10 7/7)
 4. ~~Iranian report pack~~ — **DONE 2026-09-16** (§17, R11 4/4) · ~~Dashboards~~ — **DONE 2026-09-16** (§18, R12 6/6)
 5. ~~Backup/Restore~~ — **DONE 2026-09-16** (§25, R13 5/5 restore-verified) · ~~Docker stack~~ — **WRITTEN 2026-09-16** (§26, IMPLEMENTED-BUT-UNVERIFIED)
-6. Persian invoice formats (Purchase A4, Thermal 80mm)
+6. ~~CI/CD pipeline~~ — **DONE 2026-09-16** (§27, pipeline ALL GREEN in-repo; GitHub activation BLOCKED-ENV)
 7. Audit log → Notifications → API namespaces → Feature flags
-8. Security audit pass → Performance → Monitoring
-9. CI/CD → MariaDB validation (Docker, G-MDB) → migration rehearsal → E2E breadth → **final gate**
+8. Persian invoice formats (Purchase A4, Thermal 80mm) → Security audit pass → Performance → Monitoring
+9. MariaDB validation (Docker, G-MDB) → migration rehearsal → E2E breadth → **final gate**
 
 ## PG shims register (runtime, tests/pg_compat.py — re-applied per session)
 

@@ -104,7 +104,6 @@ def run() -> str:
 		results.append("PASS: backup.sh → BACKUP-OK + retention pruned 45d-old dir")
 
 		staged = open(f"{BACKUP_DIR}/{SOURCE_SITE}/LATEST").read().strip()
-		manifest = os.path.join(staged, "MANIFEST.sha256")
 		check = subprocess.run(
 			["sha256sum", "-c", "MANIFEST.sha256"], cwd=staged, capture_output=True, text=True
 		)

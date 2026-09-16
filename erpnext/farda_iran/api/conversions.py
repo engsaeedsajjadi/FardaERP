@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import datetime
-
 import frappe
 from erpnext.farda_iran.api.limiter import is_allowed
 from frappe import _

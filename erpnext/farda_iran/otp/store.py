@@ -84,8 +84,6 @@ class FrappeStore:
 		return frappe.get_doc(self.DOCTYPE, name) if name else None
 
 	def get(self, challenge_id: str) -> Challenge | None:
-		import frappe
-
 		doc = self._get_doc(challenge_id)
 		if not doc:
 			return None
@@ -103,8 +101,6 @@ class FrappeStore:
 		)
 
 	def update(self, challenge: Challenge):
-		import frappe
-
 		doc = self._get_doc(challenge.id)
 		if doc:
 			doc.attempts = challenge.attempts

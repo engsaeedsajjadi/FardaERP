@@ -32,7 +32,6 @@ def _generate_vectors() -> dict:
 	dates = []
 	d = datetime.date(2025, 1, 1)
 	end = datetime.date(2028, 12, 31)
-	step = datetime.timedelta(days=1)
 	# every day for 2025..2028 minus stride-7 to keep the file lean but dense
 	while d <= end:
 		jy, jm, jd = jalali.date_to_jalali(d)

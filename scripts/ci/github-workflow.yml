@@ -1,0 +1,63 @@
+# FardaERP CI (§27) — GitHub Actions wrapper around scripts/ci/pipeline.sh
+#
+# NOT ACTIVE: this environment's GitHub credential cannot push workflow files
+# (CORE-002). To activate: copy this file to .github/workflows/ci.yml with a
+# workflows-scoped token, then verify the first run green.
+# The pipeline itself is EXECUTED AND PROVEN in-repo (docs/CI-CD.md §4).
+
+name: FardaERP CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+      redis:
+        image: redis:7.4.1-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install bench + frappe + this repo as an app
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install "frappe-bench==5.31.0" "click==8.4.1" flake8 bandit
+          bench init --frappe-branch version-16 --skip-assets --python "$(which python)" bench
+          cd bench
+          mv "$GITHUB_WORKSPACE" apps/erpnext
+          printf 'frappe\nerpnext\n' > sites/apps.txt
+
+      - name: Run the canonical pipeline (lint, compile, unit, security, build)
+        env:
+          PYTHON: python
+        run: |
+          cd bench/apps/erpnext
+          bash scripts/ci/pipeline.sh lint
+          bash scripts/ci/pipeline.sh compile
+          bash scripts/ci/pipeline.sh security
+          bash scripts/ci/pipeline.sh build
+
+      # integration (live-site gates) requires a provisioned site; run on demand:
+      #   bench new-site ci.farda.local --mariadb-root-password root \
+      #     --install-app erpnext && bash scripts/ci/pipeline.sh integration

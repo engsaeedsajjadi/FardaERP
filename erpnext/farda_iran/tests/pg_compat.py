@@ -30,7 +30,7 @@ import frappe
 from frappe import _
 from frappe.query_builder.functions import Sum
 from pypika import Tuple
-from frappe.utils import flt, getdate
+from frappe.utils import flt, formatdate, getdate
 
 _APPLIED = False
 

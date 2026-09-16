@@ -44,7 +44,8 @@ class SMSProvider(ABC):
 	name = "abstract"
 
 	@abstractmethod
-	def send_sms(self, phone: str, message: str) -> SendResult: ...
+	def send_sms(self, phone: str, message: str) -> SendResult:
+		...
 
 	def send_otp(self, phone: str, code: str, purpose: str = "login") -> SendResult:
 		return self.send_sms(phone, f"کد تأیید {purpose} شما: {code}\nFardaERP")
