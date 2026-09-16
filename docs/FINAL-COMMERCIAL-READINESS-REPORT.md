@@ -93,7 +93,7 @@
 | Payment | 🟡 PARTIAL | gateway adapter + security sandbox-verified (9/9); LIVE CREDS = BLOCKED-ENV |
 | SMS | 🟡 PARTIAL | provider abstraction + OTP delivery path sandbox-verified; LIVE SMS = BLOCKED-ENV |
 | OTP | ✅ PRESENT (sandbox) | hashed-only storage + TTL/cooldown + rate-limit, 6/6 live asserts |
-| Invoice | ✅ PRESENT | real invoices + Persian RTL print format (H7), 9/9 live |
+| Invoice | ✅ PRESENT | real invoices + Persian RTL print: Sales A4 + Purchase A4 + Thermal 80mm (H7 9 + R15 4 live) |
 | PDF | ✅ PRESENT | pure-Python Persian PDF (reportlab+Vazirmatn), text-layer verified |
 | RTL | 🟡 PARTIAL | fa-scoped CSS live-tested; ~1,601 empty fa msgids remain |
 | Reports | ✅ PRESENT | Iranian VAT/Cheque/Party/Purchase/Sales-Register pack live-tested |
@@ -101,7 +101,7 @@
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 166 unit + 86 live asserts (post-§24 regression incl. R14 7/7); dedicated perf pass pending |
+| Tests | 🟡 PARTIAL | 166 unit + 90 live asserts (post-R15 regression); dedicated perf pass pending |
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -253,3 +253,17 @@
 - رگرسیون کامل: Gate-5 13 + Iran 5 + Pay 9 + OTP 6 + Search 7 + Bank 7 + Pack 4 + Rep 5 +
   VAT 8 + Print 9 + Dash 6 + Audit 7 = **86 live asserts ALL PASS** · unit **166/166** +
   JS parity · pipeline 7/7 GREEN.
+
+## 2026-09-16 — §28 Print formats: Purchase A4 + Thermal 80mm (R15 4/4 live)
+- `Farda Persian Purchase Invoice` (A4 RTL): «صورتحساب خرید کالا و خدمات»، فروشنده=تأمین‌کننده
+  با کد ملی/شناسه ملی/کد اقتصادی/کد پستی (فیلدهای farda_*)، خریدار=شرکت، شماره فاکتور
+  فروشنده (bill_no)، ردیف‌ها، VAT با نرخ، مبلغ به حروف، مهر و امضا — همان سرویس‌های مرکزی
+  (Toman/Jalali/words) فرمت فروش؛ کاهش VAT خودکار از سرویس مالیات.
+- `Farda Thermal Receipt 80mm` (فروش): عرض محتوا 72mm (کاغذ ۸۰mm)، فونت ۱۱px، سربرگ
+  فروشگاه با کد اقتصادی، ردیف‌های فشرده (کالا/تعداد/قیمت/جمع)، ردیف تخفیف فقط در صورت
+  وجود، مالیات/قابل پرداخت/به حروف، پانویس تشکر — تاریخ جلالی.
+- **R15 4/4 زنده** (idempotent، teardown کامل): همگام‌سازی استاندارد هر دو فرمت · خرید A4
+  (RTL + شناسه‌های بردار معتبر ۲۴۰۰۵۶۷۸۹۰۷/۴۱۱۳۶۶۵۱۲۳۴۵ + VAT ۱۲٬۰۰۰ تومان + به حروف منطبق)
+  · حرارتی (layout 72mm + ردیف‌های فشرده + ۱۳۷٬۵۰۰ تومان + بدون ردیف تخفیفِ خالی) · ردیف
+  تخفیف دقیقاً با تخفیف واقعی (۵٬۰۰۰ تومان).
+- رگرسیون: Print 9/9 + unit 166/166 + JS parity + pipeline 7/7 GREEN. جمع زنده: ۹۰ assert.
