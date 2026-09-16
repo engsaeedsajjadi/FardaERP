@@ -13,6 +13,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@seopilot/db": "workspace:*",
+    "@seopilot/providers": "workspace:*",
+    "@seopilot/shared": "workspace:*",
+    "@seopilot/usage": "workspace:*"
+  },
   "devDependencies": {}
 }

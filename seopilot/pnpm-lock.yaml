@@ -81,11 +81,37 @@ importers:
         specifier: ^4.1.12
         version: 4.6.5
 
-  packages/backlinks: {}
+  packages/backlinks:
+    dependencies:
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/providers':
+        specifier: workspace:*
+        version: link:../providers
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
 
   packages/billing: {}
 
-  packages/competitors: {}
+  packages/competitors:
+    dependencies:
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/providers':
+        specifier: workspace:*
+        version: link:../providers
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
 
   packages/content: {}
 
@@ -145,7 +171,20 @@ importers:
 
   packages/gsc: {}
 
-  packages/keywords: {}
+  packages/keywords:
+    dependencies:
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/providers':
+        specifier: workspace:*
+        version: link:../providers
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
 
   packages/notifications:
     dependencies:
@@ -177,7 +216,20 @@ importers:
         specifier: ^4.1.12
         version: 4.6.5
 
-  packages/rankings: {}
+  packages/rankings:
+    dependencies:
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/providers':
+        specifier: workspace:*
+        version: link:../providers
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@seopilot/usage':
+        specifier: workspace:*
+        version: link:../usage
 
   packages/reports: {}
 
