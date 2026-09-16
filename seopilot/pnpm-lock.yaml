@@ -204,7 +204,14 @@ importers:
 
   packages/storage: {}
 
-  packages/usage: {}
+  packages/usage:
+    dependencies:
+      '@seopilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@seopilot/shared':
+        specifier: workspace:*
+        version: link:../shared
 
 packages:
 
