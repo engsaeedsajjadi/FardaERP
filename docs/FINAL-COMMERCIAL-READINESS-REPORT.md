@@ -155,3 +155,13 @@
   Fixed in pg_compat (PG-13); full regression re-run ALL GREEN.
 - Live totals this phase: unit 157/157 + JS parity + Gate-5 13/13 + Iran 5 + Pay 9 + OTP 6
   + Print 9 + Rep 5 + VAT 8 + Search 7 + Bank 7 + Pack 4 = 60 runtime asserts PASS.
+
+## 2026-09-16 — §18 Dashboards (real data)
+- collect_kpis: فروش/خرید (SI/PI در بازه)، سود دوره (GL Income−Expense)، دریافتنی/پرداختنی (outstanding)،
+  VAT فروش/خرید (سطرهای مالیات واقعی با حساب تنظیمات)، مانده نقد و بانک (GL)، ارزش موجودی (Bin)، سفارش‌های باز.
+- kpis_pure: payload با برچسب فارسی + رشتهٔ Toman — تبدیل نرخ فقط از سرویس مرکزی (تست مقایسه‌ای).
+- farda_kpis endpoint: authed-only (not in guest_methods — negative test)، rate-limit ۶۰/min.
+- Desk: ۵ Number Card عمومی (فروش/خرید/دریافتنی/پرداختنی/موجودی) + نمودار «فروش ماهانه» + Dashboard «فردا — مدیریت» — idempotent.
+- R12 زنده ۶/۶: KPIها دقیقاً با SI (+VAT ۱٬۱۰۰٬۰۰۰) و PE جزئی (−۴۰۰٬۰۰۰) حرکت کردند.
+- Live totals: unit 160/160 + JS parity + Gate-5 13/13 + Iran 5 + Pay 9 + OTP 6 + Print 9 + Rep 5
+  + VAT 8 + Search 7 + Bank 7 + Pack 4 + Dash 6 = 66 runtime asserts PASS.

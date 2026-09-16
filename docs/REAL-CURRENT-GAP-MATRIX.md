@@ -53,7 +53,7 @@
 
 | Feature | Status | Implementation files | Tests | Runtime evidence | API | UI | Database | Security | Migration | Production readiness | Remaining work |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Dashboards (management/sales/warehouse/finance, real data) | **MISSING** | — | — | — | — | — | — | — | — | — | §18 KPI dashboards querying real ERP data |
+| Dashboards (management KPIs, real data) | **IMPLEMENTED** | `farda_iran/dashboard/kpis.py` (collect_kpis: GL/invoices/bins real queries) + `dashboard/kpis_pure.py` (Toman payload via central services) + `setup.install.ensure_dashboards` (5 public Number Cards + فروش ماهانه chart + «فردا — مدیریت» Dashboard) | `test_dashboard_pure.py` (3) + **R12 dashboard E2E 6/6 live** (KPIs move exactly with SI+VAT and PE partial payment; cards public; endpoint authed-only) | R12 | farda_kpis endpoint (rate-limited 60/min) | Desk Dashboard+cards (fa) | read-only queries | guest_methods negative test | idempotent ensure | READY | warehouse/sales sub-dashboards; chart jalali x-axis presentation |
 | Security audit (dedicated, Farda-specific surfaces) | **PARTIAL** | negative tests embedded in R3/R4/R5 (replay, tamper, permission denial, guest policy) | embedded | R3/R4/R5 | — | — | — | — | — | — | dedicated audit pass + report: CSRF/XSS/SQLi/PII/escalation matrix; §23 checklist as executable tests |
 | Audit log (payment/cheque/VAT-change/identity-data trail) | **MISSING** | (Farda Payment Log & Farda OTP Log are domain logs, not audit) | — | — | — | — | — | — | — | — | §24 auditable records incl. old/new values, user, ts, IP; no secrets/OTP plaintext |
 | Backup / Restore | **MISSING** | — | — | — | — | — | — | — | — | — | `scripts/backup.sh`, `scripts/restore.sh`, retention, **restore verification** |
