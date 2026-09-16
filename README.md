@@ -33,7 +33,7 @@
 | 💳 **درگاه پرداخت** | انتزاع ZarinPal / IDPay / NextPay / Sandbox — امضای دیجیتال ورودی، ضد-replay/تамper؛ اعتبارنامه فقط env |
 | 🔐 **OTP/SMS** | ذخیرهٔ **فقط-hash**، انقضا، rate-limit؛ انتزاع ارائه‌دهندهٔ SMS (Kavenegar/Melipayamak/Ghasedak/Console) |
 | 🖨 **فاکتور فارسی و PDF** | Print Formatهای RTL (فروش A4 + خرید A4 + حرارتی 80mm)، PDF فارسی pure-Python با فونت وزیرمتن، مبلغ به حروف |
-| 📊 **گزارش‌های ایرانی** | فروش/خرید Register، وضعیت چک، ماندهٔ طرف حساب، گزارش VAT + داشبورد دادهٔ واقعی |
+| 📊 **گزارش‌های ایرانی** | فروش/خرید Register، وضعیت چک، ماندهٔ طرف حساب، گزارش VAT، **دفتر کل و تراز آزمایشی** (§48) + داشبورد دادهٔ واقعی |
 | 🛡 **امنیت و پایش** | سطح guest دقیقاً 4 endpoint، audit-trail، سلامت بدون secret/PII، ماسک‌کردن PII |
 | 🔔 **اعلان‌ها** | ۶ تریگر دوکاناله (in-app + SMS) با dedupe دائمی |
 | 🧯 **کلیدهای قطع (kill-switch)** | ۷ فلگ `farda_enable_*` در System Settings: `sms` · `otp` · `payment` · `vat` · `banking` · `cheque` · `reports` |
@@ -60,7 +60,7 @@ idempotency ×3 روی سوئیت‌های حساس · rehearsal نصب‌تاز
 دو مورد که **۱۰۰٪ تلقی نمی‌شوند** (طبق ماتریس گپ):
 
 - **RTL/ترجمه — `PARTIAL`:** ۱٬۶۰۱ msgid خالی از ۱۰٬۱۵۷ (`erpnext/farda_iran/translations/audit.py`)؛ QA آنتروپورت/لاگین/دیالوگ‌ها مانده است.
-- **گزارش‌ها — `PARTIAL`:** پنج گزارش ایرانی اجرا و تست شده‌اند؛ لایهٔ ایرانی GL/Trial Balance، Stock Balance/Movement، Bank Report، Cash Flow، P&L و Balance Sheet هنوز باز است. جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
+- **گزارش‌ها — `PARTIAL`:** هفت گزارش ایرانی اجرا و تست شده‌اند (۵ قبلی + دفتر کل و تراز آزمایشی §48)؛ لایهٔ ایرانی Stock Balance/Movement، Bank Report، Cash Flow، P&L و Balance Sheet هنوز باز است. جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
 
 ## راه‌اندازی سریع
 

@@ -96,7 +96,7 @@
 | Invoice | ✅ PRESENT | real invoices + Persian RTL print: Sales A4 + Purchase A4 + Thermal 80mm (H7 9 + R15 4 live) |
 | PDF | ✅ PRESENT | pure-Python Persian PDF (reportlab+Vazirmatn), text-layer verified |
 | RTL | 🟡 PARTIAL | fa-scoped CSS live-tested; ~1,601 empty fa msgids remain |
-| Reports | 🟡 PARTIAL | 5 Iranian reports (VAT/Cheque/Party/Purchase/Sales-Register) live-tested; remaining per gap matrix: GL/Trial Balance Iranian layer, Stock Balance/Movement, Bank Report, Cash Flow, P&L, Balance Sheet presentation — NOT 100% |
+| Reports | 🟡 PARTIAL | 7 Iranian reports live-tested (VAT/Cheque/Party/Purchase/Sales-Register + §48 General Ledger/Trial Balance); remaining: Stock Balance/Movement, Bank Report, Cash Flow, P&L, Balance Sheet presentation — NOT 100% |
 | Security | ✅ PRESENT (Farda surfaces) | dedicated audit R16 5/5 live (guest surface, XSS-escaped formats, SQLi, PII, escalation matrix) + docs/SECURITY-AUDIT.md; framework security gates |
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site (160 = §25-era suite size; canonical suite 2026-09-16 = 178) |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
@@ -458,3 +458,20 @@ audit/performance/order-to-cash/notifications, re-migrate 0 errors.
 | Commercial Release | 🔴 هنوز نه |
 
 **گام بعدی توافقی:** بستن ۵ گیت محیطی به محض دسترسی + تکمیل هم‌زمان RTL (batch ترجمهٔ بعدی + QA پورتال/لاگین/دیالوگ) و گزارش‌های ایرانی باقی‌مانده — بدون بازکاری روی featureهای اثبات‌شده (verify-not-rebuild همچنان حاکم است).
+
+## 2026-09-16 — §48 Reports batch 1: Farda General Ledger + Farda Trial Balance
+
+- Two new Script Reports (Farda Iran module, roles SM/AM/AU, read-only parameterized SQL,
+  Jalali/Toman via central services, zero core changes): **Farda General Ledger** (rows +
+  running balance + company-wide balanced totals) و **Farda Trial Balance** (opening/period/
+  closing per account + root_type filter).
+- REPORT_ALLOWLIST extended 5→7 (unit test asserts disk match); bandit baseline regenerated
+  for the 2 new reviewed B608s (same parameterized pattern).
+- **Runtime-verified on a fresh-drop site** (PG 18.4): R48 2/2 PASS ×3 idempotent; pipeline
+  7/7 (unit 178/178); pack R11 + R21 namespaces + VAT regression PASS.
+- TEST-BUG class fixed: SI-creating suites (integration, pack) now self-seed selling Price
+  List + Fiscal Year — fresh-site independent, no mid-run death/leak.
+- Re-bootstrap note: sandbox reset again; runtime rebuilt from recipes with two recipe
+  refinements (see session docs): sqlite3.h sed must yield UNQUOTED version number, and
+  pkg-config shim must parse "mod >= ver" as one spec; _ctypes via system libffi.so.8 +
+  generated headers (consumer ffi.h needs no fficonfig).
