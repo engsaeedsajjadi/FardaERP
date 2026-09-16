@@ -143,3 +143,15 @@
   search endpoint fields include "name"; hooks cache needs clear-cache after hooks.py edits.
 - R9 search 7/7 + R10 bank 7/7 live. Full regression: unit 157/157 + JS parity + Gate-5 13/13
   + Iran 5 + Payments 9 + OTP 6 + Print 9 + Reports 5 + VAT 8 — ALL PASS.
+
+## 2026-09-16 — Iranian reports pack + PG-13 payment-ledger fix
+- New standard reports (real data, Jalali/Toman/Persian digits, جمع rows, filters):
+  Farda Purchase Register · Farda Cheque Report (days-to-due + معوق + Persian statuses)
+  · Farda Party Balance (AR/AP outstanding + خالص دریافتنی−پرداختنی).
+- R11 pack E2E 4/4 live — including a real PE submit reducing AR 1,000,000→600,000 IRR.
+- **PG-13 (upstream-compat bug found by the new AR test):** payment-ledger outstanding query
+  needed upstream's 4-key GROUP BY with MAX() for the rest; PG-strict full-column grouping
+  split PLE rows (differing due_date) so invoice outstanding never updated on PE submit.
+  Fixed in pg_compat (PG-13); full regression re-run ALL GREEN.
+- Live totals this phase: unit 157/157 + JS parity + Gate-5 13/13 + Iran 5 + Pay 9 + OTP 6
+  + Print 9 + Rep 5 + VAT 8 + Search 7 + Bank 7 + Pack 4 = 60 runtime asserts PASS.
