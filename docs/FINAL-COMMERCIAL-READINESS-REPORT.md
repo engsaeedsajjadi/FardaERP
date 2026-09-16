@@ -130,3 +130,16 @@
   + OTP 6/6 + Print 9/9 + Reports 5/5 + VAT 8/8 — ALL PASS.
 - Fix recorded: Purchase tax rows require category=Total and add_deduct_tax='Add' (string);
   a falsy int made Purchase VAT post on the CREDIT side (GL imbalance) — caught by GL reconciliation test.
+
+## 2026-09-16 — §10 search integration + §11 Bank Account integration
+- Fold-at-rest: farda_search_key (fold_for_search) on Customer/Supplier/Item via validate hooks;
+  canonical Persian letters in titles; idempotent backfill in setup (§29).
+- search_party/search_item whitelisted APIs: fold-at-query + raw-LIKE legacy fallback;
+  frappe.get_list (permissions), no PII, guest denied, 120/min per user.
+- Bank Account: IBAN normalize+validate, registry bank get-or-create+auto-link,
+  bank↔IBAN mismatch enforcement (Persian error), farda_card_number Luhn, resolve_iban API.
+- Root-cause fixes recorded: banking/service.py relative import depth (.validators → ..utilities.validators);
+  frappe v16 runs autoname BEFORE validate → IBAN hook also bound to before_insert;
+  search endpoint fields include "name"; hooks cache needs clear-cache after hooks.py edits.
+- R9 search 7/7 + R10 bank 7/7 live. Full regression: unit 157/157 + JS parity + Gate-5 13/13
+  + Iran 5 + Payments 9 + OTP 6 + Print 9 + Reports 5 + VAT 8 — ALL PASS.
