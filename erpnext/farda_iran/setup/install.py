@@ -79,17 +79,75 @@ INVOICE_FIELDS = [
 	),
 ]
 
+ITEM_FIELDS = [
+	dict(
+		fieldname="farda_vat_exempt",
+		label="معاف از مالیات بر ارزش افزوده",
+		fieldtype="Check",
+		insert_after="item_group",
+		default="0",
+		print_hide=0,
+	),
+]
+
 
 def ensure_custom_fields() -> None:
 	custom_fields = {
 		"Customer": PARTY_FIELDS,
 		"Supplier": PARTY_FIELDS,
 		"Company": COMPANY_FIELDS,
+		"Item": ITEM_FIELDS,
 		"Sales Invoice": INVOICE_FIELDS,
 		"Purchase Invoice": INVOICE_FIELDS,
 		"Payment Entry": PAYMENT_ENTRY_FIELDS,
 	}
 	create_custom_fields(custom_fields, ignore_validate=True, update=True)
+
+
+def ensure_vat_item_tax_templates() -> None:
+	"""Standard Item Tax Templates owned by Farda (§8: tax templates).
+
+	Created per company for the configured VAT account; rate kept in sync with
+	Farda VAT Settings on every migrate. "Farda Exempt 0%" stays at rate 0.
+	"""
+	if not frappe.db.exists("DocType", "Farda VAT Settings"):
+		return
+	rate = frappe.db.get_single_value("Farda VAT Settings", "default_rate")
+	account = frappe.db.get_single_value("Farda VAT Settings", "vat_account")
+	if not account:
+		return
+	for company in frappe.get_all("Company", pluck="name"):
+		if frappe.db.get_value("Account", account, "company") != company:
+			continue
+		for title, template_rate in (("Farda VAT", rate or 0), ("Farda Exempt 0%", 0)):
+			name = frappe.db.exists("Item Tax Template", {"title": title, "company": company})
+			if not name:
+				frappe.get_doc({
+					"doctype": "Item Tax Template",
+					"title": title,
+					"company": company,
+					"taxes": [{"tax_type": account, "tax_rate": template_rate}],
+				}).insert(ignore_permissions=True)
+			else:
+				tpl = frappe.get_doc("Item Tax Template", name)
+				changed = False
+				for d in tpl.taxes:
+					if d.tax_type == account and d.tax_rate != template_rate:
+						d.tax_rate = template_rate
+						changed = True
+				if not tpl.taxes:
+					tpl.append("taxes", {"tax_type": account, "tax_rate": template_rate})
+					changed = True
+				if changed:
+					tpl.save(ignore_permissions=True)
+
+
+def get_item_tax_template_names(company: str) -> dict:
+	"""Template names for a company (used by tests/reporting)."""
+	out = {}
+	for title, key in (("Farda VAT", "vat"), ("Farda Exempt 0%", "exempt")):
+		out[key] = frappe.db.get_value("Item Tax Template", {"title": title, "company": company}, "name")
+	return out
 
 
 def ensure_vat_settings_defaults() -> None:
@@ -119,6 +177,7 @@ def before_migrate(**_kwargs) -> None:
 def execute() -> str:
 	ensure_custom_fields()
 	ensure_vat_settings_defaults()
+	ensure_vat_item_tax_templates()
 	try:
 		ensure_ui_assets()
 	except Exception:

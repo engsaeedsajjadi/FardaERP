@@ -46,12 +46,46 @@ def get_applicable_vat_rate(doc) -> float:
 	return float(s.default_rate)
 
 
+def _get_exempt_flags(items) -> list[bool]:
+	"""Batch-read Item.farda_vat_exempt for the invoice rows (missing item → False)."""
+	codes = sorted({r.item_code for r in items if r.item_code})
+	exempt_map = {}
+	if codes:
+		exempt_map = frappe.db.get_values("Item", {"name": ["in", codes]}, "farda_vat_exempt") or {}
+	return [bool(exempt_map.get(r.item_code)) for r in items]
+
+
+def _remove_vat_rows(doc, account: str | None) -> None:
+	"""Drop ALL Farda-managed VAT rows (exact description for the single row,
+	prefixed description for per-row mode). Keeps third-party tax rows intact."""
+	if not account:
+		return
+	keep = []
+	for row in doc.get("taxes") or []:
+		if row.account_head == account and (
+			row.description == VAT_DESCRIPTION
+			or str(row.description or "").startswith(VAT_DESCRIPTION + " — ")
+		):
+			continue
+		keep.append(row)
+	doc.set("taxes", keep)
+
+
 def on_invoice_validate(doc, method: str | None = None) -> None:
-	"""doc_events validate handler for Sales/Purchase Invoice."""
+	"""doc_events validate handler for Sales/Purchase Invoice.
+
+	Rate comes only from settings. Item-level exemption: if any invoice row's
+	Item is exempt, the planner switches to per-row "Actual" VAT rows so exempt
+	lines never carry VAT while taxable lines keep exact line-level VAT.
+	Stale Farda VAT rows are always cleaned before recomputation.
+	"""
+	items = doc.get("items") or []
 	if not doc.get("farda_apply_vat"):
+		_remove_vat_rows(doc, get_settings().vat_account)
 		return
 	rate = get_applicable_vat_rate(doc)
 	if not rate:
+		_remove_vat_rows(doc, get_settings().vat_account)
 		return
 	s = get_settings()
 	account = s.vat_account
@@ -61,12 +95,14 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 		)
 	if frappe.db.get_value("Account", account, "company") != doc.company:
 		frappe.throw(frappe._("حساب VAT به شرکتِ این سند تعلق ندارد"))
-	for row in doc.get("taxes") or []:
-		if row.account_head == account:
-			row.rate = rate
-			row.description = VAT_DESCRIPTION
-			break
-	else:
+
+	from erpnext.farda_iran.tax import planner
+
+	flags = _get_exempt_flags(items)
+	plan = planner.plan_vat(list(zip(flags, [frappe.utils.flt(r.amount) for r in items])), rate)
+
+	if plan.mode == "single":
+		_remove_vat_rows(doc, account)
 		doc.append(
 			"taxes",
 			{
@@ -76,6 +112,25 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 				"description": VAT_DESCRIPTION,
 			},
 		)
+		doc.calculate_taxes_and_totals()
+		return
+
+	# all_exempt / per_row → exact per-row VAT, exempt lines carry nothing
+	_remove_vat_rows(doc, account)
+	if plan.total_tax:
+		for item_row, row_tax in zip(items, plan.row_taxes):
+			if row_tax:
+				doc.append(
+					"taxes",
+					{
+						"charge_type": "Actual",
+						"account_head": account,
+						"rate": rate,
+						"tax_amount": planner.to_number(row_tax),
+						"base_tax_amount": planner.to_number(row_tax),
+						"description": f"{VAT_DESCRIPTION} — {item_row.item_name or item_row.item_code}",
+					},
+				)
 	doc.calculate_taxes_and_totals()
 
 
