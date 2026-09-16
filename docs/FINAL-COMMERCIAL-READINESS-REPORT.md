@@ -403,3 +403,23 @@
 **مسیر تا COMMERCIAL READY**: گشایش Docker (بند 1–2) → اجرای rehearsal روی MariaDB →
 اعتبارنامه‌های زنده (بند 3–4) با stop-and-ask → فعال‌سازی CI (بند 5) → به‌روزرسانی همین
 جدول و ثبت FINAL_STATUS جدید.
+
+## 2026-09-16 — §47 Production Verification (fresh sandbox, verify-not-rebuild)
+
+Full battery re-executed after a complete sandbox re-bootstrap: pipeline 7/7 GREEN
+(unit 178/178 + JS parity), 21 runtime suites PASS, idempotency ×3 on payments/VAT/
+audit/performance/order-to-cash/notifications, re-migrate 0 errors.
+
+- **Bugs found by verification: 2 — both fixed & regression-proven (commit 4016290):**
+  1. CODE-BUG `flags/service.py` — fresh installs shipped all 7 kill-switches OFF
+     (Check column reads 0, NULL-guard never fired) → seeds ON for fields it creates;
+     admin-set 0 preserved (virgin-path + preservation tests PASS).
+  2. TEST-BUG R21 — customer from R19 assumed; now self-seeded (order-independent).
+- **Gates 1–5: ALL BLOCKED-ENV** (Docker daemon, MariaDB binaries, live payment creds,
+  live SMS creds, GitHub `workflows` scope — exact push-rejection message recorded).
+  Local validations that COULD run, ran: compose-spec schema VALID (8 services),
+  workflow YAML parse + stage order + no-secrets PASS, bandit clean vs baseline,
+  pg_compat db_type guard verified, secrets/PII/OTP-plaintext greps clean.
+- **Translations: 10,157 total / 1,601 empty msgids** (counted; not functional failures).
+- **FINAL_STATUS unchanged: NOT COMMERCIAL READY — 5 environmental blockers, 0 open
+  code bugs.** Evidence: docs/PRODUCTION-VERIFICATION-REPORT.md.

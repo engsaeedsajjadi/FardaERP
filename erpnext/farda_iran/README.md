@@ -1,5 +1,11 @@
 # FardaERP — Iranian Localization Module ("Farda Iran")
 
+> **Attribution & non-affiliation:** FardaERP is an independent localization/extension
+> built ON TOP OF ERPNext/Frappe (v16 baseline). It is **NOT** an official ERPNext,
+> Frappe, or Frappe Technologies product, nor endorsed by them. ERPNext/Frappe
+> trademarks belong to their respective owners (see `TRADEMARK_POLICY.md`,
+> `attributions.md`, `license.txt` — GPL-3.0).
+
 This module is the **single, isolated home for all FardaERP-specific Iranian
 localization code**, kept separate from upstream ERPNext core per the approved
 Single-Repository architecture (docs/VERSION-BASELINE-AND-ARCHITECTURE.md).
