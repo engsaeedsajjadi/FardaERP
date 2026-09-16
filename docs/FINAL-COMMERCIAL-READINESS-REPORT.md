@@ -117,3 +117,16 @@
 - fa.po batch2: 121 curated translations (1,722→1,601 empty).
 - FULL REGRESSION on live site (py3.14 + PG16.2 UTF8): unit 133/133 + JS parity + Gate-5 13/13 + Iran 5/5 + Payments 9/9 + OTP 6/6 + Print/PDF 9/9 + Reports 5/5.
 - ENV rebuilt from scratch this turn via bootstrap_tools.sh + finish_env.sh (both rerun-safe, codeload/pypi-only); facts recorded in script headers.
+
+## 2026-09-16 — Phase-0 REAL matrix + VAT completion (§5)
+- docs/REAL-CURRENT-GAP-MATRIX.md: canonical audit-based status (30 features × 12 fields, exact statuses).
+- VAT completion: pure HALF-UP planner (none/all_exempt/single/per_row), farda_vat_exempt on Item,
+  per-row Actual VAT rows for mixed invoices (exempt lines carry zero), stale-row cleanup,
+  standard Item Tax Templates (rate-synced from settings on every migrate),
+  Farda VAT Report (sales+purchase, Jalali/Toman/Persian, totals, kind/company/date filters).
+- R8 VAT live E2E 8/8 (custom rate 15%, 0%+cleanup, exempt item, mixed GL reconcile, purchase GL,
+  effective date, report assertions incl. kind filter).
+- Full regression on live site: unit 146/146 + JS parity + Gate-5 13/13 + Iran 5/5 + Payments 9/9
+  + OTP 6/6 + Print 9/9 + Reports 5/5 + VAT 8/8 — ALL PASS.
+- Fix recorded: Purchase tax rows require category=Total and add_deduct_tax='Add' (string);
+  a falsy int made Purchase VAT post on the CREDIT side (GL imbalance) — caught by GL reconciliation test.
