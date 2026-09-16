@@ -97,11 +97,11 @@
 | PDF | ✅ PRESENT | pure-Python Persian PDF (reportlab+Vazirmatn), text-layer verified |
 | RTL | 🟡 PARTIAL | fa-scoped CSS live-tested; ~1,601 empty fa msgids remain |
 | Reports | ✅ PRESENT | Iranian VAT/Cheque/Party/Purchase/Sales-Register pack live-tested |
-| Security | 🟡 PARTIAL | framework security + negative tests; Farda audit pending |
+| Security | ✅ PRESENT (Farda surfaces) | dedicated audit R16 5/5 live (guest surface, XSS-escaped formats, SQLi, PII, escalation matrix) + docs/SECURITY-AUDIT.md; framework security gates |
 | Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
 | CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
-| Tests | 🟡 PARTIAL | 166 unit + 90 live asserts (post-R15 regression); dedicated perf pass pending |
+| Tests | 🟡 PARTIAL | 166 unit + 95 live asserts (incl. R16 security audit); dedicated perf pass pending |
 | Monitoring | ❌ MISSING | health endpoints/logs aggregation pending |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
 | Upgrade | ✅ PRESENT | sync policy documented (version-16 only, 5 gates) |
@@ -267,3 +267,21 @@
   · حرارتی (layout 72mm + ردیف‌های فشرده + ۱۳۷٬۵۰۰ تومان + بدون ردیف تخفیفِ خالی) · ردیف
   تخفیف دقیقاً با تخفیف واقعی (۵٬۰۰۰ تومان).
 - رگرسیون: Print 9/9 + unit 166/166 + JS parity + pipeline 7/7 GREEN. جمع زنده: ۹۰ assert.
+
+## 2026-09-16 — §29 Security audit pass (R16 5/5 live + docs/SECURITY-AUDIT.md)
+- **XSS (یافته و بسته)**: Jinja فراپه `autoescape=False` دارد (اثبات‌شده) — هر ۴ فرمت
+  چاپ حالا فیلدهای کاربر-کنترل (نام احزاب/کالاها/شناسه‌ها/bill_no/company) را با `| e`
+  escape می‌کنند؛ نکتهٔ اولویت `(x or "-") | e` پرانتز شد (پیش از آن escape روی مقدار
+  truthy اعمال نمی‌شد — همان چیزی که تست payload گرفت). R16 سه فرمت را با payload
+  `<script>` رندر و HTML-escape را ادعا می‌کند.
+- **Guest surface**: enumeration از مجموعه‌های فراپه — دقیقاً ۳ متد (OTP request/verify +
+  payment verify)؛ هر انحراف آینده fail می‌شود.
+- **SQLi**: payloadهای کلاسیک از APIهای جستجو → پارامترشده، جدول دست‌نخورده، ستون‌های
+  حداقلی؛ سطح‌های SQL همه placeholder یا query-builder یا allowlist (نقشه در سند).
+- **PII**: کلیدهای پاسخ OTP/payment-status حداقلی + sanitizer ممیزی (هویتی→۴ رقم آخر،
+  secret→***)؛ OTP فقط hash؛ هیچ PAN/تلفنی در پاسخ‌ها.
+- **Escalation matrix**: Farda Audit Log فقط SM-read؛ Cheque فقط نقش‌های Accounts؛
+  VAT Settings فقط SM/Accounts Manager؛ برای Guest هیچ.
+- رگرسیون پس از تغییر فرمت‌ها: Print 9/9 + R15 4/4 + unit 166/166 + JS parity — جمع زندهٔ
+  امنیتی/چاپ: **95 assert**. (CSRF تصمیم مستند: گیت فریم‌ورک برای session‌های authed؛
+  endpointهای guest با توکن یک‌بارمصرف + بررسی مبلغ محافظت می‌شوند.)
