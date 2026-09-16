@@ -37,7 +37,14 @@ export function tokens(keyword: string): string[] {
 
 /** Tiny suffix stemmer (deterministic, language-agnostic-ish). */
 export function stem(t: string): string {
-  return t.replace(/(ies)$/, "y").replace(/(sses)$/, "ss").replace(/([^s])s$/, "$1").replace(/(ing|ed)$/, "");
+  let s = t.replace(/(ies)$/, "y").replace(/(sses)$/, "ss").replace(/([^s])s$/, "$1");
+  const m = s.match(/^(.+?)(ing|ed)$/);
+  if (m && m[1]!.length >= 3) {
+    s = m[1]!;
+    // undo consonant doubling: running → run, stopped → stop
+    if (/([bdfgklmnprt])\1$/.test(s)) s = s.slice(0, -1);
+  }
+  return s;
 }
 
 export interface Cluster {
