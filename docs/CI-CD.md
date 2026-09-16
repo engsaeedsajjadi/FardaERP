@@ -57,7 +57,7 @@ dead `bank_account` lookup removed from cheque/payment_link. Remaining 659× E11
 deps PASS · lint PASS · compile PASS · unit PASS · integration PASS · security PASS · build PASS
 CI: ALL REQUESTED STAGES GREEN
 ```
-- unit = 166/166 + «JS parity tests: ALL PASS»; integration = Gate-5 13/13 + Iran 5/5
+- unit = 166/166 **(historical checkpoint at §27 execution date — canonical suite as of 2026-09-16 = 178/178; 160/166 figures are suite-growth checkpoints, not subsets)** + «JS parity tests: ALL PASS»; integration = Gate-5 13/13 + Iran 5/5
   (live site); build = `erpnext-16.34.2-py3-none-any.whl` (5067 files, farda_iran +
   tax service + 3 Vazirmatn fonts verified inside).
 - Full live regression re-run after the lint cleanup (each suite its own process):

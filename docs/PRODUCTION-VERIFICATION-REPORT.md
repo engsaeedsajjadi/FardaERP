@@ -9,6 +9,13 @@ any changes were made.
 
 Verification timestamp (this report): **2026-09-16T20:45:33Z**
 
+> ### Canonical snapshot — Documentation Reconciliation (2026-09-16T21:00:48Z)
+> - Branch: `arena/01a0a51f-fardaerp`. The authoritative HEAD is always `git rev-parse origin/arena/01a0a51f-fardaerp` — docs commits move it, so reports pin a **code snapshot** instead.
+> - **Code snapshot verified: `4016290`** — the last code-affecting commit; every later commit (8b65be6 → bf005df → this reconciliation) is documentation-only (checked via per-commit `git diff --stat`).
+> - **Canonical test counts (pipeline, 2026-09-16):** unit **178/178** = complete current suite + JS parity ALL PASS · pipeline **7/7** · 21 runtime suites · 131+ live asserts · sensitive suites ×3 idempotent. The older figures **160/160** (§25–§27 era) and **166/166** (§29–§36 era) are dated checkpoints of suite growth — NOT separate subsets and NOT current.
+> - Point-in-time gate evidence keeps its original timestamps (§16); this reconciliation changes metadata only, no code.
+
+
 ---
 
 ## 1. Repository
@@ -16,7 +23,7 @@ Verification timestamp (this report): **2026-09-16T20:45:33Z**
 | Item | Value |
 |---|---|
 | Upstream base | ERPNext v16.34.2 (tree-identical to adc8f88); Frappe v16.33.1; HRMS v16.18.1 |
-| Branch | `arena/01a0a51f-fardaerp` — delivery chain b583cbe→…→daf586c **verified reachable & pushed**; HEAD after verification: **4016290** |
+| Branch | `arena/01a0a51f-fardaerp` — delivery chain b583cbe→…→daf586c **verified reachable & pushed**; code snapshot verified: **4016290** (last code-affecting commit; all later commits are docs-only — see Canonical snapshot above; authoritative HEAD = `git rev-parse origin/arena/01a0a51f-fardaerp`) |
 | Isolation | `erpnext/farda_iran/` single-module home; `erpnext/patches.txt` contains **0** Farda entries (verified by grep) |
 | Sandbox recovery | clone reset to b9c74011 by sandbox rebuild → fetch + ff-merge to daf586c → full runtime re-bootstrap (CPython 3.14, PG 16.2, Redis 7.4.1, bench 5.31.0, frappe+erpnext+hrms editable) → **7/7 pipeline GREEN re-proven before any edit** |
 | Worktree integrity at close | `git status` clean; no temp/test artifacts in repo (all bench/sites/logs live outside the repo: /opt/fardabench, /tmp) |
@@ -149,5 +156,11 @@ Per-gate blocks (Gate / Environment / Command / Expected / Actual / Status / Tim
 8. **Translations** · `translations/audit.py` · count · **total 10,157 · empty 1,601** (matches docs; empty msgids are gap-count items, not functional failures) · 2026-09-16T20:45:33Z.
 
 ## 17. Final Status
+
+**Readiness chain (per reviewer — COMMERCIAL READY requires the FULL chain green, not merely the 5 blockers):**
+
+`Code → Unit → Integration → MariaDB → Docker → Fresh Install → Migration → Backup/Restore → Payment Live → SMS Live → GitHub CI → Security → Production Smoke → Commercial Readiness`
+
+Clearing the five §15 blockers un-pauses the chain at MariaDB/Docker/Payment/SMS/CI; every downstream link (fresh install, migration, backup/restore on MariaDB, production smoke) must then be **executed** before FINAL_STATUS can be revisited.
 
 **NOT COMMERCIAL READY** — exclusively due to the five environmental blockers in §15. The codebase itself has **zero known open defects**: 178/178 unit, JS parity, 7/7 pipeline, 21/21 runtime suites (with ×3 idempotency on all sensitive paths), fresh-install migration rehearsal, and 2 verification bugs found-and-fixed with full regression. The moment MariaDB/Docker/live-payment/live-SMS/workflows credentials become available, each gate has a documented, activation-ready path — but each remains **unverified** until actually executed in that environment.

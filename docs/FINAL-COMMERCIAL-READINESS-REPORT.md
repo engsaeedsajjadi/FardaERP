@@ -98,9 +98,9 @@
 | RTL | 🟡 PARTIAL | fa-scoped CSS live-tested; ~1,601 empty fa msgids remain |
 | Reports | 🟡 PARTIAL | 5 Iranian reports (VAT/Cheque/Party/Purchase/Sales-Register) live-tested; remaining per gap matrix: GL/Trial Balance Iranian layer, Stock Balance/Movement, Bank Report, Cash Flow, P&L, Balance Sheet presentation — NOT 100% |
 | Security | ✅ PRESENT (Farda surfaces) | dedicated audit R16 5/5 live (guest surface, XSS-escaped formats, SQLi, PII, escalation matrix) + docs/SECURITY-AUDIT.md; framework security gates |
-| Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site |
+| Backup | ✅ PRESENT (restore-verified) | §25 R13 5/5: fresh-site restore + data identity + 160/160 on restored site (160 = §25-era suite size; canonical suite 2026-09-16 = 178) |
 | Docker | 🟡 IMPLEMENTED-BUT-UNVERIFIED | §26 stack written; compose-spec schema-VALID; entrypoint config-phase runtime-proven on real Frappe v16 CLI; build/up = BLOCKED-ENV (no daemon) |
-| CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit 160/160+JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
+| CI/CD | ✅ PRESENT (pipeline) / 🟡 activation BLOCKED-ENV | 7-stage pipeline ALL GREEN in-repo (lint 0-findings, unit green — 160/160 at §27 date, canonical 178/178 as of 2026-09-16 — +JS, Gate-5+Iran live, wheel verified, bandit baseline); wrapper versioned for activation (CORE-002) |
 | Tests | ✅ PRESENT | 178 unit + 131+ live asserts (R13–R22 همه idempotent) + migration rehearsal (fresh PG 8/8 زنجیره روی سایت بِکِر)؛ MariaDB rehearsal = BLOCKED-ENV |
 | Monitoring | ✅ PRESENT (health layer) | guest /health: db/redis/workers/scheduler checks, exact payload contract, no secrets/PII (R17 4/4 live + sweep); LB-ready with 503 mapping |
 | Documentation | 🟡 PARTIAL | gap analysis, versions, phase reports; §49 set incomplete |
@@ -404,6 +404,12 @@
 اعتبارنامه‌های زنده (بند 3–4) با stop-and-ask → فعال‌سازی CI (بند 5) → به‌روزرسانی همین
 جدول و ثبت FINAL_STATUS جدید.
 
+**زنجیرهٔ الزامی آمادگی (COMMERCIAL READY فقط با سبز بودن کل زنجیره، نه صرفاً رفع ۵ بلاکر):**
+
+`Code → Unit → Integration → MariaDB → Docker → Fresh Install → Migration →
+Backup/Restore → Payment Live → SMS Live → GitHub CI → Security → Production Smoke →
+Commercial Readiness`
+
 ## 2026-09-16 — §47 Production Verification (fresh sandbox, verify-not-rebuild)
 
 Full battery re-executed after a complete sandbox re-bootstrap: pipeline 7/7 GREEN
@@ -423,6 +429,12 @@ audit/performance/order-to-cash/notifications, re-migrate 0 errors.
 - **Translations: 10,157 total / 1,601 empty msgids** (counted; not functional failures).
 - **FINAL_STATUS unchanged: NOT COMMERCIAL READY — 5 environmental blockers, 0 open
   code bugs.** Evidence: docs/PRODUCTION-VERIFICATION-REPORT.md.
+- **Documentation Reconciliation (2026-09-16T21:00:48Z):** single canonical snapshot applied across README /
+  Gap Matrix / Production Verification Report / Final Report / CI-CD: code snapshot `4016290`
+  (last code-affecting commit; everything after is docs-only), authoritative HEAD = branch tip,
+  canonical unit count **178/178** with 160/160 and 166/166 labeled as dated suite-growth
+  checkpoints (not subsets), reconciliation timestamp unified. Dated phase-log entries keep
+  their original figures as historical evidence.
 - **Post-verification doc fixes:** upstream ERPNext README replaced with the FardaERP product
   README (CORE-008) — reviewer-identified top documentation gap; RTL & Reports rows corrected
   to PARTIAL (no 100% claims); GATE 5 hard evidence extended: Contents-API

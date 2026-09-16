@@ -43,6 +43,8 @@
 **FINAL_STATUS فعلی: `NOT COMMERCIAL READY` — ۵ بلاکر صرفاً محیطی، ۰ باگ بازِ شناخته‌شده.**
 گزارش کامل: [`docs/PRODUCTION-VERIFICATION-REPORT.md`](docs/PRODUCTION-VERIFICATION-REPORT.md).
 
+> **Snapshot مرجع** (Documentation Reconciliation 2026-09-16T21:00:48Z): code snapshot تأییدشده `4016290` (آخرین کامیتِ code-affecting؛ کامیت‌های بعدی فقط-مستندات) · HEAD معتبر همیشه `git rev-parse origin/arena/01a0a51f-fardaerp` · تعداد unit مرجع **178/178** (سوئیت کامل 2026-09-16) — اعداد 160/166 در گزارش‌های قدیمی فقط checkpoint تاریخی رشد سوئیت‌اند، نه زیرمجموعه.
+
 اثبات‌شده با اجرا (نه ادعا): unit **178/178** + JS parity · pipeline داخلی **7/7** ·
 **21 سوئیت E2E زنده** (شامل زنجیرهٔ کامل Order-to-Cash: Company→Customer→Item→SO→VAT→SI→PE→تسویه→PDF فارسی→گزارش‌ها→audit) ·
 idempotency ×3 روی سوئیت‌های حساس · rehearsal نصب‌تازه (migrate) · `bench migrate` با 0 خطا.
