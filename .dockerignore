@@ -9,6 +9,7 @@
 # --- docs & tests (not needed inside the image) ---
 docs/
 *.md
+!README.md
 !LICENSE
 erpnext/farda_iran/tests/
 
