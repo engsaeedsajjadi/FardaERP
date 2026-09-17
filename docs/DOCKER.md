@@ -182,3 +182,28 @@ Then open `http://localhost` **if the site is named `localhost`** (see above —
 the browser hostname). Login `Administrator` / the admin password; setup wizard: Country=Iran,
 Currency=IRR. Health probe: `curl http://localhost/api/method/health` (may 404 until the site
 exists — probe the backend container directly for `/health`).
+
+### Updating an existing local copy (stale/mixed state — Windows)
+
+The download-zip flow can leave a MIXED folder (new .dockerignore + old Dockerfile —
+seen live 2026-09-17). Before building, verify the tree matches the branch tip:
+
+```powershell
+cd D:\Downloads\FardaERP-arena-01a0a51f-fardaerp\FardaERP-arena-01a0a51f-fardaerp
+
+# A) git checkout? → update in place
+Test-Path .git          # True/False
+# if True:
+git fetch origin arena/01a0a51f-fardaerp
+git status --short                                   # local edits? stash if you need them
+git checkout origin/arena/01a0a51f-fardaerp -- docker docker-compose.yml .dockerignore docs README.md
+
+# B) zip extract (Test-Path .git = False)? → re-download fresh zip into a NEW folder
+#    https://github.com/engsaeedsajjadi/FardaERP/archive/refs/heads/arena/01a0a51f-fardaerp.zip
+#    then copy your filled .env into it.
+
+# self-check BEFORE building (must match):
+Select-String -Path docker\Dockerfile -Pattern "corepack"                       # → EMPTY (no output)
+Select-String -Path docker\Dockerfile -Pattern "npm install -g --silent yarn"   # → 1 hit (yarn fix)
+Select-String -Path .dockerignore  -Pattern "!README.md"                         # → 1 hit
+```
