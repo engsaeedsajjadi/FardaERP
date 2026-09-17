@@ -165,8 +165,12 @@ docker compose build                        # builds backend/workers/scheduler/w
 docker compose up -d mariadb redis-cache redis-queue
 docker compose up -d                        # entrypoint waits for DB/Redis, then starts all
 
-# one-time site creation (the entrypoint does NOT create the site):
-docker compose exec backend bench new-site $env:SITE_NAME `
+# one-time site creation (the entrypoint does NOT create the site).
+# SITE NAME = the hostname the browser will use: nginx resolves the site by
+# Host header (FRAPPE_SITE_NAME_HEADER=$host). For plain local testing name
+# it "localhost"; any other name needs a hosts-file entry or a
+# FRAPPE_SITE_NAME_HEADER override in docker-compose.override.yml.
+docker compose exec backend bench new-site localhost `
   --mariadb-root-password $env:DB_ROOT_PASSWORD `
   --admin-password admin123 --install-app erpnext --install-app hrms
 
@@ -174,5 +178,7 @@ docker compose exec backend bench new-site $env:SITE_NAME `
 docker compose down; $env:RUN_MIGRATIONS="1"; docker compose up -d   # RUN_MIGRATIONS needs SITE_NAME in .env
 ```
 
-Then open `http://localhost` (nginx :80→8080). Health probe: `curl http://localhost/api/method/health`
-(may 404 on the site domain until the site exists — use the backend container for `/health`).
+Then open `http://localhost` **if the site is named `localhost`** (see above — name must match
+the browser hostname). Login `Administrator` / the admin password; setup wizard: Country=Iran,
+Currency=IRR. Health probe: `curl http://localhost/api/method/health` (may 404 until the site
+exists — probe the backend container directly for `/health`).
