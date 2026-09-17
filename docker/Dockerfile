@@ -49,7 +49,9 @@ RUN pip install --upgrade pip wheel && \
     pip install "frappe-bench==${BENCH_VERSION}" && \
     pip install "click==8.4.1"
 
-# Node + yarn/npm (build) — merged COPY keeps python entrypoints intact.
+# Node + yarn/npm (build) — merged COPY keeps python entrypoints intact
+COPY --from=nodebin /usr/local/bin /usr/local/bin
+COPY --from=nodebin /usr/local/lib/node_modules /usr/local/lib/node_modules
 # node:24 bundles yarn 1.x at /opt/yarn-v1.22.x with only a SYMLINK in
 # /usr/local/bin — the selective COPY leaves that symlink dangling, so
 # drop the dead shims and reinstall yarn classic from the npm registry

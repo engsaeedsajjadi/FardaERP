@@ -491,3 +491,15 @@ left the sandbox:**
   fixed (hard default, frappe_docker-proven form).
 - **Gate 1 status: NOT yet PASS — now genuinely testable on the user machine; awaiting the green
   `docker compose build` / `up` (+ site creation + migrate + E2E per the readiness chain).**
+
+## 2026-09-17 (2) — second real Docker run: pip stage GREEN, yarn-stage CONFIG-BUG fixed (CORE-010)
+
+- With CORE-009 fixed, the user's `docker build --target builder` **passed the previously fatal
+  pip step (9/13)** — flit/README resolution confirmed green in the real image build.
+- New failure at builder step 12/13: `corepack enable` → `ENOENT realpath /usr/local/bin/yarn`
+  (CORE-010): node:24 keeps yarn at `/opt/…` behind a `/usr/local/bin/yarn` symlink; the selective
+  COPY dangles it. The user's local Dockerfile (corepack variant) matches no pushed commit —
+  their checkout is STALE; the branch Dockerfile never shipped corepack and carried its own
+  latent yarn-dangling bug, now fixed via `rm dead shims + npm install -g yarn@1.22.22`.
+- Gate 1: still NOT claimed PASS. Next user step: fresh clone of the branch → compose build → up
+  → new-site (localhost) → migrate → E2E per the readiness chain.
