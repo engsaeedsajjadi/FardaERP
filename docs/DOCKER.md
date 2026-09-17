@@ -148,3 +148,31 @@ Record results in docs/VERSIONS.md + this file (honest vocabulary only).
   internal-network only.
 - Run TLS termination on an upstream proxy (or extend the nginx template with certs).
 - `.dockerignore` keeps tests/docs/CI residue out of the image; LICENSE ships.
+
+## 2026-09-17 — Real-user run addendum (Windows/Docker Desktop) — fixed packaging bug + exact retry
+
+First real `docker compose up` reached builder step 9/12 and exposed CORE-009 (`.dockerignore`
+stripped `README.md` → flit ConfigError). Fixed via `!README.md`; `FRAPPE_SITE_NAME_HEADER`
+now hard-defaults to `$$host` (warning-free on all compose versions; override via
+`docker-compose.override.yml`). Both proven by pruned-context flit simulation (see CORE-CHANGES).
+
+### Exact retry sequence (PowerShell)
+
+```powershell
+git pull origin arena/01a0a51f-fardaerp     # or re-download the branch zip
+copy .env.example .env                      # if not already done — FILL SITE_NAME, DB_ROOT_PASSWORD, DB_PASSWORD
+docker compose build                        # builds backend/workers/scheduler/websocket + frontend
+docker compose up -d mariadb redis-cache redis-queue
+docker compose up -d                        # entrypoint waits for DB/Redis, then starts all
+
+# one-time site creation (the entrypoint does NOT create the site):
+docker compose exec backend bench new-site $env:SITE_NAME `
+  --mariadb-root-password $env:DB_ROOT_PASSWORD `
+  --admin-password admin123 --install-app erpnext --install-app hrms
+
+# afterwards (or for upgrades):
+docker compose down; $env:RUN_MIGRATIONS="1"; docker compose up -d   # RUN_MIGRATIONS needs SITE_NAME in .env
+```
+
+Then open `http://localhost` (nginx :80→8080). Health probe: `curl http://localhost/api/method/health`
+(may 404 on the site domain until the site exists — use the backend container for `/health`).

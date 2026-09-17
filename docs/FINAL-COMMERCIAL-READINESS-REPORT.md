@@ -475,3 +475,19 @@ audit/performance/order-to-cash/notifications, re-migrate 0 errors.
   refinements (see session docs): sqlite3.h sed must yield UNQUOTED version number, and
   pkg-config shim must parse "mod >= ver" as one spec; _ctypes via system libffi.so.8 +
   generated headers (consumer ffi.h needs no fficonfig).
+
+## 2026-09-17 — first real Docker run (Gate 1 progress) — CONFIG-BUG found & fixed
+
+**The user ran `docker compose up -d` on Windows (real Docker Desktop) — the first time Gate 1
+left the sandbox:**
+
+- Pulled clean: `redis:7.4.1-alpine`, `mariadb:10.6`, `python:3.14-slim-bookworm`, `node:24-bookworm`, `nginx:1.27-alpine`.
+- Builder stage compiled all apt layers, cloned frappe v16.33.1 + hrms v16.18.1, copied the context —
+  then **failed at `pip install -e apps/erpnext`**: `flit_core.config.ConfigError: Description file
+  README.md does not exist`.
+- **Root Cause (CONFIG-BUG, CORE-009):** `.dockerignore` `*.md` stripped README.md from the context.
+- **Fix + proof:** `!README.md` exception; local simulation of the pruned context reproduces the exact
+  ConfigError pre-fix and passes flit metadata post-fix. Compose `$$host` interpolation warning also
+  fixed (hard default, frappe_docker-proven form).
+- **Gate 1 status: NOT yet PASS — now genuinely testable on the user machine; awaiting the green
+  `docker compose build` / `up` (+ site creation + migrate + E2E per the readiness chain).**
