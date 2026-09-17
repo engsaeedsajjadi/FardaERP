@@ -49,9 +49,15 @@ RUN pip install --upgrade pip wheel && \
     pip install "frappe-bench==${BENCH_VERSION}" && \
     pip install "click==8.4.1"
 
-# Node + yarn/npm (build) — merged COPY keeps python entrypoints intact
-COPY --from=nodebin /usr/local/bin /usr/local/bin
-COPY --from=nodebin /usr/local/lib/node_modules /usr/local/lib/node_modules
+# Node + yarn/npm (build) — merged COPY keeps python entrypoints intact.
+# node:24 bundles yarn 1.x at /opt/yarn-v1.22.x with only a SYMLINK in
+# /usr/local/bin — the selective COPY leaves that symlink dangling, so
+# drop the dead shims and reinstall yarn classic from the npm registry
+# (npm itself survives the COPY: real files under /usr/local/lib/node_modules).
+USER root
+RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg /usr/local/bin/pnpm /usr/local/bin/pnpx \
+    && npm install -g --silent yarn@1.22.22
+USER frappe
 
 # frontend assets (bench build output lands in sites/assets)
 RUN mkdir -p sites/assets && \
