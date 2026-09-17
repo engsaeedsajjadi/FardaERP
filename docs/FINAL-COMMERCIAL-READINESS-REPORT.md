@@ -503,3 +503,14 @@ left the sandbox:**
   latent yarn-dangling bug, now fixed via `rm dead shims + npm install -g yarn@1.22.22`.
 - Gate 1: still NOT claimed PASS. Next user step: fresh clone of the branch → compose build → up
   → new-site (localhost) → migrate → E2E per the readiness chain.
+
+## 2026-09-17 (3) — third real run: build-order + banking/vite config fix (CORE-011); local hybrid Dockerfile diagnosed
+
+- User's controlled experiment (`docker run node:24 corepack enable` → success) CONFIRMED the
+  earlier corepack failure was caused by their LOCAL hybrid Dockerfile (8.24kB/15 steps, copies
+  only `/usr/local/bin/node`, contains markdown fences + manual CMD edits) which matches NO
+  pushed commit — their `docker/` folder must be replaced from the branch tip.
+- The run still exposed two REAL branch-Dockerfile build bugs (CORE-011): banking/vite reads
+  `sites/common_site_config.json` at build time (ENOENT) and per-app install+build interleaving
+  breaks cross-app esbuild resolution. Fixed: minimal config file + install-all-then-build-all.
+- Gate 1 remains NOT PASS until the user's green full build on the branch-tip files.

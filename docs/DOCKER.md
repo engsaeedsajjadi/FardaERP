@@ -205,5 +205,6 @@ git checkout origin/arena/01a0a51f-fardaerp -- docker docker-compose.yml .docker
 # self-check BEFORE building (must match):
 Select-String -Path docker\Dockerfile -Pattern "corepack"                       # → EMPTY (no output)
 Select-String -Path docker\Dockerfile -Pattern "npm install -g --silent yarn"   # → 1 hit (yarn fix)
+Select-String -Path docker\Dockerfile -Pattern "webserver_port.*8000"            # → 1 hit (banking/vite build config, CORE-011)
 Select-String -Path .dockerignore  -Pattern "!README.md"                         # → 1 hit
 ```

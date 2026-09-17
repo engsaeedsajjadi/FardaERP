@@ -61,11 +61,23 @@ RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg /usr/local/bin/pnpm /usr/lo
     && npm install -g --silent yarn@1.22.22
 USER frappe
 
-# frontend assets (bench build output lands in sites/assets)
-RUN mkdir -p sites/assets && \
-    cd apps/frappe && yarn install --frozen-lockfile && yarn build && \
-    cd ../erpnext && yarn install --frozen-lockfile && yarn build && \
-    cd ../hrms && yarn install --frozen-lockfile && yarn build
+# build-time site config: erpnext's banking/ (vite) reads webserver_port
+# from sites/common_site_config.json during `yarn build` — absent in the
+# builder stage it dies with ENOENT (found by the first real image build).
+RUN mkdir -p sites && printf '{\n  "webserver_port": 8000\n}\n' > sites/common_site_config.json
+
+# node deps for ALL apps BEFORE any build: bench/esbuild resolves imports
+# across app trees (frappe's build bundles erpnext/hrms entry points), so
+# building an app before its deps are installed yields unresolved imports
+# (onscan.js / html2canvas) in the bundle.
+RUN cd apps/frappe && yarn install --frozen-lockfile && \
+    cd ../erpnext && yarn install --frozen-lockfile && \
+    cd ../hrms && yarn install --frozen-lockfile
+
+# assets build (output lands in sites/assets, copied by the frontend target)
+RUN cd apps/frappe && yarn build && \
+    cd ../erpnext && yarn build && \
+    cd ../hrms && yarn build
 
 # ---------- final (backend / workers / scheduler / websocket) ----------
 FROM python:3.14-slim-bookworm AS final
