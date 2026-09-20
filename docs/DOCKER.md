@@ -165,12 +165,8 @@ docker compose build                        # builds backend/workers/scheduler/w
 docker compose up -d mariadb redis-cache redis-queue
 docker compose up -d                        # entrypoint waits for DB/Redis, then starts all
 
-# one-time site creation (the entrypoint does NOT create the site).
-# SITE NAME = the hostname the browser will use: nginx resolves the site by
-# Host header (FRAPPE_SITE_NAME_HEADER=$host). For plain local testing name
-# it "localhost"; any other name needs a hosts-file entry or a
-# FRAPPE_SITE_NAME_HEADER override in docker-compose.override.yml.
-docker compose exec backend bench new-site localhost `
+# one-time site creation (the entrypoint does NOT create the site):
+docker compose exec backend bench new-site $env:SITE_NAME `
   --mariadb-root-password $env:DB_ROOT_PASSWORD `
   --admin-password admin123 --install-app erpnext --install-app hrms
 
@@ -178,33 +174,5 @@ docker compose exec backend bench new-site localhost `
 docker compose down; $env:RUN_MIGRATIONS="1"; docker compose up -d   # RUN_MIGRATIONS needs SITE_NAME in .env
 ```
 
-Then open `http://localhost` **if the site is named `localhost`** (see above — name must match
-the browser hostname). Login `Administrator` / the admin password; setup wizard: Country=Iran,
-Currency=IRR. Health probe: `curl http://localhost/api/method/health` (may 404 until the site
-exists — probe the backend container directly for `/health`).
-
-### Updating an existing local copy (stale/mixed state — Windows)
-
-The download-zip flow can leave a MIXED folder (new .dockerignore + old Dockerfile —
-seen live 2026-09-17). Before building, verify the tree matches the branch tip:
-
-```powershell
-cd D:\Downloads\FardaERP-arena-01a0a51f-fardaerp\FardaERP-arena-01a0a51f-fardaerp
-
-# A) git checkout? → update in place
-Test-Path .git          # True/False
-# if True:
-git fetch origin arena/01a0a51f-fardaerp
-git status --short                                   # local edits? stash if you need them
-git checkout origin/arena/01a0a51f-fardaerp -- docker docker-compose.yml .dockerignore docs README.md
-
-# B) zip extract (Test-Path .git = False)? → re-download fresh zip into a NEW folder
-#    https://github.com/engsaeedsajjadi/FardaERP/archive/refs/heads/arena/01a0a51f-fardaerp.zip
-#    then copy your filled .env into it.
-
-# self-check BEFORE building (must match):
-Select-String -Path docker\Dockerfile -Pattern "corepack"                       # → EMPTY (no output)
-Select-String -Path docker\Dockerfile -Pattern "npm install -g --silent yarn"   # → 1 hit (yarn fix)
-Select-String -Path docker\Dockerfile -Pattern "webserver_port.*8000"            # → 1 hit (banking/vite build config, CORE-011)
-Select-String -Path .dockerignore  -Pattern "!README.md"                         # → 1 hit
-```
+Then open `http://localhost` (nginx :80→8080). Health probe: `curl http://localhost/api/method/health`
+(may 404 on the site domain until the site exists — use the backend container for `/health`).

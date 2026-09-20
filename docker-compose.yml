@@ -95,7 +95,7 @@ services:
       redis-queue:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "bench worker"]
+      test: ["CMD", "pgrep", "-f", "frappe worker"]
       interval: 30s
       timeout: 10s
       retries: 4
@@ -120,7 +120,7 @@ services:
       redis-queue:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "bench schedule"]
+      test: ["CMD", "pgrep", "-f", "frappe schedule"]
       interval: 30s
       timeout: 10s
       retries: 4
@@ -159,7 +159,7 @@ services:
     environment:
       # `$$host` escapes to a literal "$host" for nginx (multi-site by Host header);
       # hardcoded default (frappe_docker-proven) — override via docker-compose.override.yml
-      FRAPPE_SITE_NAME_HEADER: $$host
+      FRAPPE_SITE_NAME_HEADER: erp.farda.local
     volumes:
       - sites:/var/www/sites
     depends_on:

@@ -1,14 +1,11 @@
 # FardaERP frontend — served by the official nginx image's envsubst mechanism
 # (/etc/nginx/templates/*.template -> /etc/nginx/conf.d/*.conf with env vars).
 # FRAPPE_SITE_NAME_HEADER defaults to `$host` (multi-site by Host header).
-
 upstream backend_up { server backend:8000; }
 upstream websocket_up { server websocket:9000; }
-
 server {
     listen 8080;
-    server_name ${FRAPPE_SITE_NAME_HEADER};
-
+    server_name _;
     # built JS/CSS assets (copied into the image at build time)
     location /assets/ {
         alias /usr/share/nginx/html/assets/;
@@ -16,14 +13,12 @@ server {
         add_header Cache-Control "public, max-age=31536000, immutable";
         access_log off;
     }
-
     # public files live on the shared sites volume: <site>/public/files
     location /files/ {
         alias /var/www/sites/$host/public/files/;
         try_files $uri =404;
         add_header Cache-Control "public, max-age=3600";
     }
-
     # private files are only delivered via frappe's X-Accel-Redirect
     location /private/files/ {
         internal;
@@ -33,7 +28,6 @@ server {
         internal;
         alias /var/www/sites/$host/protected/;
     }
-
     # realtime (socketio)
     location /socket.io {
         proxy_http_version 1.1;
@@ -44,7 +38,6 @@ server {
         proxy_read_timeout 86400s;
         proxy_pass http://websocket_up;
     }
-
     # everything else -> gunicorn/frappe
     location / {
         proxy_set_header Host $host;
