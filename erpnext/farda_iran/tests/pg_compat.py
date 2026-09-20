@@ -901,6 +901,44 @@ def _patch_delink_original_entry():
 	acc_utils.delink_original_entry = delink_original_entry
 
 
+def _patch_hrms_update_employee_advance_status():
+	"""PG-15: hrms.patches.post_install.update_employee_advance_status uses
+	MariaDB numeric truthiness (`(advance.return_amount)` as a boolean inside
+	pypika `.where(...)`) — PostgreSQL rejects `argument of AND must be type
+	boolean, not type numeric` and the hrms install dies mid-patch. Shim keeps
+	identical semantics with explicit `> 0` predicates (a no-op row set on a
+	fresh install; same matched rows as upstream on existing data)."""
+
+	def execute():
+		frappe.reload_doc("hr", "doctype", "employee_advance")
+		advance = frappe.qb.DocType("Employee Advance")
+		(
+			frappe.qb.update(advance)
+			.set(advance.status, "Returned")
+			.where(
+				(advance.docstatus == 1)
+				& (advance.return_amount > 0)
+				& (advance.paid_amount == advance.return_amount)
+				& (advance.status == "Paid")
+			)
+		).run()
+		(
+			frappe.qb.update(advance)
+			.set(advance.status, "Partly Claimed and Returned")
+			.where(
+				(advance.docstatus == 1)
+				& (advance.claimed_amount > 0)
+				& (advance.return_amount > 0)
+				& (advance.paid_amount == (advance.return_amount + advance.claimed_amount))
+				& (advance.status == "Paid")
+			)
+		).run()
+
+	from hrms.patches.post_install import update_employee_advance_status as _mod
+
+	_mod.execute = execute
+
+
 def apply():
 	"""Apply all PG shims (idempotent, postgres-only)."""
 	global _APPLIED
@@ -919,5 +957,9 @@ def apply():
 	_patch_trial_balance_get_opening_balance()
 	_patch_financial_statements_get_accounting_entries()
 	_patch_delink_original_entry()
+	try:
+		_patch_hrms_update_employee_advance_status()
+	except ImportError:
+		pass  # hrms not installed on this bench
 	_APPLIED = True
-	print("pg_compat: applied 13 upstream strict-PostgreSQL shims (PG-1..PG-14)")
+	print("pg_compat: applied 14 upstream strict-PostgreSQL shims (PG-1..PG-15)")

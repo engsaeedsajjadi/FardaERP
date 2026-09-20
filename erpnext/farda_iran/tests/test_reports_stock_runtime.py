@@ -27,10 +27,11 @@ def _ensure(report: str, folder: str) -> None:
 		raise AssertionError(f"{report} failed to sync")
 
 
-def _stock_entry(purpose: str, rows: list[dict]) -> str:
+def _stock_entry(purpose: str, rows: list[dict], company: str) -> str:
 	return frappe.get_doc({
 		"doctype": "Stock Entry",
 		"stock_entry_type": purpose,
+		"company": company,
 		"items": rows,
 	}).insert().submit().name
 
@@ -62,7 +63,7 @@ def run() -> str:
 	# ---- 1) Material Receipt: 10 units @ 1,000 IRR into WH A ----
 	_stock_entry("Material Receipt", [
 		{"item_code": item, "qty": 10, "basic_rate": 1000, "t_warehouse": wh_a},
-	])
+	], company)
 
 	sb = frappe.get_attr("erpnext.farda_iran.report.farda_stock_balance.farda_stock_balance.execute")
 	columns, data = sb({"company": company, "warehouse": wh_a})
@@ -84,7 +85,7 @@ def run() -> str:
 	# ---- 2) Material Transfer: 4 units A → B ----
 	_stock_entry("Material Transfer", [
 		{"item_code": item, "qty": 4, "basic_rate": 1000, "s_warehouse": wh_a, "t_warehouse": wh_b},
-	])
+	], company)
 	_, data = sb({"company": company, "warehouse": wh_b})
 	row_b = next((r for r in data[:-1] if r["warehouse"] == wh_b), None)
 	assert row_b and abs(_p2f(row_b["farda_qty"]) - 4) < 1e-9, (row_b, data)
@@ -96,7 +97,7 @@ def run() -> str:
 	# ---- 3) Material Issue: remaining 6 units out of WH A ----
 	_stock_entry("Material Issue", [
 		{"item_code": item, "qty": 6, "basic_rate": 1000, "s_warehouse": wh_a},
-	])
+	], company)
 	_, data_a = sb({"company": company, "warehouse": wh_a})
 	assert not [r for r in data_a[:-1] if r["warehouse"] == wh_a], data_a  # zero row excluded
 	results.append("PASS: Stock Balance — issued-out warehouse drops to zero (row excluded)")

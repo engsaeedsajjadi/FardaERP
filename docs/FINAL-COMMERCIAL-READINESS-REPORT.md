@@ -532,3 +532,25 @@ left the sandbox:**
   portal/email, calendar), empty msgids 1,601 -> **1,415** / 10,157 (audit tooling verified
   empty-only, 0 overwrites). Remaining reports: Stock Balance/Movement, Bank, Cash Flow, P&L,
   Balance Sheet.
+
+## 2026-09-20 (5) — sandbox runtime rebuilt on fresh PG site; Stock Balance + PG-15 shim verified live
+
+- Fresh runtime env rebuilt from scratch (sandbox reset #5): cpython 3.14.0 compiled
+  (openssl 3.3.2 build; sqlite3.h/ffi.h hand-crafted vs system libs — the known recipe),
+  postgres via pgserver wheel, redis via redislite binary, frappe 16.33.1 + erpnext 16.34.2
+  + hrms 16.18.1 installed from tags, site created `--db-type postgres` (UTF8 cluster).
+- Fresh-PG findings (env-side, documented for the next bootstrap): warehouse types /
+  address template / item groups / UOMs / Stock Entry Types need seeding (MariaDB fixtures
+  don't run on PG installs), farda custom fields need `farda_iran.setup.install.execute()`
+  (hooked to before_migrate, not run by install-app), and frappe/locale.py `get_locale_value`
+  crashes (UnboundLocalError) when no language is set — upstream bug; seeded System Settings
+  language=en + Language en row as the env workaround.
+- PG-15 shim added (erpnext/farda_iran/tests/pg_compat.py): hrms patch
+  update_employee_advance_status uses MariaDB numeric truthiness in pypika .where() —
+  PG rejected `argument of AND must be type boolean`; shim keeps identical semantics with
+  explicit `> 0` predicates. hrms install then completed.
+- Results on the fresh site: gate5 smoke 13/13; Farda Stock Balance runtime 6/6 (receipt
+  qty+Toman valuation, transfer split, issue-to-zero, direct-SLE cross-check, historical
+  as-on, group filter); GL/TB regression 2/2; unit 178/178 + JS parity ALL PASS.
+- Reports: 8 shipped (Stock Balance VERIFIED). RTL: 1,415/10,157 empty msgids (batch3).
+  Gate 1 still awaits the user's green Docker run on tip.

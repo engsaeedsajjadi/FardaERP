@@ -62,7 +62,7 @@ CI: ALL REQUESTED STAGES GREEN
   tax service + 3 Vazirmatn fonts verified inside).
 - Full live regression re-run after the lint cleanup (each suite its own process):
   Gate-5 13 + Iran 5 + Pay 9 + OTP 6 + Search 7 + Bank 7 + Pack 4 + Rep 5 + VAT 8
-  + Print 9 + Dash 6 = **79 runtime asserts PASS**.
+  + Print 9 + Dash 6 + Stock Balance 6 (2026-09-20) = **85 runtime asserts PASS**.
 
 ## 7) Harness fix shipped with this phase (not an upstream bug)
 
