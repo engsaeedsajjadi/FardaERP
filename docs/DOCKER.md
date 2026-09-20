@@ -22,7 +22,15 @@
 
 Shared named volume `sites` is mounted at `/home/frappe/frappe-bench/sites` (backend,
 workers, scheduler, websocket) and `/var/www/sites` (frontend, for `/files`).
-Multi-site by Host header (`FRAPPE_SITE_NAME_HEADER=$host`).
+Multi-site by Host header was the original design (`FRAPPE_SITE_NAME_HEADER=$host`); the
+current compose pins a fixed site name (see note below).
+
+> **Fixed-site mode (docker-compose.yml @ 4a3e763):** the frontend now sends a
+> hardcoded `FRAPPE_SITE_NAME_HEADER: erp.farda.local` (nginx `server_name _`).
+> Consequence: `SITE_NAME` in `.env` **must be exactly `erp.farda.local`**, and
+> the site is reachable at `http://localhost/` regardless of browser hostname.
+> To restore per-host routing instead, override the variable via
+> `docker-compose.override.yml`.
 
 ## 2) Prerequisites
 

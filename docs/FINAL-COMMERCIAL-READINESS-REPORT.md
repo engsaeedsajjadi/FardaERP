@@ -491,3 +491,44 @@ left the sandbox:**
   fixed (hard default, frappe_docker-proven form).
 - **Gate 1 status: NOT yet PASS — now genuinely testable on the user machine; awaiting the green
   `docker compose build` / `up` (+ site creation + migrate + E2E per the readiness chain).**
+## 2026-09-17 (2) — second real Docker run: pip stage GREEN, yarn-stage CONFIG-BUG fixed (CORE-010)
+
+- With CORE-009 fixed, the user's `docker build --target builder` **passed the previously fatal
+  pip step (9/13)** — flit/README resolution confirmed green in the real image build.
+- New failure at builder step 12/13: `corepack enable` → `ENOENT realpath /usr/local/bin/yarn`
+  (CORE-010): node:24 keeps yarn at `/opt/…` behind a `/usr/local/bin/yarn` symlink; the selective
+  COPY dangles it. The user's local Dockerfile (corepack variant) matches no pushed commit —
+  their checkout is STALE; the branch Dockerfile never shipped corepack and carried its own
+  latent yarn-dangling bug, now fixed via `rm dead shims + npm install -g yarn@1.22.22`.
+- Gate 1: still NOT claimed PASS. Next user step: fresh clone of the branch → compose build → up
+  → new-site (localhost) → migrate → E2E per the readiness chain.
+
+## 2026-09-17 (3) — third real run: build-order + banking/vite config fix (CORE-011); local hybrid Dockerfile diagnosed
+
+- User's controlled experiment (`docker run node:24 corepack enable` → success) CONFIRMED the
+  earlier corepack failure was caused by their LOCAL hybrid Dockerfile (8.24kB/15 steps, copies
+  only `/usr/local/bin/node`, contains markdown fences + manual CMD edits) which matches NO
+  pushed commit — their `docker/` folder must be replaced from the branch tip.
+- The run still exposed two REAL branch-Dockerfile build bugs (CORE-011): banking/vite reads
+  `sites/common_site_config.json` at build time (ENOENT) and per-app install+build interleaving
+  breaks cross-app esbuild resolution. Fixed: minimal config file + install-all-then-build-all.
+- Gate 1 remains NOT PASS until the user's green full build on the branch-tip files.
+
+
+## 2026-09-20 (4) — user stabilization commit `4a3e763` absorbed; RTL batch3 shipped
+
+- The USER pushed `4a3e763` ("stabilize FardaERP v16 production stack") on top of CORE-011:
+  Dockerfile rewritten around `bench build` (pre-seeded `sites/apps.txt` + minimal
+  `common_site_config.json` — CORE-011 semantics kept), yarn via corepack (corepack variant of
+  CORE-010, pre-validated CACHED on the user machine in run #3), worker/scheduler healthchecks
+  now match real v16 process titles (`pgrep -f "frappe worker|schedule"`), and the frontend
+  defaults to a FIXED site name `erp.farda.local` instead of Host-header routing (site-naming
+  contract change; DOCKER.md updated with the fixed-site note — `.env` SITE_NAME must match).
+- Ledger addenda (2)/(3) and CORE-010/011 rows removed by that commit were RESTORED (history
+  stays in the PVR; canonical snapshot describes current state) and the change is recorded as
+  CORE-012 in docs/CORE-CHANGES.md. Gate 1 still NOT PASS until the user's green
+  build/up/new-site/migrate run on this tip.
+- Track 2 progress: RTL batch3 — 186 curated fa translations (banking PDF-import UI, dialogs,
+  portal/email, calendar), empty msgids 1,601 -> **1,415** / 10,157 (audit tooling verified
+  empty-only, 0 overwrites). Remaining reports: Stock Balance/Movement, Bank, Cash Flow, P&L,
+  Balance Sheet.
