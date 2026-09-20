@@ -55,8 +55,12 @@ if __name__ == "__main__":
 			from batch2 import BATCH2
 		except ImportError:
 			BATCH2 = {}
+		try:
+			from batch3 import BATCH3
+		except ImportError:
+			BATCH3 = {}
 
-		n = fill({**BATCH1, **BATCH2})
-		print(f"filled {n} translations from BATCH1+BATCH2")
+		n = fill({**BATCH1, **BATCH2, **BATCH3})
+		print(f"filled {n} translations from BATCH1+BATCH2+BATCH3")
 		stats = audit()
 		print(f"after: {stats['total']} entries, {stats['empty']} empty")
