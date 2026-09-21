@@ -75,7 +75,14 @@ leaderboards = "erpnext.startup.leaderboard.get_leaderboards"
 filters_config = "erpnext.startup.filters.get_filters_config"
 additional_print_settings = "erpnext.controllers.print_settings.get_print_settings"
 
-on_session_creation = "erpnext.portal.utils.create_customer_or_supplier"
+on_session_creation = [
+	"erpnext.portal.utils.create_customer_or_supplier",
+	# CORE-014: apply strict-PostgreSQL compatibility shims at session start.
+	# pg_compat.apply() is a no-op on MariaDB (db_type guard) — Docker deployments
+	# are unaffected; PG-only sandboxes otherwise crash upstream aggregate queries
+	# (e.g. Period Closing Voucher MAX with implicit ORDER BY) during document submit.
+	"erpnext.farda_iran.tests.pg_compat.apply",
+]
 
 treeviews = [
 	"Account",

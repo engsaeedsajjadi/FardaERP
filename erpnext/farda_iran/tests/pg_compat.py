@@ -846,6 +846,45 @@ def _patch_get_closing_entry_for_closed_period():
 	sce.get_closing_entry_for_closed_period = get_closing_entry_for_closed_period
 
 
+def _patch_get_items_to_be_repost():
+	"""PG-16: upstream get_items_to_be_repost SELECTs `creation`/`posting_datetime`
+	while GROUP BY `item_code, warehouse` — legal on MariaDB (non-strict),
+	GroupingError on strict PostgreSQL. Replicate the intended first-occurrence
+	dedup in Python instead."""
+	import erpnext.stock.stock_ledger as sl
+
+	def get_items_to_be_repost(voucher_type=None, voucher_no=None, doc=None, reposting_data=None):
+		if reposting_data and reposting_data.items_to_be_repost:
+			return reposting_data.items_to_be_repost
+
+		items_to_be_repost = []
+
+		if doc and doc.items_to_be_repost:
+			items_to_be_repost = json.loads(doc.items_to_be_repost)
+
+		if not items_to_be_repost and voucher_type and voucher_no:
+			rows = frappe.db.get_all(
+				"Stock Ledger Entry",
+				filters={"voucher_type": voucher_type, "voucher_no": voucher_no},
+				fields=["item_code", "warehouse", "posting_date", "posting_time", "creation", "posting_datetime"],
+				order_by="creation asc",
+			)
+			seen = set()
+			for row in rows:  # first occurrence per (item_code, warehouse), creation order kept
+				key = (row.item_code, row.warehouse)
+				if key not in seen:
+					seen.add(key)
+					items_to_be_repost.append(row)
+
+		return items_to_be_repost or []
+
+	sl.get_items_to_be_repost = get_items_to_be_repost
+	# stock_controller imports the symbol at module top — rebind there too
+	import erpnext.controllers.stock_controller as sc
+
+	sc.get_items_to_be_repost = get_items_to_be_repost
+
+
 def _patch_delink_original_entry():
 	"""PG-14: PE cancel (delink_original_entry) sets `delinked = True` — a
 	boolean — on the smallint `delinked` column. MariaDB coerces silently;
@@ -949,6 +988,7 @@ def apply():
 	_patch_validate_against_pcv()
 	_patch_get_closing_entry_for_closed_period()
 	_patch_get_sre_reserved_warehouses_for_voucher()
+	_patch_get_items_to_be_repost()
 	_patch_query_payment_ledger()
 	_patch_get_held_invoices()
 	_patch_get_negative_outstanding_invoices()
@@ -962,4 +1002,4 @@ def apply():
 	except ImportError:
 		pass  # hrms not installed on this bench
 	_APPLIED = True
-	print("pg_compat: applied 14 upstream strict-PostgreSQL shims (PG-1..PG-15)")
+	print("pg_compat: applied 15 upstream strict-PostgreSQL shims (PG-1..PG-16)")
