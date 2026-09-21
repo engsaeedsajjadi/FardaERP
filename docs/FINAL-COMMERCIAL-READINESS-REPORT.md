@@ -555,7 +555,7 @@ left the sandbox:**
 - Reports: 8 shipped (Stock Balance VERIFIED). RTL: 1,415/10,157 empty msgids (batch3).
   Gate 1 still awaits the user's green Docker run on tip.
 
-## 2026-09-20 (6) — Iranian reports layer COMPLETE (12/12); sandbox bootstrap scripted; RTL batch4
+## 2026-09-20 (6) — Iranian reports layer COMPLETE (13 reports; count corrected in addendum 7); sandbox bootstrap scripted; RTL batch4
 
 - Reports 9–12 shipped and verified live on the fresh PG site the same day:
   Farda Stock Movement (کاردکس: opening row, SLE rows, running qty balance, Jalali dates,
@@ -577,3 +577,37 @@ left the sandbox:**
 - RTL batch4: 156 curated translations (POS/banking reconciliation/MRP/fiscal labels) —
   empty msgids 1,415 → **1,259** / 10,157 (empty-only fill, 0 overwrites).
 - Gate 1 still NOT PASS — awaiting the user's green Docker run on tip.
+
+## 2026-09-21 (7) — master audit pass: 13-report audit suite green; financials suite hardened; docs count corrected
+
+- COUNT CORRECTION: the Iranian reports layer is **13 reports** (5 base + GL + TB +
+  Stock Balance + Stock Movement + Bank + Cash Flow + P&L + Balance Sheet); addendum 6
+  and the 2026-09-20 docs said 12/12 — arithmetic error, fixed here and in README/matrix.
+- NEW `test_reports_audit_runtime` (27 asserts, §17 evidence pack): every allowlisted
+  report runs twice on real seeded data — populated (rows present) and empty-state
+  (impossible filters, no exception, proper shape) — plus guest blocked from the
+  namespaced reports API (FORBIDDEN). 14/14 PASS on the fresh PG site. VAT report needs
+  real tax rows: the suite seeds one farda_apply_vat=1 SI (settings idempotent, rollback).
+- Suite hardening (§28-compliant, root-caused): test_reports_financials previously
+  asserted exact totals against SITE-WIDE GL aggregates and passed only before gate5's
+  committed seed chain landed; rebuilt around dedicated suite accounts (equity/income/
+  expense/bank) with exact per-account asserts + exact statement identities (P&L profit
+  identity, BS equation, cash-flow closing identity). test_reports_runtime +
+  test_notifications_runtime gained idempotent self-seeds (VAT settings / R19 customer)
+  so they no longer depend on committed data from older sessions.
+- Same-day full battery on the fresh site: unit 178/178 + JS parity, gate5 13/13,
+  stock 7/7, financials 4/4 (hardened), GL/TB 2/2, pack 4/4, reports_runtime 5/5,
+  payments 6/6, notifications PASS, reports-audit 14/14 → runtime asserts now 123.
+- RTL audit (§10): farda_rtl.css audited — scoping correct (html[lang="fa"], numbers/ISO
+  LTR); extended additively to dialogs/dropdowns/filter labels/form tabs/list rows/
+  sidebar (no physical margin/padding overrides existed; only text-align). Visual QA on
+  a real browser (Portal/login) still pending — NEEDS E2E, not claimed PASS.
+- Security (§22): secret scan clean (no tracked keys/tokens/.env); bandit on new code
+  0 findings (the 7 MEDIUM B608 in older reports are the reviewed baseline); identifier
+  validators (§13) verified wired: کد ملی/شناسه ملی/شبا(MOD-97-10)/کد پستی/کد اقتصادی on
+  Customer+Supplier+Company validate hooks with Persian frappe.throw messages + API
+  (bank_resolve) + 27 unit tests.
+- Docker (§23-24): static audit green (farda_iran ships via repo COPY → apps/erpnext;
+  assets via bench build incl. farda css/js app_includes; versions pinned; healthchecks
+  frappe-titled). Real `docker compose build` remains BLOCKED-ENV in the sandbox (no
+  daemon) — the sanctioned execution loop is the user's Docker Desktop run (Gate 1).
