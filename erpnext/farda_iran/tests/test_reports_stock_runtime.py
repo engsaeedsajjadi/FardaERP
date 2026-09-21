@@ -43,9 +43,17 @@ def run() -> str:
 	pg_compat.apply()
 	results: list[str] = []
 
+	# self-seed the site baseline exactly like the gate-5 smoke does (fresh
+	# PG sites have no company/currency/FY until provisioned)
+	from erpnext.farda_iran.tests import gate5_smoke
+
+	gate5_smoke.ensure_currency(gate5_smoke.Smoke())
+	gate5_smoke.ensure_company(gate5_smoke.Smoke())
+	gate5_smoke.ensure_fiscal_year(gate5_smoke.Smoke())
+	company = gate5_smoke.COMPANY
+
 	_ensure("Farda Stock Balance", "farda_stock_balance")
 
-	company = frappe.db.get_value("Company", {"is_group": 0}, "name")
 	wh_a = frappe.get_doc({
 		"doctype": "Warehouse", "warehouse_name": "FardaST WH A", "company": company, "is_group": 0,
 	}).insert().name
@@ -123,6 +131,35 @@ def run() -> str:
 	_, data_g = sb({"company": company, "item_code": item, "item_group": "FardaST NOPE"})
 	assert len(data_g) == 1 and data_g[0]["item_code"] == "جمع کل", data_g
 	results.append("PASS: Stock Balance — item_group filter narrows correctly")
+
+	# ---- 7) Farda Stock Movement (کاردکس): opening + rows + running balance ----
+	_ensure("Farda Stock Movement", "farda_stock_movement")
+	sm = frappe.get_attr("erpnext.farda_iran.report.farda_stock_movement.farda_stock_movement.execute")
+	today = frappe.utils.nowdate()
+	columns, data = sm({"company": company, "item_code": item, "from_date": today, "to_date": today})
+	assert [c["fieldname"] for c in columns] == [
+		"farda_date", "voucher_no", "voucher_type", "item_code", "warehouse",
+		"farda_in", "farda_out", "farda_balance", "farda_rate", "farda_value",
+	], columns
+	assert data[0]["farda_date"] == "افتتاحیه" and _p2f(data[0]["farda_balance"]) == 0, data[0]
+	ledger_rows = data[1:-1]
+	assert len(ledger_rows) == 4, f"expected 4 SLE rows (receipt, transfer x2, issue), got {len(ledger_rows)}: {ledger_rows}"
+	# running balance column consistent row by row
+	run_bal = 0.0
+	for r in ledger_rows:
+		run_bal += _p2f(r["farda_in"]) - _p2f(r["farda_out"])
+		assert abs(_p2f(r["farda_balance"]) - run_bal) < 1e-9, r
+		assert r["farda_date"] and r["voucher_no"], r  # Jalali date + voucher link present
+	# totals: in 14 (receipt 10 + transfer-in 4), out 10 (transfer-out 4 + issue 6), closing 4
+	tot = data[-1]
+	assert _p2f(tot["farda_in"]) == 14 and _p2f(tot["farda_out"]) == 10 and _p2f(tot["farda_balance"]) == 4, tot
+	# transfer rows carry valuation: receipt value = 10,000 IRR → 1,000 Toman
+	receipt_row = ledger_rows[0]
+	assert abs(_p2f(receipt_row["farda_value"]) * 10 - 10_000) < 0.01, receipt_row
+	# warehouse-scoped run: WH B only → single in-row of 4, closing 4
+	_, data_b = sm({"company": company, "item_code": item, "from_date": today, "to_date": today, "warehouse": wh_b})
+	assert len(data_b) == 3 and _p2f(data_b[-1]["farda_balance"]) == 4, data_b  # opening + 1 row + total
+	results.append("PASS: Stock Movement — کاردکس opening/rows/running-balance, Jalali dates, Toman value, warehouse scope")
 
 	frappe.db.rollback()
 	return " | ".join(results)

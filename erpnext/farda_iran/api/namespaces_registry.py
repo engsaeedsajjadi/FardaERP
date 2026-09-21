@@ -46,6 +46,11 @@ REPORT_ALLOWLIST: frozenset[str] = frozenset(
 		"farda_general_ledger",
 		"farda_trial_balance",
 		"farda_stock_balance",
+		"farda_stock_movement",
+		"farda_bank_report",
+		"farda_cash_flow",
+		"farda_profit_and_loss",
+		"farda_balance_sheet",
 	}
 )
 
@@ -59,6 +64,11 @@ REPORT_DOC_NAMES: dict[str, str] = {
 	"farda_general_ledger": "Farda General Ledger",
 	"farda_trial_balance": "Farda Trial Balance",
 	"farda_stock_balance": "Farda Stock Balance",
+	"farda_stock_movement": "Farda Stock Movement",
+	"farda_bank_report": "Farda Bank Report",
+	"farda_cash_flow": "Farda Cash Flow",
+	"farda_profit_and_loss": "Farda Profit and Loss",
+	"farda_balance_sheet": "Farda Balance Sheet",
 }
 
 # farda.reports.run per-user sliding-window budget (heavy aggregations).
