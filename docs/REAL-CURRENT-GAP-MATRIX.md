@@ -1,6 +1,6 @@
 # FardaERP — REAL CURRENT GAP MATRIX (Phase 0, audit-based)
 
-> Generated: 2026-09-16 · HEAD at initial generation: `5be7e40` · **reconciled: 2026-09-16T21:00:48Z** · code snapshot: `4016290` (later commits docs-only) · branch `arena/01a0a51f-fardaerp`
+> Generated: 2026-09-16 · HEAD at initial generation: `5be7e40` · **reconciled: 2026-09-21** · code snapshot: `d08ad54` (latest code-affecting commit; later commits docs-only) · branch `arena/01a0a51f-fardaerp`
 > Canonical counts: unit **178/178** (complete suite, 2026-09-16) — older 160/166 figures in dated evidence below are historical suite-growth checkpoints.
 > Method: **source code + tests + runtime execution are the authority** (not older gap docs).
 > Every row was verified by reading the actual files under `erpnext/farda_iran/`, `erpnext/hooks.py`,
