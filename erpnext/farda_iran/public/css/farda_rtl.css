@@ -28,4 +28,23 @@ html[lang="fa"] .list-row .list-subject + .list-row-col.text-right {
 	direction: ltr;
 	text-align: right;
 }
+/* dialogs, dropdowns, filters, sidebar — Desk-wide RTL coverage */
+html[lang="fa"] .modal-dialog .modal-header,
+html[lang="fa"] .modal-dialog .modal-body,
+html[lang="fa"] .modal-dialog .modal-footer,
+html[lang="fa"] .dropdown-menu .dropdown-item,
+html[lang="fa"] .filter-box .filter-field-label,
+html[lang="fa"] .form-tabs .nav-link,
+html[lang="fa"] .list-row .list-row-col,
+html[lang="fa"] .desk-sidebar .standard-sidebar-item,
+html[lang="fa"] .page-title .title-text {
+	direction: rtl;
+	text-align: right;
+}
+/* ISO tokens (IBAN, serials, codes) inside dialogs/lists stay LTR */
+html[lang="fa"] .modal-dialog .indicator,
+html[lang="fa"] .list-row .list-id,
+html[lang="fa"] code {
+	direction: ltr;
+}
 /* print format container inherits RTL naturally; pdf/print unchanged */

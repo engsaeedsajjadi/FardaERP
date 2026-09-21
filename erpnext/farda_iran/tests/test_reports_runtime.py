@@ -39,6 +39,10 @@ def run() -> str:
 	fn = frappe.get_attr("erpnext.farda_iran.report.farda_sales_register.farda_sales_register.execute")
 
 	company = frappe.db.get_value("Company", {"is_group": 0}, "name")
+	# self-seed VAT settings (site-level singleton; idempotent)
+	from erpnext.farda_iran.tests.test_integration_iran import _setup_vat_settings
+
+	_setup_vat_settings(company)
 	customer = frappe.get_doc({
 		"doctype": "Customer",
 		"customer_name": "REPORT TEST CUSTOMER",

@@ -90,7 +90,12 @@ def run() -> str:
 	wh = frappe.db.get_value(
 		"Warehouse", {"company": company, "is_group": 0, "warehouse_name": ("like", "%Stores%")}, "name"
 	) or frappe.db.get_value("Warehouse", {"company": company, "is_group": 0}, "name")
-	customer = frappe.db.get_value("Customer", {"customer_name": "FardaE2E CUST"}, "name")
+	# self-seed the R19 fixture customer (idempotent; must not depend on
+	# committed data from previous sessions)
+	customer = frappe.db.get_value("Customer", {"customer_name": "FardaE2E CUST"}, "name") \
+		or frappe.get_doc({"doctype": "Customer", "customer_name": "FardaE2E CUST",
+						   "customer_type": "Individual", "company": company}).insert().name
+	frappe.db.commit()
 	assert customer, "R19 fixture customer missing"
 
 	# self-heal: purge this suite's leftovers from crashed prior runs
