@@ -43,7 +43,7 @@
 **FINAL_STATUS فعلی: `NOT COMMERCIAL READY` — ۵ بلاکر صرفاً محیطی، ۰ باگ بازِ شناخته‌شده.**
 گزارش کامل: [`docs/PRODUCTION-VERIFICATION-REPORT.md`](docs/PRODUCTION-VERIFICATION-REPORT.md).
 
-> **Snapshot مرجع** (Documentation Reconciliation 2026-09-16T21:00:48Z): code snapshot تأییدشده `4016290` (آخرین کامیتِ code-affecting؛ کامیت‌های بعدی فقط-مستندات) · HEAD معتبر همیشه `git rev-parse origin/arena/01a0a51f-fardaerp` · تعداد unit مرجع **178/178** (سوئیت کامل 2026-09-16) — اعداد 160/166 در گزارش‌های قدیمی فقط checkpoint تاریخی رشد سوئیت‌اند، نه زیرمجموعه.
+> **Snapshot مرجع** (Documentation Reconciliation 2026-09-16T21:00:48Z): code snapshot تأییدشده `d08ad54` (آخرین کامیتِ code-affecting؛ کامیت‌های بعدی فقط-مستندات) · HEAD معتبر همیشه `git rev-parse origin/arena/01a0a51f-fardaerp` · تعداد unit مرجع **178/178** (سوئیت کامل 2026-09-16) — اعداد 160/166 در گزارش‌های قدیمی فقط checkpoint تاریخی رشد سوئیت‌اند، نه زیرمجموعه.
 
 اثبات‌شده با اجرا (نه ادعا): unit **178/178** + JS parity · pipeline داخلی **7/7** ·
 **21 سوئیت E2E زنده** (شامل زنجیرهٔ کامل Order-to-Cash: Company→Customer→Item→SO→VAT→SI→PE→تسویه→PDF فارسی→گزارش‌ها→audit) ·
@@ -59,8 +59,8 @@ idempotency ×3 روی سوئیت‌های حساس · rehearsal نصب‌تاز
 
 دو مورد که **۱۰۰٪ تلقی نمی‌شوند** (طبق ماتریس گپ):
 
-- **RTL/ترجمه — `PARTIAL`:** ۱٬۶۰۱ msgid خالی از ۱۰٬۱۵۷ (`erpnext/farda_iran/translations/audit.py`)؛ QA آنتروپورت/لاگین/دیالوگ‌ها مانده است.
-- **گزارش‌ها — `IMPLEMENTED` (لایهٔ ایرانی ۱۲/۱۲):** فروش/خرید/چک/طرف حساب/مالیات بر ارزش افزوده/دفتر کل/تراز آزمایشی/موجودی کالا/کاردکس/بانک/جریان وجوه نقد/سود و زیان/ترازنامه — همه با سوئیت ران‌تایم سبز روی سایت تازه (2026-09-20). جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
+- **RTL/ترجمه — `PARTIAL`:** ۱٬۲۵۹ msgid خالی از ۱۰٬۱۵۷ (`erpnext/farda_iran/translations/audit.py`)؛ QA آنتروپورت/لاگین/دیالوگ‌ها مانده است.
+- **گزارش‌ها — `IMPLEMENTED` (لایهٔ ایرانی ۱۳/۱۳):** فروش/خرید/چک/طرف حساب/مالیات بر ارزش افزوده/دفتر کل/تراز آزمایشی/موجودی کالا/کاردکس/بانک/جریان وجوه نقد/سود و زیان/ترازنامه — همه با سوئیت ران‌تایم سبز روی سایت تازه (2026-09-20). جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
 
 ## راه‌اندازی سریع
 
