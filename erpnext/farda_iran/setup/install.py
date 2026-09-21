@@ -288,9 +288,15 @@ def ensure_ui_assets() -> None:
 
 	public = frappe.get_app_path("erpnext", "farda_iran", "public")
 	assets = os.path.join(frappe.local.sites_path, "assets", "erpnext", "farda_iran")
-	for sub, fname in (("js", "farda_ui.js"), ("css", "farda_rtl.css")):
+	for sub, fname in (("js", "farda_ui.js"), ("css", "farda_rtl.css"), ("css", "farda_design.css")):
 		os.makedirs(os.path.join(assets, sub), exist_ok=True)
 		shutil.copy2(os.path.join(public, sub, fname), os.path.join(assets, sub, fname))
+	# bundled Vazirmatn (Desk typography + PDF share the same files)
+	fonts_src = os.path.join(public, "fonts")
+	fonts_dst = os.path.join(assets, "fonts")
+	os.makedirs(fonts_dst, exist_ok=True)
+	for fname in os.listdir(fonts_src):
+		shutil.copy2(os.path.join(fonts_src, fname), os.path.join(fonts_dst, fname))
 
 
 def ensure_audit_index() -> None:
@@ -312,6 +318,89 @@ def before_migrate(**_kwargs) -> None:
 	execute()
 
 
+def ensure_workspace() -> None:
+	"""§5 IA — public «FardaERP» workspace (Persian business navigation).
+
+	Idempotent: create once, then only refresh the shortcut list if missing
+	entries are added in later releases (existing user order preserved).
+	Real-data Number Cards + chart are embedded via their stored names
+	(ensure_dashboards). No fake data; frappe enforces per-shortcut permissions.
+	"""
+	from frappe.desk.doctype.workspace.workspace import Workspace
+
+	name = "FardaERP"
+	shortcuts = [
+		# (label, type, target)
+		("مشتریان", "DocType", "Customer"),
+		("سفارش‌های فروش", "DocType", "Sales Order"),
+		("فاکتورهای فروش", "DocType", "Sales Invoice"),
+		("دریافت‌ها", "DocType", "Payment Entry"),
+		("تأمین‌کنندگان", "DocType", "Supplier"),
+		("سفارش‌های خرید", "DocType", "Purchase Order"),
+		("فاکتورهای خرید", "DocType", "Purchase Invoice"),
+		("کالاها", "DocType", "Item"),
+		("اسناد انبار (ورود/خروج/انتقال)", "DocType", "Stock Entry"),
+		("موجودی کالا", "Report", "Farda Stock Balance"),
+		("دفتر کل", "Report", "Farda General Ledger"),
+		("تراز آزمایشی", "Report", "Farda Trial Balance"),
+		("سود و زیان", "Report", "Farda Profit and Loss"),
+		("ترازنامه", "Report", "Farda Balance Sheet"),
+		("جریان وجوه نقد", "Report", "Farda Cash Flow"),
+		("حساب‌های بانکی", "DocType", "Bank Account"),
+		("گزارش بانک", "Report", "Farda Bank Report"),
+		("چک‌ها", "DocType", "Cheque"),
+		("گزارش چک", "Report", "Farda Cheque Report"),
+		("گزارش فروش", "Report", "Farda Sales Register"),
+		("گزارش خرید", "Report", "Farda Purchase Register"),
+		("گزارش مالیات بر ارزش افزوده", "Report", "Farda VAT Report"),
+		("مانده طرف‌حساب‌ها", "Report", "Farda Party Balance"),
+	]
+	if frappe.db.exists("Workspace", name):
+		doc = frappe.get_doc("Workspace", name)
+		existing = {(s.label, s.type, s.link_to) for s in (doc.shortcuts or [])}
+		changed = False
+		for label, stype, target in shortcuts:
+			if (label, stype, target) not in existing:
+				doc.append("shortcuts", {"label": label, "type": stype, "link_to": target})
+				changed = True
+		if changed:
+			doc.save(ignore_permissions=True)
+		return
+
+	content = [
+		{"id": "farda_h1", "type": "header", "data": {"text": "<span class=\"h4\"><b>فردا ERP</b></span>", "col": 12}},
+		{"id": "farda_cards", "type": "number_card", "data": {"number_card_name": "فروش کل", "col": 3}},
+		{"id": "farda_cards2", "type": "number_card", "data": {"number_card_name": "خرید کل", "col": 3}},
+		{"id": "farda_cards3", "type": "number_card", "data": {"number_card_name": "دریافتنی", "col": 3}},
+		{"id": "farda_cards4", "type": "number_card", "data": {"number_card_name": "پرداختنی", "col": 3}},
+		{"id": "farda_cards5", "type": "number_card", "data": {"number_card_name": "ارزش موجودی", "col": 3}},
+		{"id": "farda_chart", "type": "chart", "data": {"chart_name": "فروش ماهانه", "col": 8}},
+		{
+			"id": "farda_shortcuts",
+			"type": "shortcut",
+			"data": {
+				"shortcut_list": [
+					{"label": lbl, "type": stype, "link_to": target}
+					for lbl, stype, target in shortcuts
+				]
+			},
+			"col": 12,
+		},
+	]
+	doc = frappe.get_doc({
+		"doctype": "Workspace",
+		"name": name,
+		"label": name,
+		"title": "فردا ERP",
+		"module": "Farda Iran",
+		"public": 1,
+		"content": frappe.as_json(content),
+	})
+	for lbl, stype, target in shortcuts:
+		doc.append("shortcuts", {"label": lbl, "type": stype, "link_to": target})
+	doc.insert(ignore_permissions=True)
+
+
 def execute() -> str:
 	ensure_custom_fields()
 	ensure_vat_settings_defaults()
@@ -323,6 +412,10 @@ def execute() -> str:
 		ensure_dashboards()
 	except Exception:
 		frappe.log_error("farda_iran: dashboard setup failed")  # non-fatal
+	try:
+		ensure_workspace()
+	except Exception:
+		frappe.log_error("farda_iran: workspace setup failed")  # non-fatal
 	try:
 		ensure_ui_assets()
 	except Exception:

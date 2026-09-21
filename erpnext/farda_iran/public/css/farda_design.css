@@ -1,0 +1,126 @@
+/*
+ * FardaERP Design System (Phase 3) — central token + component layer.
+ * Scoped to html[lang="fa"] so non-Persian sites are untouched.
+ * Local assets only (bundled Vazirmatn, OFL) — no external HTTP fonts.
+ * Tokens: colors, spacing, radius, typography scale. Components: buttons,
+ * inputs, tables, cards, empty/loading states. Additive, no physical
+ * margin/padding overrides (RTL stays in farda_rtl.css).
+ */
+
+/* ---------- fonts (bundled, served from app assets) ---------- */
+@font-face {
+	font-family: "Vazirmatn";
+	src: url("/assets/erpnext/farda_iran/fonts/Vazirmatn-Regular.ttf") format("truetype");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Vazirmatn";
+	src: url("/assets/erpnext/farda_iran/fonts/Vazirmatn-Bold.ttf") format("truetype");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* ---------- tokens ---------- */
+:root,
+html[lang="fa"] {
+	--farda-color-primary: #0f6d5f;         /* brand green-teal */
+	--farda-color-primary-dark: #0b5247;
+	--farda-color-success: #1f7a3d;
+	--farda-color-danger: #b3362b;
+	--farda-color-warning: #9a6b15;
+	--farda-color-surface: #ffffff;
+	--farda-color-surface-alt: #f6f7f6;
+	--farda-color-border: #d9dedc;
+	--farda-color-text: #22282a;
+	--farda-color-text-muted: #5d6a67;
+	--farda-space-1: 4px;
+	--farda-space-2: 8px;
+	--farda-space-3: 12px;
+	--farda-space-4: 16px;
+	--farda-space-6: 24px;
+	--farda-radius-sm: 6px;
+	--farda-radius: 10px;
+	--farda-font: "Vazirmatn", "Tahoma", "Segoe UI", sans-serif;
+}
+
+/* ---------- typography ---------- */
+html[lang="fa"] body,
+html[lang="fa"] .btn,
+html[lang="fa"] input,
+html[lang="fa"] select,
+html[lang="fa"] textarea,
+html[lang="fa"] .dropdown-menu,
+html[lang="fa"] .modal-dialog {
+	font-family: var(--farda-font);
+}
+html[lang="fa"] .page-title .title-text,
+html[lang="fa"] h1, html[lang="fa"] h2, html[lang="fa"] h3 {
+	font-weight: 700;
+	letter-spacing: 0;
+}
+html[lang="fa"] .text-muted,
+html[lang="fa"] .document-link .document-link-badge {
+	color: var(--farda-color-text-muted);
+}
+
+/* ---------- buttons ---------- */
+html[lang="fa"] .btn-primary {
+	background-color: var(--farda-color-primary);
+	border-color: var(--farda-color-primary);
+}
+html[lang="fa"] .btn-primary:hover,
+html[lang="fa"] .btn-primary:focus {
+	background-color: var(--farda-color-primary-dark);
+	border-color: var(--farda-color-primary-dark);
+}
+html[lang="fa"] .btn:focus-visible {
+	outline: 2px solid var(--farda-color-primary);
+	outline-offset: 2px;                     /* keyboard accessibility */
+}
+
+/* ---------- inputs ---------- */
+html[lang="fa"] .form-control,
+html[lang="fa"] .link-field .form-control {
+	border-color: var(--farda-color-border);
+	border-radius: var(--farda-radius-sm);
+}
+html[lang="fa"] .form-control:focus {
+	border-color: var(--farda-color-primary);
+	box-shadow: 0 0 0 2px rgba(15, 109, 95, 0.12);
+}
+
+/* ---------- tables / list ---------- */
+html[lang="fa"] .list-row-head,
+html[lang="fa"] .datatable .dt-header {
+	font-weight: 700;
+	background-color: var(--farda-color-surface-alt);
+}
+html[lang="fa"] .list-row:hover,
+html[lang="fa"] .result.rows .list-row:hover {
+	background-color: var(--farda-color-surface-alt);
+}
+
+/* ---------- cards / dashboard ---------- */
+html[lang="fa"] .number-card-content,
+html[lang="fa"] .dashboard-card {
+	border: 1px solid var(--farda-color-border);
+	border-radius: var(--farda-radius);
+	background-color: var(--farda-color-surface);
+}
+
+/* ---------- empty / loading states ---------- */
+html[lang="fa"] .no-result,
+html[lang="fa"] .flex-void {
+	color: var(--farda-color-text-muted);
+}
+
+/* ---------- reduced motion respect ---------- */
+@media (prefers-reduced-motion: reduce) {
+	html[lang="fa"] * {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

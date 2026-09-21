@@ -23,7 +23,7 @@ add_to_apps_screen = [
 develop_version = "15.x.x-develop"
 
 app_include_js = "erpnext.bundle.js"
-app_include_css = ["erpnext.bundle.css", "/assets/erpnext/farda_iran/css/farda_rtl.css"]
+app_include_css = ["erpnext.bundle.css", "/assets/erpnext/farda_iran/css/farda_rtl.css", "/assets/erpnext/farda_iran/css/farda_design.css"]
 web_include_css = "erpnext-web.bundle.css"
 email_css = "email_erpnext.bundle.css"
 

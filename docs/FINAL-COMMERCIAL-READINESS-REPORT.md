@@ -611,3 +611,25 @@ left the sandbox:**
   assets via bench build incl. farda css/js app_includes; versions pinned; healthchecks
   frappe-titled). Real `docker compose build` remains BLOCKED-ENV in the sandbox (no
   daemon) — the sanctioned execution loop is the user's Docker Desktop run (Gate 1).
+
+## 2026-09-21 (8) — UX redesign Phases 1-4 shipped (audit + IA + design system + workspace)
+
+- docs/UX-AUDIT.md (Phase 1) + docs/UX-INFORMATION-ARCHITECTURE.md (Phase 2): existing
+  display layer (jalali/toman flags, bundled Vazirmatn, real KPI endpoint, Persian
+  search, 13 reports) catalogued as REUSE; gaps = workspace IA, design tokens, Desk
+  fonts, quick actions; business engines marked untouched-by-design.
+- Phase 3: farda_design.css — central tokens (colors/spacing/radius/typography),
+  bundled-Vazirmatn @font-face (local assets only, shared with PDF), component polish
+  (buttons/inputs/tables/cards/empty states), scoped html[lang=fa], reduced-motion +
+  focus-visible a11y. Hooked via app_include_css (hooks.py amendment recorded as
+  CORE-013). ensure_ui_assets now also ships the font files.
+- Phase 4: public «FardaERP» workspace (module Farda Iran) — Persian IA: header + the 5
+  REAL number cards + فروش ماهانه chart + 23 Persian shortcuts (all 13 Iranian reports,
+  core doctypes: Customer/Supplier/Item/SI/PI/SO/PO/Payment Entry/Stock Entry/Bank
+  Account/Cheque). Idempotent ensure in setup (same pattern as dashboards).
+- NEW test_ux_runtime (6 asserts): idempotent re-run, workspace IA completeness,
+  real-card embedding (content JSON parsed), asset shipping, hooks wiring + local-only
+  fonts + fa scoping, boot flags. 6/6 PASS on fresh PG site; same-day regression:
+  unit 178/178 + JS parity, gate5 13/13, stock 7/7, financials 4/4, dashboard 6/6.
+- Pending UX phases (documented, not claimed): quick-create dialogs + form field
+  grouping (Phase 5-6), Portal/login browser QA (NEEDS E2E).
