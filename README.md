@@ -60,7 +60,7 @@ idempotency ×3 روی سوئیت‌های حساس · rehearsal نصب‌تاز
 دو مورد که **۱۰۰٪ تلقی نمی‌شوند** (طبق ماتریس گپ):
 
 - **RTL/ترجمه — `PARTIAL`:** ۱٬۶۰۱ msgid خالی از ۱۰٬۱۵۷ (`erpnext/farda_iran/translations/audit.py`)؛ QA آنتروپورت/لاگین/دیالوگ‌ها مانده است.
-- **گزارش‌ها — `PARTIAL`:** هشت گزارش ایرانی اجرا و تست شده‌اند (۵ قبلی + دفتر کل و تراز آزمایشی §48 + موجودی کالا 2026-09-20)؛ لایهٔ ایرانی Stock Movement، Bank Report، Cash Flow، P&L و Balance Sheet هنوز باز است. جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
+- **گزارش‌ها — `IMPLEMENTED` (لایهٔ ایرانی ۱۲/۱۲):** فروش/خرید/چک/طرف حساب/مالیات بر ارزش افزوده/دفتر کل/تراز آزمایشی/موجودی کالا/کاردکس/بانک/جریان وجوه نقد/سود و زیان/ترازنامه — همه با سوئیت ران‌تایم سبز روی سایت تازه (2026-09-20). جزئیات: [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md).
 
 ## راه‌اندازی سریع
 

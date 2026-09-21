@@ -554,3 +554,26 @@ left the sandbox:**
   as-on, group filter); GL/TB regression 2/2; unit 178/178 + JS parity ALL PASS.
 - Reports: 8 shipped (Stock Balance VERIFIED). RTL: 1,415/10,157 empty msgids (batch3).
   Gate 1 still awaits the user's green Docker run on tip.
+
+## 2026-09-20 (6) — Iranian reports layer COMPLETE (12/12); sandbox bootstrap scripted; RTL batch4
+
+- Reports 9–12 shipped and verified live on the fresh PG site the same day:
+  Farda Stock Movement (کاردکس: opening row, SLE rows, running qty balance, Jalali dates,
+  Toman value, warehouse scope), Farda Bank Report (bank accounts opening/Dr/Cr/closing),
+  Farda Cash Flow (direct cash+bank movement; CFAS classification documented out of scope),
+  Farda Profit and Loss (income/expense + net profit), Farda Balance Sheet (as-on balances by
+  root type + retained profit line; statement balances: assets 13M T = equity 10M T + profit
+  3M T in the 4-JE scenario). Allowlist 8→12 + doc-name map. Report allowlist unit test green.
+- New runtime suites: test_reports_financials_runtime (4 asserts) + کاردکس section in
+  test_reports_stock_runtime (7 total). Same-day full regression on the fresh site:
+  gate5 13/13, GL/TB 2/2, unit 178/178 + JS parity ALL PASS. Runtime asserts total now 96.
+- Fresh-PG findings (seeds module committed): Party Type masters (Customer/Supplier/…) are
+  MISSING entirely on fresh PG installs — JE party validation reads Party Type.account_type;
+  sandbox_seeds now provisions them. JE posting_date is mandatory in v16 (no default).
+- scripts/ci/bootstrap_sandbox_runtime.sh committed: one-command sandbox runtime rebuild
+  (cpython 3.14 + openssl + pgserver + redislite + frappe stack + fresh PG site + PG shims +
+  seeds). Fixes over the manual recipe: CPPFLAGS for sqlite/zlib headers, apps/ mkdir,
+  __REPO__ substitution. Two earlier in-turn failures documented.
+- RTL batch4: 156 curated translations (POS/banking reconciliation/MRP/fiscal labels) —
+  empty msgids 1,415 → **1,259** / 10,157 (empty-only fill, 0 overwrites).
+- Gate 1 still NOT PASS — awaiting the user's green Docker run on tip.
