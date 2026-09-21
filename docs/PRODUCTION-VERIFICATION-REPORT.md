@@ -11,7 +11,7 @@ Verification timestamp (this report): **2026-09-16T20:45:33Z**
 
 > ### Canonical snapshot — Documentation Reconciliation (2026-09-16T21:00:48Z)
 > - Branch: `arena/01a0a51f-fardaerp`. The authoritative HEAD is always `git rev-parse origin/arena/01a0a51f-fardaerp` — docs commits move it, so reports pin a **code snapshot** instead.
-> - **Code snapshot verified: `4016290`** — the last code-affecting commit; every later commit (8b65be6 → bf005df → this reconciliation) is documentation-only (checked via per-commit `git diff --stat`).
+> - **Current code snapshot: `d08ad54`** — the latest code-affecting commit (reports completed at `5c7e84d`, translation batch 4 at `d08ad54`); commits after `d08ad54` are documentation-only (checked via per-commit `git diff --stat`).
 > - **Canonical test counts (pipeline, 2026-09-16):** unit **178/178** = complete current suite + JS parity ALL PASS · pipeline **7/7** · 21 runtime suites · 131+ live asserts · sensitive suites ×3 idempotent. The older figures **160/160** (§25–§27 era) and **166/166** (§29–§36 era) are dated checkpoints of suite growth — NOT separate subsets and NOT current.
 > - Point-in-time gate evidence keeps its original timestamps (§16); this reconciliation changes metadata only, no code.
 > - **History vs Current (separation rule):** the environment facts and per-gate blocks in this
