@@ -17,7 +17,7 @@ Verification timestamp (this report): **2026-09-16T20:45:33Z**
 > - **History vs Current (separation rule):** the environment facts and per-gate blocks in this
 >   report are the **historical record of the 2026-09-16T20:45:33Z verification session** and are
 >   deliberately NOT rewritten. The **only current-state statement is the Canonical snapshot
->   above** (code snapshot `4016290`; authoritative HEAD = branch tip). Section 16 is titled
+>   above** (code snapshot `d08ad54`; authoritative HEAD = branch tip). Section 16 is titled
 >   accordingly. Do not mistake session-era metadata for the current tree.
 
 
