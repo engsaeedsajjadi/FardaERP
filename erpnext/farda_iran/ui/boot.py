@@ -1,7 +1,7 @@
 """FardaERP UI boot integration — feature flags for Jalali/Toman display.
 
 extend_bootinfo hook: injects `frappe.boot.farda_iran` consumed by
-`farda_iran/public/js/farda_ui.js`. All flags default ON for Iranian sites and
+`erpnext/public/farda_iran/js/farda_ui.js`. All flags default ON for Iranian sites and
 are overridable per site via site_config keys (feature flags, §53):
   farda_iran_ui_jalali_dates (bool, default 1)
   farda_iran_ui_toman_display (bool, default 1)

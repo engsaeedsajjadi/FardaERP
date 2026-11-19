@@ -31,11 +31,12 @@ html[lang="fa"] {
 	--farda-color-success: #1f7a3d;
 	--farda-color-danger: #b3362b;
 	--farda-color-warning: #9a6b15;
-	--farda-color-surface: #ffffff;
-	--farda-color-surface-alt: #f6f7f6;
-	--farda-color-border: #d9dedc;
-	--farda-color-text: #22282a;
-	--farda-color-text-muted: #5d6a67;
+	/* surfaces/text follow Frappe's theme variables so dark mode stays readable (UI-3) */
+	--farda-color-surface: var(--card-bg, #ffffff);
+	--farda-color-surface-alt: var(--subtle-fg, #f6f7f6);
+	--farda-color-border: var(--border-color, #d9dedc);
+	--farda-color-text: var(--text-color, #22282a);
+	--farda-color-text-muted: var(--text-muted, #5d6a67);
 	--farda-space-1: 4px;
 	--farda-space-2: 8px;
 	--farda-space-3: 12px;

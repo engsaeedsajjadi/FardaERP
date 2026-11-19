@@ -28,6 +28,44 @@ def _store() -> FrappePaymentStore:
 	return FrappePaymentStore()
 
 
+def _validate_amount_against_reference(doctype: str, name: str, amount_irr: int) -> None:
+	"""SEC-1: the charged amount may not exceed what is still owed on the document."""
+	doc = frappe.db.get_value(
+		doctype,
+		name,
+		["docstatus", "currency", "grand_total", "rounded_total"]
+		+ (["advance_paid"] if doctype == "Sales Order" else ["outstanding_amount"]),
+		as_dict=True,
+	)
+	if doc.docstatus != 1:
+		frappe.throw(_("فقط برای سند ثبت‌نهایی‌شده می‌توان پرداخت آنلاین ایجاد کرد"), frappe.ValidationError)
+	if (doc.currency or "IRR") != "IRR":
+		frappe.throw(_("پرداخت آنلاین فقط برای اسناد ریالی پشتیبانی می‌شود"), frappe.ValidationError)
+	if doctype == "Sales Order":
+		owed = (doc.rounded_total or doc.grand_total or 0) - (doc.advance_paid or 0)
+	else:
+		owed = doc.outstanding_amount or 0
+	if amount_irr > int(round(owed)):
+		frappe.throw(
+			_("مبلغ پرداخت ({0} ریال) از مانده سند ({1} ریال) بیشتر است").format(amount_irr, int(round(owed))),
+			frappe.ValidationError,
+		)
+
+
+def _safe_callback_url(callback_url: str | None, gateway: str) -> str:
+	"""SEC-1: the gateway may only redirect back to this site (no open redirect)."""
+	from urllib.parse import quote, urlparse
+
+	default = frappe.utils.get_url(f"/farda_payment_callback?gateway={quote(gateway)}")
+	if not callback_url:
+		return default
+	site_host = urlparse(frappe.utils.get_url()).netloc
+	parsed = urlparse(callback_url)
+	if parsed.scheme not in ("http", "https") or parsed.netloc != site_host:
+		frappe.throw(_("آدرس بازگشت باید روی همین سایت باشد"), frappe.ValidationError)
+	return callback_url
+
+
 def _gateway(name: str, transport=None) -> PaymentGateway:
 	try:
 		cls = resolve_class(name)
@@ -56,8 +94,15 @@ def start_payment(
 			frappe.throw(_("سند مرجع نامعتبر است"), frappe.ValidationError)
 		if not frappe.db.exists(reference_doctype, reference_name):
 			frappe.throw(_("سند مرجع یافت نشد"), frappe.DoesNotExistError)
+		# SEC-1: the caller must be allowed to see the document it pays for
+		if not frappe.has_permission(reference_doctype, "read", reference_name):
+			frappe.throw(_("دسترسی به سند مرجع مجاز نیست"), frappe.PermissionError)
+		_validate_amount_against_reference(reference_doctype, reference_name, amount_irr)
+	elif not frappe.has_permission("Payment Entry", "create"):
+		# SEC-1: free-amount payments (no reference) are for back-office users only
+		frappe.throw(_("پرداخت بدون سند مرجع مجاز نیست"), frappe.PermissionError)
 	gw = _gateway(gateway)
-	callback = callback_url or frappe.utils.get_url("/farda_payment_callback")
+	callback = _safe_callback_url(callback_url, gw.name)
 	result = gw.create_payment(amount_irr, callback, description=reference_name or "FardaERP payment")
 	if not result.ok or not result.authority:
 		frappe.throw(_("درگاه پرداخت درخواست را نپذیرفت: {0}").format(result.error or "?"))
@@ -133,5 +178,7 @@ def _build_payment_entry(row: dict, authority: str) -> str | None:
 	pe.reference_no = authority[:140]
 	pe.reference_date = frappe.utils.today()
 	pe.farda_payment_authority = authority  # custom field created by farda setup
-	pe.insert()
+	# SEC-3: the gateway callback usually arrives as Guest; the draft is created on the
+	# strength of the verified, amount-checked gateway result, not the caller's rights.
+	pe.insert(ignore_permissions=True)
 	return pe.name

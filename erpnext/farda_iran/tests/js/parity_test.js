@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-/* JS parity tests for farda_iran/public/js/farda_ui.js — run by run_js_tests.py
+/* JS parity tests for erpnext/public/farda_iran/js/farda_ui.js — run by run_js_tests.py
  * (real JS execution via node; no faking).
  */
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const JS_PATH = path.join(__dirname, "..", "..", "public", "js", "farda_ui.js");
+const JS_PATH = path.join(__dirname, "..", "..", "..", "public", "farda_iran", "js", "farda_ui.js");
 const VECTORS_PATH = path.join(__dirname, "jalali_vectors.json");
 
 function loadFardaIR() {

@@ -15,7 +15,7 @@ from __future__ import annotations
 import io
 import os
 
-FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "fonts")
+FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "public", "farda_iran", "fonts")
 REGULAR = os.path.join(FONT_DIR, "Vazirmatn-Regular.ttf")
 BOLD = os.path.join(FONT_DIR, "Vazirmatn-Bold.ttf")
 

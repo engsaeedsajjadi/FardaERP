@@ -107,6 +107,7 @@ CI گیت‌هاب با کپی `scripts/ci/github-workflow.yml` به `.github/wo
 
 | سند | محتوا |
 |---|---|
+| [`docs/DELIVERY-CHECKLIST.md`](docs/DELIVERY-CHECKLIST.md) | **چک‌لیست تست نهایی پیش از تحویل** (اصلاحات ۲۰۲۶-۱۱-۱۹: hooks، Docker، پرداخت، UI) |
 | [`docs/PRODUCTION-VERIFICATION-REPORT.md`](docs/PRODUCTION-VERIFICATION-REPORT.md) | گزارش ۱۷-بخشی تأیید production + شواهد ۵ گیت |
 | [`docs/REAL-CURRENT-GAP-MATRIX.md`](docs/REAL-CURRENT-GAP-MATRIX.md) | ماتریس ویژگی‌ها با واژگان ۵وضعیتی (IMPLEMENTED … BLOCKED-ENV) |
 | [`docs/FINAL-COMMERCIAL-READINESS-REPORT.md`](docs/FINAL-COMMERCIAL-READINESS-REPORT.md) | گزارش آمادگی تجاری + تاریخچه |

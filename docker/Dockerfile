@@ -229,8 +229,8 @@ COPY --from=nodebin \
 # ------------------------------------------------------------
 
 COPY --chown=root:root \
-    erpnext/farda_iran/public/fonts/Vazirmatn-Regular.ttf \
-    erpnext/farda_iran/public/fonts/Vazirmatn-Bold.ttf \
+    erpnext/public/farda_iran/fonts/Vazirmatn-Regular.ttf \
+    erpnext/public/farda_iran/fonts/Vazirmatn-Bold.ttf \
     /usr/local/share/fonts/
 
 RUN fc-cache -f

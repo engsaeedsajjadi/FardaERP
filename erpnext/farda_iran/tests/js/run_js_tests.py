@@ -1,4 +1,4 @@
-"""Real-JS parity tests for farda_iran/public/js/farda_ui.js.
+"""Real-JS parity tests for erpnext/public/farda_iran/js/farda_ui.js.
 
 Generates ~3 years of Gregorian->Jalali vectors from the PYTHON service, then
 executes the actual JS with node and asserts parity + currency formatting.

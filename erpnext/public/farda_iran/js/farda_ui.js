@@ -91,33 +91,75 @@
 	function wrapFormatter(name, transform) {
 		if (!frappe.form || !frappe.form.formatters || !frappe.form.formatters[name]) { return; }
 		var orig = frappe.form.formatters[name];
-		frappe.form.formatters[name] = function (value, df, options, doc) {
+		if (orig.__farda) { return; }  // never wrap twice
+		var wrapped = function (value, df, options, doc) {
 			var out = orig.call(this, value, df, options, doc);
 			try {
-				return out === null || out === undefined || out === "" ? out : transform(out, df, doc);
+				return out === null || out === undefined || out === "" ? out : transform(out, df, doc, options);
 			} catch (e) {
 				return out;
 			}
 		};
+		wrapped.__farda = true;
+		frappe.form.formatters[name] = wrapped;
+	}
+
+	/* Frappe's Date/Datetime formatters return the USER date format (e.g. dd-mm-yyyy),
+	 * not ISO. Map a user-formatted date back to ISO before converting (UI-1). */
+	function userDateToIso(s) {
+		s = String(s);
+		if (/^\d{4}-\d{2}-\d{2}/.test(s)) { return s.slice(0, 10); }
+		if (frappe.datetime && frappe.datetime.user_to_str) {
+			var iso = frappe.datetime.user_to_str(s, false);
+			if (iso && /^\d{4}-\d{2}-\d{2}/.test(iso)) { return iso.slice(0, 10); }
+		}
+		return null;
+	}
+
+	/* Convert the date inside a formatter result (plain text or simple HTML);
+	 * a Datetime keeps its time part untouched. */
+	function jalaliizeOutput(out) {
+		var text = String(out);
+		var m = text.match(/\d{1,4}[-\/.]\d{1,2}[-\/.]\d{1,4}/);
+		if (!m) { return out; }
+		var iso = userDateToIso(m[0]);
+		if (!iso) { return out; }
+		return text.replace(m[0], toJalaliDisplay(iso));
+	}
+
+	/* Replace the IRR amount + unit in a formatter result with "<amount> تومان",
+	 * keeping the surrounding HTML (alignment wrapper) intact (UI-2). */
+	var IRR_UNIT = /(﷼|IRR|ریال|Rial)\s?/;
+	function tomanizeOutput(out, ratio, options) {
+		var text = String(out);
+		var num = text.match(/\d[\d,]*(?:\.\d+)?/);
+		if (!num) { return out; }
+		var hadUnit = IRR_UNIT.test(text);
+		text = text.replace(IRR_UNIT, "");
+		var label = irrToTomanText(num[0], ratio);
+		if (hadUnit || !(options && options.only_value)) { label += " تومان"; }
+		return text.replace(num[0], label);
+	}
+
+	function fieldCurrency(df, doc) {
+		if (frappe.meta && frappe.meta.get_field_currency) {
+			try { return frappe.meta.get_field_currency(df, doc); } catch (e) { /* fall through */ }
+		}
+		return df && (df.currency || df.options);
 	}
 
 	function apply() {
 		var f = flags();
 
 		if (f.jalali) {
-			wrapFormatter("Date", function (out) { return toJalaliDisplay(out); });
-			wrapFormatter("Datetime", function (out) {
-				// "24/06/1405 12:30" — convert date part, keep time part
-				var parts = String(out).split(" ");
-				return toJalaliDisplay(parts[0]) + (parts[1] ? " " + parts.slice(1).join(" ") : "");
-			});
+			wrapFormatter("Date", function (out) { return jalaliizeOutput(out); });
+			wrapFormatter("Datetime", function (out) { return jalaliizeOutput(out); });
 		}
 
 		if (f.toman) {
-			wrapFormatter("Currency", function (out, df) {
-				var cur = df && (df.options || df.currency);
-				if (cur !== "IRR") { return out; }
-				return irrToTomanText(out, f.ratio);
+			wrapFormatter("Currency", function (out, df, doc, options) {
+				if (fieldCurrency(df, doc) !== "IRR") { return out; }
+				return tomanizeOutput(out, f.ratio, options);
 			});
 		}
 	}
@@ -128,6 +170,8 @@
 		gregorianToJalali: gregorianToJalali,
 		jalaliToGregorian: jalaliToGregorian,
 		irrToTomanText: irrToTomanText,
+		jalaliizeOutput: jalaliizeOutput,
+		tomanizeOutput: tomanizeOutput,
 		selfTest: function () {
 			var checks = [
 				["2026-09-15", "24/06/1405"],

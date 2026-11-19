@@ -283,20 +283,18 @@ def ensure_vat_settings_defaults() -> None:
 
 
 def ensure_ui_assets() -> None:
-	"""Copy client JS into sites/assets (no node build step required)."""
-	import shutil
+	"""Verify the Desk assets are reachable (CORE-016).
 
-	public = frappe.get_app_path("erpnext", "farda_iran", "public")
-	assets = os.path.join(frappe.local.sites_path, "assets", "erpnext", "farda_iran")
-	for sub, fname in (("js", "farda_ui.js"), ("css", "farda_rtl.css"), ("css", "farda_design.css")):
-		os.makedirs(os.path.join(assets, sub), exist_ok=True)
-		shutil.copy2(os.path.join(public, sub, fname), os.path.join(assets, sub, fname))
-	# bundled Vazirmatn (Desk typography + PDF share the same files)
-	fonts_src = os.path.join(public, "fonts")
-	fonts_dst = os.path.join(assets, "fonts")
-	os.makedirs(fonts_dst, exist_ok=True)
-	for fname in os.listdir(fonts_src):
-		shutil.copy2(os.path.join(fonts_src, fname), os.path.join(fonts_dst, fname))
+	The JS/CSS/fonts live in erpnext/public/farda_iran/, which Frappe serves at
+	/assets/erpnext/farda_iran/ through the standard app-assets link and which
+	the Docker build copies into the nginx image. Nothing needs copying at
+	migrate time any more (the old copy into sites/assets never reached the
+	nginx container, so Docker deployments rendered without RTL/fonts).
+	"""
+	public = frappe.get_app_path("erpnext", "public", "farda_iran")
+	for rel in ("js/farda_ui.js", "css/farda_rtl.css", "css/farda_design.css"):
+		if not os.path.exists(os.path.join(public, rel)):
+			frappe.log_error(f"farda_iran: missing UI asset {rel}")
 
 
 def ensure_audit_index() -> None:

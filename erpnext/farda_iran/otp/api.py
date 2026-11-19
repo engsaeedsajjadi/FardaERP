@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 
 import frappe
+from frappe.rate_limiter import rate_limit
 from frappe import _
 
 from erpnext.farda_iran.otp import core as otp_core
@@ -32,6 +33,7 @@ def _provider():
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(limit=10, seconds=60 * 60)  # SEC-2: per-IP cap (per-phone cap lives in otp.core)
 def request_otp(phone: str, purpose: str = "login") -> dict:
 	if purpose not in ALLOWED_PURPOSES:
 		frappe.throw(_("هدف نامعتبر است"), frappe.ValidationError)
@@ -53,6 +55,7 @@ def request_otp(phone: str, purpose: str = "login") -> dict:
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(limit=30, seconds=60 * 60)  # SEC-2: slows brute force across challenges
 def verify_otp(challenge_id: str, code: str) -> dict:
 	store = FrappeStore()
 	try:

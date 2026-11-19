@@ -81,7 +81,7 @@ on_session_creation = [
 	# pg_compat.apply() is a no-op on MariaDB (db_type guard) — Docker deployments
 	# are unaffected; PG-only sandboxes otherwise crash upstream aggregate queries
 	# (e.g. Period Closing Voucher MAX with implicit ORDER BY) during document submit.
-	"erpnext.farda_iran.tests.pg_compat.apply",
+	"erpnext.farda_iran.compat.pg.apply",
 ]
 
 treeviews = [
@@ -739,11 +739,32 @@ before_migrate = ["erpnext.farda_iran.setup.install.before_migrate"]
 # returns {"status","checks","durations_ms"} only — never secrets/PII
 # (contract asserted by erpnext/farda_iran/tests/test_monitoring_runtime.py).
 
-extend_bootinfo = ["erpnext.farda_iran.ui.boot.extend_bootinfo"]
+# NOTE (CORE-016): every FardaERP hook below is ADDED to the upstream value
+# defined earlier in this file. Re-assigning a hook name here silently drops
+# upstream behaviour (Frappe reads only the final module attribute), which
+# previously removed erpnext.bundle.js, the upstream boot info and all 45
+# upstream scheduler jobs.
+extend_bootinfo = [*extend_bootinfo, "erpnext.farda_iran.ui.boot.extend_bootinfo"]
 
-app_include_js = ["/assets/erpnext/farda_iran/js/farda_ui.js"]
+app_include_js = [
+	*([app_include_js] if isinstance(app_include_js, str) else app_include_js),
+	"/assets/erpnext/farda_iran/js/farda_ui.js",
+]
 
-doc_events.update(
+
+def _farda_merge_hooks(target: dict, extra: dict) -> None:
+	"""Merge {key: {event: handler(s)}} into target without dropping upstream handlers."""
+	for key, events in extra.items():
+		bucket = target.setdefault(key, {})
+		for event, handlers in events.items():
+			new = [handlers] if isinstance(handlers, str) else list(handlers)
+			old = bucket.get(event)
+			old = [] if old is None else ([old] if isinstance(old, str) else list(old))
+			bucket[event] = old + [h for h in new if h not in old]
+
+
+_farda_merge_hooks(
+	doc_events,
 	{
 		"Customer": {
 			"validate": "erpnext.farda_iran.party.validate",
@@ -786,9 +807,11 @@ doc_events.update(
 	}
 )
 
-scheduler_events = {
-	"daily": [
-		"erpnext.farda_iran.cheque.reminders.notify_cheques_due",
-		"erpnext.farda_iran.notifications.service.run",
-	],
-}
+scheduler_events.setdefault("daily", [])
+scheduler_events["daily"] = [
+	*scheduler_events["daily"],
+	"erpnext.farda_iran.cheque.reminders.notify_cheques_due",
+	"erpnext.farda_iran.notifications.service.run",
+]
+
+del _farda_merge_hooks

@@ -1,4 +1,4 @@
-"""FardaERP UI integration (see boot.py; assets in ../public/js)."""
+"""FardaERP UI integration (see boot.py; assets in erpnext/public/farda_iran)."""
 
 from .boot import extend_bootinfo
 
