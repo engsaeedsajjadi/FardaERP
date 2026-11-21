@@ -27,3 +27,8 @@ docker-compose.yml
 
 # --- OS noise ---
 .DS_Store
+
+# --- secrets: never bake keys into the image (CORE-034) ---
+secrets/
+*.pem
+*.key
