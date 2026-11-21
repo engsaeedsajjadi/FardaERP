@@ -117,12 +117,18 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 	Stale Farda VAT rows are always cleaned before recomputation.
 	"""
 	items = doc.get("items") or []
+	pattern = _moadian_pattern(doc)
+	_remove_levy_rows(doc)
 	if not doc.get("farda_apply_vat"):
 		_remove_vat_rows(doc, vat_account_for(doc.get("company")))
+		doc.calculate_taxes_and_totals()
 		return
 	rate = get_applicable_vat_rate(doc)
+	if pattern in (7, 11, 14):  # export, commodity exchange, chain sale: VAT rate is 0 (S1 §7-41)
+		rate = 0
 	if not rate:
 		_remove_vat_rows(doc, vat_account_for(doc.get("company")))
+		doc.calculate_taxes_and_totals()
 		return
 	s = get_settings()
 	if not s.vat_account:
@@ -140,6 +146,26 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 	from erpnext.farda_iran.tax import planner
 
 	flags = _get_exempt_flags(items)
+	if pattern == 3:  # gold: VAT on making fee + profit + commission (S1 §7-42)
+		_remove_vat_rows(doc, account)
+		for item_row, row_tax in zip(items, _gold_row_vat(items, flags, rate)):
+			if row_tax:
+				doc.append(
+					"taxes",
+					{
+						"charge_type": "Actual",
+						"category": "Total",
+						"add_deduct_tax": "Add",
+						"account_head": account,
+						"rate": rate,
+						"tax_amount": row_tax,
+						"base_tax_amount": row_tax,
+						"description": f"{VAT_DESCRIPTION} — {item_row.item_code or ''}",
+					},
+				)
+		_apply_levies(doc, pattern, rate)
+		doc.calculate_taxes_and_totals()
+		return
 	plan = planner.plan_vat(list(zip(flags, [frappe.utils.flt(r.amount) for r in items])), rate)
 
 	if plan.mode == "single":
@@ -155,6 +181,7 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 				"description": VAT_DESCRIPTION,
 			},
 		)
+		_apply_levies(doc, pattern, rate)
 		doc.calculate_taxes_and_totals()
 		return
 
@@ -176,7 +203,100 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 						"description": f"{VAT_DESCRIPTION} — {item_row.item_code or ''}",
 					},
 				)
+	_apply_levies(doc, pattern, rate)
 	doc.calculate_taxes_and_totals()
+
+
+# ---------------------------------------------------------------- CORE-035
+LEVY_DESCRIPTION = "سایر مالیات‌ها و عوارض"
+
+
+def _moadian_pattern(doc) -> int:
+	"""Sales Invoice pattern (سامانه مودیان الگو); 1 for anything else."""
+	if doc.doctype != "Sales Invoice":
+		return 1
+	try:
+		from erpnext.farda_iran.moadian.service import ensure_pattern
+
+		return ensure_pattern(doc)
+	except Exception:
+		return 1
+
+
+def _signed_line(row, pattern: int, rate) -> tuple[dict, int]:
+	"""Moadian line for a row; credit-note rows (negative qty) are computed on
+	absolute values and the sign is returned separately."""
+	from erpnext.farda_iran.moadian import service as md
+
+	sign = -1 if frappe.utils.flt(row.qty) < 0 else 1
+	if sign < 0:
+		row = frappe._dict(row.as_dict() if hasattr(row, "as_dict") else row)
+		for f in ("qty", "base_net_amount", "net_amount", "farda_md_consfee", "farda_md_spro", "farda_md_bros", "total_weight"):
+			if row.get(f):
+				row[f] = abs(frappe.utils.flt(row[f]))
+	return md.line_from_row(row, pattern, rate), sign
+
+
+def _gold_row_vat(items, exempt_flags, rate) -> list[int]:
+	out = []
+	for row, exempt in zip(items, exempt_flags):
+		line, sign = _signed_line(row, 3, 0 if exempt else rate)
+		out.append(sign * int(line.get("vam") or 0))
+	return out
+
+
+def levies_account_for(company: str | None) -> str | None:
+	"""Account for other taxes/levies (عوارض): number 210303, else the same name."""
+	if not company:
+		return None
+	for f in ({"account_number": "210303"}, {"account_name": LEVY_DESCRIPTION}):
+		name = frappe.db.get_value("Account", dict(f, company=company, is_group=0), "name")
+		if name:
+			return name
+	return None
+
+
+def _remove_levy_rows(doc) -> None:
+	keep = [r for r in doc.get("taxes") or [] if not str(r.description or "").startswith(LEVY_DESCRIPTION)]
+	if len(keep) != len(doc.get("taxes") or []):
+		doc.set("taxes", keep)
+
+
+def _apply_levies(doc, pattern: int, rate) -> None:
+	"""Rows with «نرخ سایر مالیات/عوارض» get matching Actual tax rows so the ERP
+	totals equal what is declared to سامانه مودیان (S1 §7-43)."""
+	if doc.doctype != "Sales Invoice":
+		return
+	items = doc.get("items") or []
+	if not any(r.get("farda_md_odr") or r.get("farda_md_olr") for r in items):
+		return
+	account = None
+	for row, exempt in zip(items, _get_exempt_flags(items)):
+		if exempt or not (row.get("farda_md_odr") or row.get("farda_md_olr")):
+			continue  # levies are 0 when the line's VAT rate is 0 (S1 §7-43)
+		line, sign = _signed_line(row, pattern, rate)
+		amount = sign * (int(line.get("odam") or 0) + int(line.get("olam") or 0))
+		if not amount:
+			continue
+		account = account or levies_account_for(doc.company)
+		if not account:
+			frappe.throw(
+				frappe._(
+					"برای شرکت {0} حساب «سایر مالیات‌ها و عوارض» (شماره ۲۱۰۳۰۳) پیدا نشد. این حساب را از نوع «مالیات» بسازید."
+				).format(doc.company)
+			)
+		doc.append(
+			"taxes",
+			{
+				"charge_type": "Actual",
+				"category": "Total",
+				"add_deduct_tax": "Add",
+				"account_head": account,
+				"tax_amount": amount,
+				"base_tax_amount": amount,
+				"description": f"{LEVY_DESCRIPTION} — {row.item_code or ''}",
+			},
+		)
 
 
 def invoice_totals(doc) -> frappe._dict:

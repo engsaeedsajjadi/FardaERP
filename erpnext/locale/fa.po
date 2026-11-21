@@ -64567,3 +64567,7 @@ msgstr "ارسال‌های سامانه مودیان"
 #. FardaERP سامانه مودیان (CORE-034)
 msgid "Farda Moadian Settings"
 msgstr "تنظیمات سامانه مودیان"
+
+#. FardaERP سامانه مودیان (CORE-035)
+msgid "Farda Moadian Carried Goods"
+msgstr "کالاهای حمل‌شده (بارنامه)"

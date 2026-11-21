@@ -232,5 +232,105 @@ class ClientTests(unittest.TestCase):
 			mclient.MoadianClient.from_config(cfg)
 
 
+class PatternTests(unittest.TestCase):
+	"""Every V7.8 pattern: arithmetic, mandatory fields, out-of-pattern stripping."""
+
+	def _inv(self, inp, lines, **kw):
+		return minv.build(_spec(inp=inp, lines=lines, **kw))
+
+	def test_gold_vat_on_making_fee(self):
+		line = {"sstid": "2330001234567", "am": 2, "fee": 50_000_000, "vra": 0, "consfee": 3_000_000, "spro": 1_500_000, "bros": 500_000}
+		inv = self._inv(3, [line])
+		b = inv["body"][0]
+		self.assertEqual(b["tcpbs"], 5_000_000)
+		self.assertEqual(b["adis"], 100_000_000 + 5_000_000)
+		self.assertEqual(b["vam"], 500_000)  # 10% of tcpbs, gold value at vra 0
+		self.assertEqual(b["tsstam"], 105_000_000 + 500_000)
+		self.assertEqual(inv["header"]["tbill"], 105_500_000)
+		self.assertTrue(minv.validate(inv)["ok"], minv.validate(inv))
+
+	def test_currency_sale(self):
+		line = {"sstid": "2330001234567", "cfee": 1000, "exr": 600_000, "cpr": 590_000, "cut": "usd", "sovat": 10_000_000, "vra": 10}
+		inv = self._inv(2, [line], buyer={"tob": 1, "bid": "0012345678", "bpc": "1234567890"})
+		b = inv["body"][0]
+		self.assertEqual((b["prdis"], b["vam"], b["cut"]), (600_000_000, 1_000_000, "USD"))
+		self.assertNotIn("am", b)  # ignored in the currency pattern
+		self.assertNotIn("fee", b)
+		self.assertTrue(minv.validate(inv)["ok"], minv.validate(inv))
+		bad = self._inv(2, [dict(line, sovat=1)])
+		self.assertIn("body[1].sovat", {e["field"] for e in minv.validate(bad)["errors"]})
+
+	def test_export_uses_rial_value_and_zero_vat(self):
+		line = {"sstid": "2330001234567", "am": 10, "fee": 5_000_000, "vra": 9, "ssrv": 50_000_000, "sscv": 1000.5, "cut": "EUR", "exr": 49_975, "nw": 12.5}
+		inv = self._inv(7, [line], buyer={"tob": 4}, header={"scc": "50100", "cdcn": "123"})
+		h, b = inv["header"], inv["body"][0]
+		self.assertEqual(b["vra"], 0)
+		self.assertEqual((h["torv"], h["tocv"], h["tonw"], h["tbill"]), (50_000_000, 1000.5, 12.5, 50_000_000))
+		self.assertNotIn("tprdis", h)
+		self.assertNotIn("prdis", b)
+		self.assertTrue(minv.validate(inv)["ok"], minv.validate(inv))
+
+	def test_airline_and_contract_and_utility_mandatory_fields(self):
+		line = {"sstid": "2330001234567", "am": 1, "fee": 30_000_000, "vra": 10}
+		inv = self._inv(6, [line], buyer={"tob": 1})
+		self.assertIn("ft", {e["field"] for e in minv.validate(inv)["errors"]})
+		inv = self._inv(6, [line], buyer={"tob": 1}, header={"ft": 1})
+		self.assertTrue(minv.validate(inv)["ok"], minv.validate(inv))
+		self.assertIn("crn", {e["field"] for e in minv.validate(self._inv(4, [line]))["errors"]})
+		self.assertTrue(minv.validate(self._inv(4, [line], header={"crn": "123456789012"}))["ok"])
+		utility = self._inv(5, [line], header={"billid": "12345"})
+		self.assertNotIn("setm", utility["header"])  # settlement is out of pattern for utility bills
+		self.assertTrue(minv.validate(utility)["ok"], minv.validate(utility))
+
+	def test_waybill(self):
+		line = {"sstid": "2330001234567", "am": 1, "fee": 8_000_000, "vra": 10}
+		hdr = {"lno": "998877", "ocu": "364", "dco": "364", "tid": "0012345678", "lt": 1, "cno": "12ب345", "sg": [{"sgid": "2330001234567", "sgt": "سیمان"}]}
+		res = minv.validate(self._inv(8, [line], header=hdr))
+		fields = {e["field"] for e in res["errors"]}
+		self.assertTrue({"oci", "dci", "did"} <= fields)
+		ok = self._inv(8, [line], header=dict(hdr, oci="1", dci="2", did="0012345678"))
+		self.assertEqual(ok["header"]["sg"][0]["sgt"], "سیمان")
+		self.assertTrue(minv.validate(ok)["ok"], minv.validate(ok))
+
+	def test_petroleum_vat_from_base_amount(self):
+		inv = self._inv(9, [{"sstid": "2330001234567", "am": 100, "fee": 30_000, "vra": 10, "vba": 1_500.5}])
+		self.assertEqual(inv["body"][0]["vam"], 150_050)
+
+	def test_levies(self):
+		inv = self._inv(1, [{"sstid": "2330001234567", "am": 1, "fee": 1_000_000, "vra": 10, "odt": "عوارض", "odr": 5}])
+		b, h = inv["body"][0], inv["header"]
+		self.assertEqual((b["odam"], b["tsstam"], h["todam"]), (50_000, 1_150_000, 50_000))
+		self.assertTrue(minv.validate(inv)["ok"])
+
+	def test_type_two_limits(self):
+		line = {"sstid": "2330001234567", "am": 1, "fee": 10, "vra": 10}
+		inv = minv.build(_spec(inty=2, inp=4, lines=[line], header={"crn": "123456789012"}))
+		self.assertIn("inty", {e["field"] for e in minv.validate(inv)["errors"]})
+		inv2 = minv.build(_spec(inty=2, buyer={}, lines=[line]))
+		self.assertNotIn("setm", inv2["header"])
+		self.assertTrue(minv.validate(inv2)["ok"], minv.validate(inv2))
+
+	def test_single_line_patterns(self):
+		line = {"sstid": "2330001234567", "am": 1, "fee": 10, "vra": 0}
+		inv = self._inv(14, [line, line], buyer={"tob": 2, "tinb": "14011576540"})
+		self.assertIn("body", {e["field"] for e in minv.validate(inv)["errors"]})
+
+	def test_return_and_correction_reference_previous(self):
+		ref = taxid.generate("A11216", 19500 * DAY, 1)
+		for ins in (2, 4):
+			inv = minv.build(_spec(ins=ins, irtaxid=ref, serial=5))
+			h = inv["header"]
+			self.assertEqual(h["irtaxid"], ref)
+			for k in ("tob", "tinb", "inty", "inp"):
+				self.assertNotIn(k, h)  # taken from the reference invoice
+			self.assertTrue(minv.validate(inv, inty=1, inp=1)["ok"], minv.validate(inv, inty=1, inp=1))
+		export_return = minv.build(_spec(ins=4, irtaxid=ref, inp=7, lines=[{"sstid": "2330001234567", "ssrv": 10, "sscv": 1}]))
+		self.assertIn("ins", {e["field"] for e in minv.validate(export_return, inty=1, inp=7)["errors"]})
+
+	def test_format_checks(self):
+		inv = minv.build(_spec(header={"crn": "12AB"}, inp=4))
+		self.assertIn("crn", {e["field"] for e in minv.validate(inv)["errors"]})
+
+
 if __name__ == "__main__":
 	unittest.main()

@@ -147,15 +147,75 @@ MOADIAN_ITEM_FIELDS = [
 	),
 ]
 
+def _p(*codes) -> str:
+	"""depends_on for «pattern is one of codes» (value looks like '7 - صادرات')."""
+	return "eval:[" + ",".join(str(c) for c in codes) + "].includes(parseInt(doc.farda_moadian_pattern))"
+
+
+def _pp(*codes) -> str:
+	"""Same, evaluated on an item row (parent = the invoice)."""
+	return "eval:[" + ",".join(str(c) for c in codes) + "].includes(parseInt(parent.farda_moadian_pattern))"
+
+
+_PATTERN_OPTIONS = "\n" + "\n".join(
+	f"{k} - {v}"
+	for k, v in {
+		1: "فروش", 2: "فروش ارز", 3: "طلا، جواهر و پلاتین", 4: "قرارداد پیمانکاری", 5: "قبوض خدماتی",
+		6: "بلیط هواپیما", 7: "صادرات", 8: "بارنامه", 9: "فروش فرآورده‌های نفتی", 11: "بورس کالا",
+		13: "خدمات بیمه‌ای", 14: "فروش زنجیره",
+	}.items()
+)
+
+
+def _md(fieldname, label, fieldtype="Data", after=None, **kw):
+	d = dict(fieldname=f"farda_md_{fieldname}", label=label, fieldtype=fieldtype, allow_on_submit=1, print_hide=1)
+	if after:
+		d["insert_after"] = after
+	d.update(kw)
+	return d
+
+
 MOADIAN_INVOICE_FIELDS = [
+	dict(fieldname="farda_moadian_info_section", label="اطلاعات سامانه مودیان", fieldtype="Section Break", insert_after="outstanding_amount", collapsible=1),
 	dict(
-		fieldname="farda_moadian_section",
-		label="سامانه مودیان",
-		fieldtype="Section Break",
-		insert_after="outstanding_amount",
-		collapsible=1,
-		depends_on="eval:doc.docstatus>0 && doc.farda_moadian_log",
+		fieldname="farda_moadian_pattern", label="الگوی صورتحساب (نوع کسب‌وکار)", fieldtype="Select", options=_PATTERN_OPTIONS,
+		insert_after="farda_moadian_info_section", print_hide=1,
+		description="از «تنظیمات سامانه مودیان» پر می‌شود. الگو روی محاسبه مالیات اثر دارد (طلا، صادرات، …).",
 	),
+	dict(
+		fieldname="farda_moadian_invoice_type", label="نوع صورتحساب مودیان", fieldtype="Select",
+		options="\n1 - نوع اول (با اطلاعات خریدار)\n2 - نوع دوم (بدون الزام اطلاعات خریدار)",
+		insert_after="farda_moadian_pattern", print_hide=1, allow_on_submit=1,
+		description="خالی = طبق تنظیمات. نوع دوم فقط برای فروش، طلا، فرآورده نفتی و بیمه.",
+	),
+	dict(fieldname="farda_moadian_cb1", fieldtype="Column Break", insert_after="farda_moadian_invoice_type"),
+	_md("crn", "شماره قرارداد پیمانکاری (۱۲ رقمی، ثبت‌شده در کارپوشه)", after="farda_moadian_cb1", depends_on=_p(4), mandatory_depends_on=_p(4)),
+	_md("billid", "شماره اشتراک / شناسه قبض", after="farda_md_crn", depends_on=_p(5), mandatory_depends_on=_p(5)),
+	_md("ft", "نوع پرواز", "Select", after="farda_md_billid", options="\n1 - داخلی\n2 - خارجی", depends_on=_p(6), mandatory_depends_on=_p(6)),
+	_md("tinc", "شماره اقتصادی آژانس فروشنده بلیط", after="farda_md_ft", depends_on=_p(6)),
+	_md("bpn", "شماره گذرنامه خریدار", after="farda_md_tinc", depends_on=_p(2, 6, 7)),
+	_md("scc", "کد گمرک محل اظهار", after="farda_md_bpn", depends_on=_p(7)),
+	_md("cdcn", "شماره کوتاژ اظهارنامه گمرکی", after="farda_md_scc", depends_on=_p(7)),
+	_md("cdcd", "تاریخ کوتاژ", "Date", after="farda_md_cdcn", depends_on=_p(7)),
+	_md("asn", "شماره اعلامیه فروش بورس", after="farda_md_cdcd", depends_on=_p(11), mandatory_depends_on=_p(11)),
+	_md("asd", "تاریخ اعلامیه فروش بورس", "Date", after="farda_md_asn", depends_on=_p(11), mandatory_depends_on=_p(11)),
+	_md("in", "شناسه یکتای بیمه‌نامه", after="farda_md_asd", depends_on=_p(13), mandatory_depends_on=_p(13)),
+	_md("an", "شناسه یکتای الحاقیه", after="farda_md_in", depends_on=_p(13)),
+	# waybill (بارنامه)
+	_md("lno", "شماره بارنامه", after="farda_md_an", depends_on=_p(8), mandatory_depends_on=_p(8)),
+	_md("lrno", "شماره بارنامه مرجع", after="farda_md_lno", depends_on=_p(8)),
+	_md("lt", "نوع حمل", "Select", after="farda_md_lrno", options="\n1 - جاده‌ای\n2 - ریلی\n3 - هوایی\n4 - دریایی", depends_on=_p(8), mandatory_depends_on=_p(8)),
+	_md("cno", "شماره ناوگان (پلاک/قطار/پرواز/کشتی)", after="farda_md_lt", depends_on=_p(8), mandatory_depends_on=_p(8)),
+	_md("did", "کد ملی راننده", after="farda_md_cno", depends_on=_p(8)),
+	_md("ocu", "کد کشور مبدأ (ایران: 364)", after="farda_md_did", depends_on=_p(8), mandatory_depends_on=_p(8)),
+	_md("oci", "کد شهر مبدأ", after="farda_md_ocu", depends_on=_p(8)),
+	_md("dco", "کد کشور مقصد (ایران: 364)", after="farda_md_oci", depends_on=_p(8), mandatory_depends_on=_p(8)),
+	_md("dci", "کد شهر مقصد", after="farda_md_dco", depends_on=_p(8)),
+	_md("tid", "شناسه/کد ملی فرستنده", after="farda_md_dci", depends_on=_p(8), mandatory_depends_on=_p(8)),
+	_md("rid", "شناسه/کد ملی گیرنده", after="farda_md_tid", depends_on=_p(8)),
+	_md("carried_goods", "کالاهای حمل‌شده", "Table", after="farda_md_rid", options="Farda Moadian Carried Goods", depends_on=_p(8)),
+	# status (filled by the system)
+	dict(fieldname="farda_moadian_section", label="وضعیت در سامانه مودیان", fieldtype="Section Break", insert_after="farda_md_carried_goods", collapsible=1, depends_on="eval:doc.docstatus>0 && doc.farda_moadian_log"),
 	dict(fieldname="farda_moadian_status", label="وضعیت در سامانه مودیان", fieldtype="Data", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_section"),
 	dict(fieldname="farda_moadian_taxid", label="شماره منحصر به فرد مالیاتی", fieldtype="Data", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_status", print_hide=0),
 	dict(fieldname="farda_moadian_cb", fieldtype="Column Break", insert_after="farda_moadian_taxid"),
@@ -163,20 +223,63 @@ MOADIAN_INVOICE_FIELDS = [
 	dict(fieldname="farda_moadian_log", label="آخرین سابقه ارسال", fieldtype="Link", options="Farda Moadian Log", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_reference"),
 ]
 
+# Sales Invoice Item: values only some patterns need (gold, currency, export, levies…)
+_ROW = dict(print_hide=1)
+_RIAL = "Company:company:default_currency"
+MOADIAN_INVOICE_ITEM_FIELDS = [
+	dict(fieldname="farda_md_item_section", label="سامانه مودیان", fieldtype="Section Break", insert_after="item_tax_template", collapsible=1),
+	dict(fieldname="farda_md_consfee", label="اجرت ساخت (ریال، کل ردیف)", fieldtype="Currency", options=_RIAL, insert_after="farda_md_item_section", depends_on=_pp(3), mandatory_depends_on=_pp(3), description="نرخ ردیف = قیمت کل هر واحد، شامل اجرت و سود و حق‌العمل", **_ROW),
+	dict(fieldname="farda_md_spro", label="سود فروشنده (ریال، کل ردیف)", fieldtype="Currency", options=_RIAL, insert_after="farda_md_consfee", depends_on=_pp(3), **_ROW),
+	dict(fieldname="farda_md_bros", label="حق‌العمل (ریال، کل ردیف)", fieldtype="Currency", options=_RIAL, insert_after="farda_md_spro", depends_on=_pp(3), **_ROW),
+	dict(fieldname="farda_md_cui", label="عیار", fieldtype="Float", insert_after="farda_md_bros", depends_on=_pp(3), **_ROW),
+	dict(fieldname="farda_md_cut", label="کد ارز (مثلاً USD)", fieldtype="Data", length=3, insert_after="farda_md_cui", depends_on="eval:parseInt(parent.farda_moadian_pattern)==2 || (parseInt(parent.farda_moadian_pattern)==7 && parent.currency=='IRR')", mandatory_depends_on=_pp(2), **_ROW),
+	dict(fieldname="farda_md_cpr", label="نرخ خرید ارز (ریال)", fieldtype="Float", insert_after="farda_md_cut", depends_on=_pp(2), mandatory_depends_on=_pp(2), description="مقدار = مبلغ ارز؛ نرخ ردیف = نرخ فروش هر واحد ارز", **_ROW),
+	dict(fieldname="farda_md_sovat", label="مأخذ مالیات فروش ارز (ریال)", fieldtype="Currency", options=_RIAL, insert_after="farda_md_cpr", depends_on=_pp(2), description="خالی = مقدار × (نرخ فروش − نرخ خرید)", **_ROW),
+	dict(fieldname="farda_md_nw", label="وزن خالص (کیلوگرم)", fieldtype="Float", insert_after="farda_md_sovat", depends_on=_pp(7), **_ROW),
+	dict(fieldname="farda_md_sscv", label="ارزش ارزی ردیف", fieldtype="Float", insert_after="farda_md_nw", depends_on="eval:parseInt(parent.farda_moadian_pattern)==7 && parent.currency=='IRR'", description="فقط وقتی ارز فاکتور ریال است", **_ROW),
+	dict(fieldname="farda_md_vba", label="مبلغ پایه مالیات هر لیتر", fieldtype="Float", insert_after="farda_md_sscv", depends_on=_pp(9), **_ROW),
+	dict(fieldname="farda_md_cb", fieldtype="Column Break", insert_after="farda_md_vba"),
+	dict(fieldname="farda_md_odt", label="موضوع سایر مالیات و عوارض", fieldtype="Data", insert_after="farda_md_cb", **_ROW),
+	dict(fieldname="farda_md_odr", label="نرخ سایر مالیات و عوارض (٪)", fieldtype="Percent", insert_after="farda_md_odt", **_ROW),
+	dict(fieldname="farda_md_olt", label="موضوع سایر وجوه قانونی", fieldtype="Data", insert_after="farda_md_odr", **_ROW),
+	dict(fieldname="farda_md_olr", label="نرخ سایر وجوه قانونی (٪)", fieldtype="Percent", insert_after="farda_md_olt", **_ROW),
+]
+
 
 def ensure_moadian_defaults() -> None:
-	"""First run only: turn the integration on with sandbox-safe defaults."""
+	"""Fill only missing settings, sandbox-safe; never overwrite the user's choices."""
 	if not frappe.db.exists("DocType", "Farda Moadian Settings"):
-		return
-	if frappe.db.sql("select count(*) from `tabSingles` where doctype='Farda Moadian Settings'")[0][0]:
 		return
 	for field, value in (
 		("enabled", 1),
 		("auto_inquiry", 1),
 		("default_invoice_type", "نوع اول (با اطلاعات خریدار)"),
+		("default_pattern", "1 - فروش"),
 		("last_serial", 0),
 	):
-		frappe.db.set_single_value("Farda Moadian Settings", field, value)
+		if frappe.db.get_single_value("Farda Moadian Settings", field) in (None, ""):
+			frappe.db.set_single_value("Farda Moadian Settings", field, value)
+
+
+def ensure_levies_accounts() -> None:
+	"""Iranian-chart companies get «سایر مالیات‌ها و عوارض» (210303) next to VAT."""
+	for parent in frappe.get_all("Account", filters={"account_number": "2103", "is_group": 1}, fields=["name", "company"]):
+		if frappe.db.exists("Account", {"company": parent.company, "account_number": "210303"}):
+			continue
+		try:
+			frappe.get_doc(
+				dict(
+					doctype="Account",
+					account_name="سایر مالیات‌ها و عوارض",
+					account_number="210303",
+					parent_account=parent.name,
+					company=parent.company,
+					account_type="Tax",
+					is_group=0,
+				)
+			).insert(ignore_permissions=True)
+		except Exception:
+			frappe.log_error(f"farda_iran: levies account for {parent.company}")
 
 
 def ensure_custom_fields() -> None:
@@ -187,6 +290,7 @@ def ensure_custom_fields() -> None:
 		"Item": ITEM_FIELDS + MOADIAN_ITEM_FIELDS,
 		"Bank Account": BANK_ACCOUNT_FIELDS,
 		"Sales Invoice": INVOICE_FIELDS + MOADIAN_INVOICE_FIELDS,
+		"Sales Invoice Item": MOADIAN_INVOICE_ITEM_FIELDS,
 		"Purchase Invoice": INVOICE_FIELDS,
 		"Payment Entry": PAYMENT_ENTRY_FIELDS,
 	}
@@ -576,6 +680,7 @@ def execute() -> str:
 	ensure_custom_fields()
 	ensure_irr_format()
 	ensure_moadian_defaults()
+	ensure_levies_accounts()
 	ensure_vat_settings_defaults()
 	ensure_vat_item_tax_templates()
 	ensure_search_keys()

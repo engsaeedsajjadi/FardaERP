@@ -9,6 +9,10 @@
   "subject",
   "status",
   "target_label",
+  "chain_root",
+  "pattern_label",
+  "inty",
+  "inp",
   "column_break_1",
   "company",
   "customer",
@@ -49,7 +53,7 @@
    "fieldname": "subject",
    "fieldtype": "Select",
    "label": "موضوع",
-   "options": "اصلی\nابطال",
+   "options": "اصلی\nاصلاحی\nابطال\nبرگشت از فروش",
    "default": "اصلی",
    "in_list_view": 1,
    "in_standard_filter": 1,
@@ -215,6 +219,34 @@
    "fieldtype": "Code",
    "label": "پاسخ سامانه (JSON)",
    "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "chain_root",
+   "fieldtype": "Link",
+   "label": "فاکتور اصلی زنجیره",
+   "options": "Sales Invoice",
+   "read_only": 1,
+   "search_index": 1,
+   "description": "فاکتور نخست؛ اصلاحیه‌ها و برگشتی‌ها به آن وصل‌اند"
+  },
+  {
+   "fieldname": "pattern_label",
+   "fieldtype": "Data",
+   "label": "الگوی صورتحساب",
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "inty",
+   "fieldtype": "Int",
+   "label": "نوع صورتحساب",
+   "read_only": 1
+  },
+  {
+   "fieldname": "inp",
+   "fieldtype": "Int",
+   "label": "کد الگو",
    "read_only": 1
   }
  ],

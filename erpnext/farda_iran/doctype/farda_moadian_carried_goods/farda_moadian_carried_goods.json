@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "sgid",
+  "sgt"
+ ],
+ "fields": [
+  {
+   "fieldname": "sgid",
+   "fieldtype": "Data",
+   "label": "شناسه کالای حمل‌شده (۱۳ رقمی)",
+   "in_list_view": 1,
+   "reqd": 1,
+   "length": 13
+  },
+  {
+   "fieldname": "sgt",
+   "fieldtype": "Data",
+   "label": "شرح کالای حمل‌شده",
+   "in_list_view": 1,
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Moadian Carried Goods",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
