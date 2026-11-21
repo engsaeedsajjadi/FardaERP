@@ -25,10 +25,9 @@ def _fetch(doctype: str, tax_table: str, party_field: str, vat: str, conditions:
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	from erpnext.farda_iran.invoice.persian import fa, format_jalali_date, toman_str
-	from erpnext.farda_iran.tax.service import get_settings
+	from erpnext.farda_iran.tax.service import vat_account_for
 
-	settings = get_settings()
-	vat_account = settings.vat_account
+	vat_account = vat_account_for(filters.get("company"))  # CORE-031: per-company
 
 	columns = [
 		{"label": _("نوع"), "fieldname": "kind", "width": 90},

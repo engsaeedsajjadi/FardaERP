@@ -785,7 +785,10 @@ _farda_merge_hooks(
 			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
 			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
 		},
-		"Company": {"validate": "erpnext.farda_iran.party.validate_company"},
+		"Company": {
+			"validate": "erpnext.farda_iran.party.validate_company",
+			"on_update": "erpnext.farda_iran.setup.company.apply_iran_chart_defaults",
+		},
 		"Item": {"validate": "erpnext.farda_iran.item.validate"},
 		"Bank Account": {
 			"validate": "erpnext.farda_iran.banking.hooks.validate_bank_account",

@@ -198,7 +198,15 @@ class FardaHome {
 	}
 
 	async load_kpis() {
-		const k = await this.call("erpnext.farda_iran.dashboard.kpis.farda_kpis", { company: this.company });
+		// figures for the current JALALI month, matching the «وضعیت <ماه>» heading
+		const j = this.jalali(frappe.datetime.now_date());
+		const g = window.FardaIR.jalaliToGregorian(j.jy, j.jm, 1);
+		const from_date = `${g[0]}-${String(g[1]).padStart(2, "0")}-${String(g[2]).padStart(2, "0")}`;
+		const k = await this.call("erpnext.farda_iran.dashboard.kpis.farda_kpis", {
+			company: this.company,
+			from_date,
+			to_date: frappe.datetime.now_date(),
+		});
 		FardaHome.KPIS.forEach((def) => {
 			const $v = this.$root.find(`.fh-kpi[data-kpi="${def.key}"] .fh-kpi-value`).removeClass("fh-skeleton");
 			const item = k && k[def.key];

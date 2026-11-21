@@ -39,7 +39,9 @@ def collect_kpis(company: str | None = None, from_date: str | None = None, to_da
 	p_ge = _params(company, from_date, to_date, "ge")
 	p_pl = _params(company, from_date, to_date)
 
-	vat_account = frappe.db.get_single_value("Farda VAT Settings", "vat_account")
+	from erpnext.farda_iran.tax.service import vat_account_for
+
+	vat_account = vat_account_for(company)  # CORE-031: per-company VAT account
 	vat_sales = vat_purchases = 0.0
 	if vat_account:
 		vat_sales = _num(

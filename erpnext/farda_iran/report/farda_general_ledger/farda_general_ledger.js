@@ -102,4 +102,11 @@ frappe.query_reports["Farda General Ledger"] = {
 			]
 		}
 	],
+	// show document / party types in Persian; the stored value stays the DocType name
+	formatter(value, row, column, data, default_formatter) {
+		if (["voucher_type", "party_type", "against_voucher_type"].includes(column.fieldname) && value) {
+			value = __(value);
+		}
+		return default_formatter(value, row, column, data);
+	},
 };

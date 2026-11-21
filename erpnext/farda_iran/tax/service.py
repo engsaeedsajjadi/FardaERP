@@ -56,6 +56,39 @@ def _get_exempt_flags(items) -> list[bool]:
 	return [bool(exempt_map.get(r.item_code)) for r in items]
 
 
+def vat_account_for(company: str | None, configured: str | None = None) -> str | None:
+	"""CORE-031: the VAT account to use for one company.
+
+	Farda VAT Settings holds a single account, which belongs to one company. For
+	any other company use its equivalent: same account number, same account
+	name, the Iranian chart's VAT account (210301), or its only Tax account with
+	the VAT rate. Returns None when the company has no VAT account.
+	"""
+	configured = configured if configured is not None else get_settings().vat_account
+	if not company:
+		return configured
+	if configured and frappe.db.get_value("Account", configured, "company") == company:
+		return configured
+	cands = []
+	if configured:
+		src = frappe.db.get_value("Account", configured, ["account_number", "account_name"], as_dict=True) or {}
+		if src.get("account_number"):
+			cands.append({"account_number": src.account_number})
+		if src.get("account_name"):
+			cands.append({"account_name": src.account_name})
+	cands.append({"account_number": "210301"})
+	for f in cands:
+		name = frappe.db.get_value("Account", dict(f, company=company, is_group=0), "name")
+		if name:
+			return name
+	taxes = frappe.get_all(
+		"Account",
+		filters={"company": company, "is_group": 0, "account_type": "Tax", "tax_rate": get_settings().default_rate or 10},
+		pluck="name",
+	)
+	return taxes[0] if len(taxes) == 1 else None
+
+
 def _remove_vat_rows(doc, account: str | None) -> None:
 	"""Drop ALL Farda-managed VAT rows (exact description for the single row,
 	prefixed description for per-row mode). Keeps third-party tax rows intact."""
@@ -82,20 +115,24 @@ def on_invoice_validate(doc, method: str | None = None) -> None:
 	"""
 	items = doc.get("items") or []
 	if not doc.get("farda_apply_vat"):
-		_remove_vat_rows(doc, get_settings().vat_account)
+		_remove_vat_rows(doc, vat_account_for(doc.get("company")))
 		return
 	rate = get_applicable_vat_rate(doc)
 	if not rate:
-		_remove_vat_rows(doc, get_settings().vat_account)
+		_remove_vat_rows(doc, vat_account_for(doc.get("company")))
 		return
 	s = get_settings()
-	account = s.vat_account
+	if not s.vat_account:
+		frappe.throw(
+			frappe._("حساب مالیات بر ارزش افزوده در «تنظیمات مالیات بر ارزش افزوده» تعیین نشده است")
+		)
+	account = vat_account_for(doc.company, s.vat_account)
 	if not account:
 		frappe.throw(
-			frappe._("حساب مالیات بر ارزش افزوده در تنظیمات Farda VAT تعیین نشده است")
+			frappe._(
+				"برای شرکت {0} حساب مالیات بر ارزش افزوده پیدا نشد. یک حساب از نوع «مالیات» با نرخ {1}٪ بسازید یا حساب را در تنظیمات ارزش افزوده تعیین کنید."
+			).format(doc.company, rate)
 		)
-	if frappe.db.get_value("Account", account, "company") != doc.company:
-		frappe.throw(frappe._("حساب VAT به شرکتِ این سند تعلق ندارد"))
 
 	from erpnext.farda_iran.tax import planner
 
@@ -145,10 +182,10 @@ def invoice_totals(doc) -> frappe._dict:
 	Frappe-aware (used only inside server-side Jinja rendering).
 	"""
 	amount = frappe.utils.flt
-	s = get_settings()
+	vat_account = vat_account_for(doc.get("company"))
 	vat_amount = 0.0
 	for row in doc.get("taxes") or []:
-		if s.vat_account and row.get("account_head") == s.vat_account:
+		if vat_account and row.get("account_head") == vat_account:
 			vat_amount += amount(row.get("tax_amount"))
 	try:
 		rate = get_applicable_vat_rate(doc) if doc.get("farda_apply_vat") else 0.0
