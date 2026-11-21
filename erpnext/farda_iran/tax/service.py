@@ -70,13 +70,16 @@ def vat_account_for(company: str | None, configured: str | None = None) -> str |
 	if configured and frappe.db.get_value("Account", configured, "company") == company:
 		return configured
 	cands = []
-	if configured:
-		src = frappe.db.get_value("Account", configured, ["account_number", "account_name"], as_dict=True) or {}
-		if src.get("account_number"):
-			cands.append({"account_number": src.account_number})
-		if src.get("account_name"):
-			cands.append({"account_name": src.account_name})
-	cands.append({"account_number": "210301"})
+	src = (
+		frappe.db.get_value("Account", configured, ["account_number", "account_name"], as_dict=True) or {}
+		if configured
+		else {}
+	)
+	if src.get("account_number"):
+		cands.append({"account_number": src.account_number})
+	cands.append({"account_number": "210301"})  # Iranian chart's VAT account wins over a name match
+	if src.get("account_name"):
+		cands.append({"account_name": src.account_name})
 	for f in cands:
 		name = frappe.db.get_value("Account", dict(f, company=company, is_group=0), "name")
 		if name:
