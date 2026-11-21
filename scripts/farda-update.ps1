@@ -12,8 +12,14 @@ Write-Host "سایت: $site" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path ".\secrets\moadian" | Out-Null
 
 Write-Host "1/4 ساخت ایمیج (چند دقیقه طول می‌کشد)..." -ForegroundColor Cyan
-docker compose build
-if ($LASTEXITCODE -ne 0) { throw "ساخت ایمیج ناموفق بود" }
+$ok = $false
+foreach ($try in 1..3) {
+    docker compose build
+    if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+    Write-Host "ساخت ایمیج ناموفق بود (احتمالاً قطعی اینترنت)؛ تلاش دوباره $try از 3 ..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 20
+}
+if (-not $ok) { throw "ساخت ایمیج سه بار ناموفق بود؛ اتصال اینترنت را بررسی کنید و اسکریپت را دوباره اجرا کنید" }
 
 Write-Host "2/4 راه‌اندازی دوباره سرویس‌ها..." -ForegroundColor Cyan
 docker compose up -d

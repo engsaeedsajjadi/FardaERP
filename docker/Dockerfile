@@ -80,17 +80,12 @@ RUN git clone --depth 1 --branch ${HRMS_VERSION} \
     apps/hrms
 
 
-# ERPNext = this repository
-COPY --chown=frappe:frappe . \
-    /home/frappe/frappe-bench/apps/erpnext
-
-
 # ------------------------------------------------------------
-# Python dependencies
+# Frappe Python dependencies (cached: does not depend on this repo)
 # ------------------------------------------------------------
 
 RUN pip install --upgrade pip wheel && \
-    pip install -e apps/frappe -e apps/erpnext -e apps/hrms && \
+    pip install -e apps/frappe && \
     pip install "frappe-bench==${BENCH_VERSION}" && \
     pip install "click==8.4.1"
 
@@ -104,10 +99,15 @@ COPY --from=nodebin /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 
 # ------------------------------------------------------------
-# Yarn 1.22.22
+# Yarn 1.22.22 — retried, with the npm registry as a fallback
+# (registry.yarnpkg.com is sometimes unreachable)
 # ------------------------------------------------------------
 
 USER root
+
+# one shared corepack cache so the frappe user does not download yarn again
+ENV COREPACK_HOME=/usr/local/share/corepack \
+    COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 RUN rm -f \
         /usr/local/bin/yarn \
@@ -115,9 +115,14 @@ RUN rm -f \
         /usr/local/bin/pnpm \
         /usr/local/bin/pnpx \
     && corepack enable \
-    && corepack prepare yarn@1.22.22 --activate
+    && ( for i in 1 2 3; do corepack prepare yarn@1.22.22 --activate && exit 0; echo "retry $i"; sleep 10; done; \
+         COREPACK_NPM_REGISTRY=https://registry.npmjs.org corepack prepare yarn@1.22.22 --activate && exit 0; \
+         npm install -g --force yarn@1.22.22 --registry=https://registry.npmjs.org ) \
+    && mkdir -p "$COREPACK_HOME" && chmod -R a+rX "$COREPACK_HOME"
 
 USER frappe
+
+RUN yarn config set network-timeout 600000 -g
 
 
 # ============================================================
@@ -134,16 +139,25 @@ RUN mkdir -p \
         > sites/common_site_config.json
 
 
-# ============================================================
-# Install frontend dependencies
-# ============================================================
-
+# Frappe frontend dependencies (cached)
 RUN cd apps/frappe && \
-        yarn install --frozen-lockfile && \
-    cd ../erpnext && \
-        yarn install --frozen-lockfile && \
-    cd ../hrms && \
-        yarn install --frozen-lockfile
+    for i in 1 2 3; do yarn install --frozen-lockfile && break; [ $i = 3 ] && exit 1; sleep 15; done
+
+
+# ------------------------------------------------------------
+# ERPNext = this repository (only the steps below rerun when it changes)
+# ------------------------------------------------------------
+
+COPY --chown=frappe:frappe . \
+    /home/frappe/frappe-bench/apps/erpnext
+
+RUN pip install -e apps/erpnext -e apps/hrms && \
+    pip install "click==8.4.1"
+
+RUN for app in erpnext hrms; do \
+        cd /home/frappe/frappe-bench/apps/$app && \
+        for i in 1 2 3; do yarn install --frozen-lockfile && break; [ $i = 3 ] && exit 1; sleep 15; done; \
+    done
 
 
 # ============================================================
