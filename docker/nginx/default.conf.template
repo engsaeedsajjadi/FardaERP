@@ -1,11 +1,20 @@
 # FardaERP frontend — served by the official nginx image's envsubst mechanism
 # (/etc/nginx/templates/*.template -> /etc/nginx/conf.d/*.conf with env vars).
-# FRAPPE_SITE_NAME_HEADER defaults to `$host` (multi-site by Host header).
+# FRAPPE_SITE_NAME_HEADER = the Frappe site served (compose sets it to SITE_NAME),
+# so the site works whatever hostname/IP the browser uses (CORE-017).
 upstream backend_up { server backend:8000; }
 upstream websocket_up { server websocket:9000; }
 server {
     listen 8080;
     server_name _;
+    set $farda_site "${FRAPPE_SITE_NAME_HEADER}";
+    client_max_body_size 50m;
+    # container healthcheck (independent of any site)
+    location = /nginx-health {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok";
+    }
     # built JS/CSS assets (copied into the image at build time)
     location /assets/ {
         alias /usr/share/nginx/html/assets/;
@@ -15,18 +24,18 @@ server {
     }
     # public files live on the shared sites volume: <site>/public/files
     location /files/ {
-        alias /var/www/sites/$host/public/files/;
+        alias /var/www/sites/$farda_site/public/files/;
         try_files $uri =404;
         add_header Cache-Control "public, max-age=3600";
     }
     # private files are only delivered via frappe's X-Accel-Redirect
     location /private/files/ {
         internal;
-        alias /var/www/sites/$host/private/files/;
+        alias /var/www/sites/$farda_site/private/files/;
     }
     location /protected/ {
         internal;
-        alias /var/www/sites/$host/protected/;
+        alias /var/www/sites/$farda_site/protected/;
     }
     # realtime (socketio)
     location /socket.io {
@@ -34,6 +43,7 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
+        proxy_set_header X-Frappe-Site-Name $farda_site;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_read_timeout 86400s;
         proxy_pass http://websocket_up;
@@ -43,7 +53,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Frappe-Site-Name $host;
+        proxy_set_header X-Frappe-Site-Name $farda_site;
         proxy_read_timeout 120s;
         proxy_pass http://backend_up;
     }

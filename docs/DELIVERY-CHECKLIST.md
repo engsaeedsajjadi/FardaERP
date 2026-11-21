@@ -44,8 +44,14 @@ docker compose up -d
 
 ```bash
 docker compose exec backend bench new-site <SITE_NAME> \
-  --mariadb-root-password <DB_ROOT_PASSWORD> --admin-password <رمز قوی> \
-  --install-app erpnext --install-app hrms
+  --db-root-username root --mariadb-user-host-login-scope=% \
+  --mariadb-root-password <DB_ROOT_PASSWORD> --db-password <DB_PASSWORD> \
+  --admin-password <رمز قوی> --install-app erpnext --install-app hrms
+```
+
+> `--db-root-username root` جلوی سؤال «Enter mysql super user» را می‌گیرد (جواب درست `root` است). `--mariadb-user-host-login-scope=%` لازم است تا workers و scheduler هم بتوانند به دیتابیس وصل شوند.
+
+```bash
 ```
 
 **سایت موجود:** در `.env` مقدار `RUN_MIGRATIONS=1` بگذارید، `docker compose up -d` بزنید، سپس آن را به `0` برگردانید.

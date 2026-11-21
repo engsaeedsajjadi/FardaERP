@@ -53,6 +53,7 @@ Create the first site:
 ```bash
 docker compose exec backend bash -lc \
   'bench new-site "$SITE_NAME" \
+     --db-root-username root --mariadb-user-host-login-scope=% \
      --mariadb-root-password "$DB_ROOT_PASSWORD" \
      --db-password "$DB_PASSWORD" \
      --admin-password "CHANGE-ME-ADMIN" \
@@ -175,8 +176,9 @@ docker compose up -d                        # entrypoint waits for DB/Redis, the
 
 # one-time site creation (the entrypoint does NOT create the site):
 docker compose exec backend bench new-site $env:SITE_NAME `
-  --mariadb-root-password $env:DB_ROOT_PASSWORD `
-  --admin-password admin123 --install-app erpnext --install-app hrms
+  --db-root-username root --mariadb-user-host-login-scope=% `
+  --mariadb-root-password $env:DB_ROOT_PASSWORD --db-password $env:DB_PASSWORD `
+  --admin-password <strong-password> --install-app erpnext --install-app hrms
 
 # afterwards (or for upgrades):
 docker compose down; $env:RUN_MIGRATIONS="1"; docker compose up -d   # RUN_MIGRATIONS needs SITE_NAME in .env

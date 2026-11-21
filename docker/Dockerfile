@@ -277,11 +277,11 @@ HEALTHCHECK \
     --timeout=10s \
     --start-period=30s \
     --retries=5 \
-    CMD wget -q \
-        -O /dev/null \
-        --header="Host: ${FRAPPE_SITE_NAME_HEADER:-erp.farda.local}" \
-        http://127.0.0.1:8000/ \
-        || exit 1
+    CMD ["python", "-c", "import sys, urllib.request, urllib.error\ntry:\n    urllib.request.urlopen('http://127.0.0.1:8000/api/method/ping', timeout=8)\nexcept urllib.error.HTTPError as e:\n    sys.exit(0 if e.code < 500 else 1)\nexcept Exception:\n    sys.exit(1)"]
+# (CORE-017) site-independent: gunicorn is healthy if it answers HTTP at all.
+# A fresh stack has no site yet (404 "site not found" is fine); the old check
+# required a site named erp.farda.local, so backend stayed unhealthy forever
+# and the frontend never started.
 
 
 # ------------------------------------------------------------
@@ -319,8 +319,10 @@ COPY --from=builder \
 # ------------------------------------------------------------
 # Nginx configuration
 # ------------------------------------------------------------
+# rendered by the nginx image's envsubst step at start (FRAPPE_SITE_NAME_HEADER)
+RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/default.conf.template \
-    /etc/nginx/conf.d/default.conf
+    /etc/nginx/templates/default.conf.template
 
 # ------------------------------------------------------------
 # Frontend port
@@ -338,11 +340,7 @@ HEALTHCHECK \
     --timeout=10s \
     --start-period=30s \
     --retries=5 \
-    CMD wget -q \
-        -O /dev/null \
-        --header="Host: ${FRAPPE_SITE_NAME_HEADER:-erp.farda.local}" \
-        http://127.0.0.1:8080/ \
-        || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/nginx-health || exit 1
 
 
 # ------------------------------------------------------------
