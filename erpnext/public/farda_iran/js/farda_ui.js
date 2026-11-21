@@ -145,12 +145,13 @@
 		try { return (frappe.get_route() || [])[0] === "Form"; } catch (e) { return false; }
 	}
 
-	function rializeOutput(out) {
+	function rializeOutput(out, bare) {
 		var text = String(out);
 		if (!IRR_UNIT.test(text)) { return out; }
 		var num = text.match(/-?\d[\d,]*(?:\.\d+)?/);
 		text = text.replace(IRR_UNIT, "");
-		return num ? text.replace(num[0], num[0] + " ریال") : text;
+		if (!num || bare) { return text.trim(); }
+		return text.replace(num[0], num[0] + " ریال");
 	}
 
 	function fieldCurrency(df, doc) {
@@ -175,7 +176,8 @@
 				// also SHOWN in rial (with an explicit unit) — showing Toman next to a
 				// rial input invites 10x entry errors. Toman is for lists, reports and
 				// dashboards, where nothing is typed.
-				if (inForm()) { return rializeOutput(out); }
+				// grid cells are narrow and their header already names the currency
+				if (inForm()) { return rializeOutput(out, !!(doc && doc.parenttype)); }
 				return tomanizeOutput(out, f.ratio, options);
 			});
 		}

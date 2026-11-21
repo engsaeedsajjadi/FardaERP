@@ -493,8 +493,21 @@ def _ensure_desktop_icon(workspace: str) -> None:
 	frappe.cache.delete_key("desktop_icons")
 
 
+def ensure_irr_format() -> None:
+	"""Rial has no fractional unit: show 3,300,000 not 3,300,000.00 (CORE-025)."""
+	if frappe.db.exists("Currency", "IRR"):
+		frappe.db.set_value(
+			"Currency",
+			"IRR",
+			{"number_format": "#,###", "fraction": "", "fraction_units": 0, "smallest_currency_fraction_value": 0},
+		)
+		# make Frappe use each currency's own format (IRR: no decimals, USD keeps cents)
+		frappe.db.set_single_value("System Settings", "use_number_format_from_currency", 1)
+
+
 def execute() -> str:
 	ensure_custom_fields()
+	ensure_irr_format()
 	ensure_vat_settings_defaults()
 	ensure_vat_item_tax_templates()
 	ensure_search_keys()
