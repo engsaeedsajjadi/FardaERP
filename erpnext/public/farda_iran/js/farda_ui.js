@@ -290,7 +290,16 @@
 			var oPicker = kind === "d" ? orig.dPicker : orig.tPicker;
 			P.format_for_input = function (value) { return active(this) ? toInput(this, value) : (kind === "d" ? orig.dFormat : orig.tFormat).call(this, value); };
 			P.parse = function (value) {
-				if (active(this) && value) { var v = fromInput(this, value); if (v) { return v; } }
+				if (active(this) && value) {
+					var v = fromInput(this, value);
+					if (v) { return v; }
+					// a Jalali-looking year that did not parse (e.g. 31/07/1405) must not
+					// fall through to the Gregorian parser, which would store year 1405 AD
+					if (/(^|\D)1[2-5]\d\d(\D|$)/.test(asciiDigits(value))) {
+						frappe.show_alert({ message: "تاریخ نامعتبر است: " + frappe.utils.escape_html(value), indicator: "red" });
+						return "";
+					}
+				}
 				return oParse.call(this, value);
 			};
 			P.set_formatted_input = function (value) {
