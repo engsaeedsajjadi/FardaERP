@@ -316,6 +316,15 @@ def before_migrate(**_kwargs) -> None:
 	execute()
 
 
+def after_install(**_kwargs) -> None:
+	"""bench new-site / install-app (CORE-020)."""
+	execute()
+
+
+def after_migrate(**_kwargs) -> None:
+	execute()
+
+
 def ensure_workspace() -> None:
 	"""§5 IA — public «FardaERP» workspace (Persian business navigation).
 
@@ -363,6 +372,7 @@ def ensure_workspace() -> None:
 				changed = True
 		if changed:
 			doc.save(ignore_permissions=True)
+		_ensure_desktop_icon(name)
 		return
 
 	content = [
@@ -397,6 +407,22 @@ def ensure_workspace() -> None:
 	for lbl, stype, target in shortcuts:
 		doc.append("shortcuts", {"label": lbl, "type": stype, "link_to": target})
 	doc.insert(ignore_permissions=True)
+	_ensure_desktop_icon(name)
+
+
+def _ensure_desktop_icon(workspace: str) -> None:
+	"""Frappe v16 shows only Desktop Icons on /desk; a public workspace without an
+	icon (and a Workspace Sidebar) is invisible there (CORE-020). Put «فردا ERP»
+	first on the desktop so users start from the Persian navigation."""
+	if not frappe.db.exists("DocType", "Desktop Icon"):
+		return  # Frappe < v16
+	from frappe.desk.doctype.desktop_icon.desktop_icon import add_workspace_to_desktop
+
+	add_workspace_to_desktop(workspace)
+	frappe.db.set_value(
+		"Desktop Icon", workspace, {"idx": -1, "hidden": 0, "icon": "home", "bg_color": "blue"}
+	)
+	frappe.cache.delete_key("desktop_icons")
 
 
 def execute() -> str:

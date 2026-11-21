@@ -733,6 +733,15 @@ repost_allowed_doctypes = [
 # wire it in. Validators are no-ops for documents without the custom fields.
 # ------------------------------------------------------------------
 before_migrate = ["erpnext.farda_iran.setup.install.before_migrate"]
+# CORE-020: a brand-new site (bench new-site) never runs migrate hooks, so the
+# Farda setup (custom fields, VAT defaults, dashboards, Persian workspace) was
+# missing until the first migrate. Run it after install too, and again after
+# migrate so records that reference freshly-synced reports/cards succeed.
+after_install = [
+	*([after_install] if isinstance(after_install, str) else after_install),
+	"erpnext.farda_iran.setup.install.after_install",
+]
+after_migrate = ["erpnext.farda_iran.setup.install.after_migrate"]
 
 # § Monitoring: guest-readable health endpoint for load balancers / uptime probes:
 #   GET /api/method/erpnext.farda_iran.monitoring.api.health
