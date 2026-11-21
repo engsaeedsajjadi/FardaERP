@@ -126,8 +126,8 @@ class FardaHome {
 			<div class="fh-grid">
 				<section class="fh-modules" aria-label="قابلیت‌ها">
 					<header class="fh-section-head">
-						<h2>چه کاری می‌خواهید انجام دهید؟</h2>
-						<p>همهٔ بخش‌های فردا و کاری که هر کدام برایتان انجام می‌دهد</p>
+						<h2>بخش‌های برنامه</h2>
+						<p>بخش‌های فردا و کاری که هر کدام انجام می‌دهد</p>
 					</header>
 					<div class="fh-module-list">${FardaHome.MODULES.map((m) => this.module_row(m)).join("")}</div>
 				</section>

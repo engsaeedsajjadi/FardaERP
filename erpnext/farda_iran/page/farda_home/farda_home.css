@@ -148,7 +148,6 @@
 }
 .fh-module-links a:hover { border-color: var(--fh-teal); color: var(--fh-teal); }
 .fh-module-links a.is-report { background: var(--fh-soft); border-color: transparent; }
-.fh-module-links a.is-report::before { content: "گزارش · "; color: var(--fh-muted); font-size: 11px; }
 
 /* side panels */
 .fh-side { display: flex; flex-direction: column; gap: 16px; }

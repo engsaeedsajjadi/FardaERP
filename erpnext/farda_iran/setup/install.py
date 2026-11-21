@@ -362,39 +362,27 @@ def ensure_workspace() -> None:
 		("گزارش مالیات بر ارزش افزوده", "Report", "Farda VAT Report"),
 		("مانده طرف‌حساب‌ها", "Report", "Farda Party Balance"),
 	]
+	# CORE-022: the workspace's job in v16 is the sidebar + desktop icon; its page
+	# redirects to the «فردا ERP» home (farda_ui.js). Content is kept to valid
+	# shortcut blocks only — the old number-card/chart blocks had no matching child
+	# rows, which made Frappe v16 render an empty page.
+	content = [{"id": "farda_h1", "type": "header", "data": {"text": "<span class=\"h4\"><b>فردا ERP</b></span>", "col": 12}}]
+	content += [
+		{"id": f"farda_sc{i}", "type": "shortcut", "data": {"shortcut_name": lbl, "col": 3}}
+		for i, (lbl, _t, _x) in enumerate(shortcuts)
+	]
 	if frappe.db.exists("Workspace", name):
 		doc = frappe.get_doc("Workspace", name)
 		existing = {(s.label, s.type, s.link_to) for s in (doc.shortcuts or [])}
-		changed = False
 		for label, stype, target in shortcuts:
 			if (label, stype, target) not in existing:
 				doc.append("shortcuts", {"label": label, "type": stype, "link_to": target})
-				changed = True
-		if changed:
-			doc.save(ignore_permissions=True)
+		doc.title = "فردا ERP"
+		doc.content = frappe.as_json(content)
+		doc.save(ignore_permissions=True)
 		_ensure_desktop_icon(name)
 		return
 
-	content = [
-		{"id": "farda_h1", "type": "header", "data": {"text": "<span class=\"h4\"><b>فردا ERP</b></span>", "col": 12}},
-		{"id": "farda_cards", "type": "number_card", "data": {"number_card_name": "فروش کل", "col": 3}},
-		{"id": "farda_cards2", "type": "number_card", "data": {"number_card_name": "خرید کل", "col": 3}},
-		{"id": "farda_cards3", "type": "number_card", "data": {"number_card_name": "دریافتنی", "col": 3}},
-		{"id": "farda_cards4", "type": "number_card", "data": {"number_card_name": "پرداختنی", "col": 3}},
-		{"id": "farda_cards5", "type": "number_card", "data": {"number_card_name": "ارزش موجودی", "col": 3}},
-		{"id": "farda_chart", "type": "chart", "data": {"chart_name": "فروش ماهانه", "col": 8}},
-		{
-			"id": "farda_shortcuts",
-			"type": "shortcut",
-			"data": {
-				"shortcut_list": [
-					{"label": lbl, "type": stype, "link_to": target}
-					for lbl, stype, target in shortcuts
-				]
-			},
-			"col": 12,
-		},
-	]
 	doc = frappe.get_doc({
 		"doctype": "Workspace",
 		"name": name,
@@ -410,6 +398,85 @@ def ensure_workspace() -> None:
 	_ensure_desktop_icon(name)
 
 
+# Persian sidebar (Frappe v16 Workspace Sidebar): the navigation a user keeps
+# while working — home first, then one collapsible section per business area.
+SIDEBAR = [
+	("صفحهٔ اصلی", "Page", "farda-home", "home", None),
+	("فروش و مشتریان", None, None, "sell", [
+		("مشتریان", "DocType", "Customer"),
+		("پیش‌فاکتورها", "DocType", "Quotation"),
+		("سفارش‌های فروش", "DocType", "Sales Order"),
+		("فاکتورهای فروش", "DocType", "Sales Invoice"),
+		("گزارش فروش", "Report", "Farda Sales Register"),
+	]),
+	("خرید و تأمین‌کنندگان", None, None, "buying", [
+		("تأمین‌کنندگان", "DocType", "Supplier"),
+		("درخواست‌های کالا", "DocType", "Material Request"),
+		("سفارش‌های خرید", "DocType", "Purchase Order"),
+		("فاکتورهای خرید", "DocType", "Purchase Invoice"),
+		("گزارش خرید", "Report", "Farda Purchase Register"),
+	]),
+	("انبار و کالا", None, None, "stock", [
+		("کالاها", "DocType", "Item"),
+		("انبارها", "DocType", "Warehouse"),
+		("اسناد انبار", "DocType", "Stock Entry"),
+		("موجودی کالا", "Report", "Farda Stock Balance"),
+		("کاردکس کالا", "Report", "Farda Stock Movement"),
+	]),
+	("بانک و چک", None, None, "dollar-sign", [
+		("حساب‌های بانکی", "DocType", "Bank Account"),
+		("چک‌ها", "DocType", "Cheque"),
+		("دریافت و پرداخت", "DocType", "Payment Entry"),
+		("گزارش بانک", "Report", "Farda Bank Report"),
+		("گزارش چک", "Report", "Farda Cheque Report"),
+	]),
+	("حسابداری", None, None, "accounting", [
+		("سرفصل حساب‌ها", "DocType", "Account"),
+		("اسناد حسابداری", "DocType", "Journal Entry"),
+		("دفتر کل", "Report", "Farda General Ledger"),
+		("تراز آزمایشی", "Report", "Farda Trial Balance"),
+		("سود و زیان", "Report", "Farda Profit and Loss"),
+		("ترازنامه", "Report", "Farda Balance Sheet"),
+		("جریان وجوه نقد", "Report", "Farda Cash Flow"),
+		("مانده طرف‌حساب‌ها", "Report", "Farda Party Balance"),
+	]),
+	("مالیات بر ارزش افزوده", None, None, "book-text", [
+		("تنظیمات ارزش افزوده", "DocType", "Farda VAT Settings"),
+		("قالب‌های مالیاتی کالا", "DocType", "Item Tax Template"),
+		("گزارش ارزش افزوده", "Report", "Farda VAT Report"),
+	]),
+	("تنظیمات", None, None, "setting", [
+		("شرکت‌ها", "DocType", "Company"),
+		("کاربران", "DocType", "User"),
+		("تراکنش‌های درگاه", "DocType", "Farda Payment Log"),
+		("گزارش ممیزی", "DocType", "Farda Audit Log"),
+	]),
+]
+
+
+def ensure_sidebar(name: str = "FardaERP") -> None:
+	"""(Re)build the Persian Workspace Sidebar from SIDEBAR (CORE-022)."""
+	if not frappe.db.exists("DocType", "Workspace Sidebar"):
+		return  # Frappe < v16
+	doc = frappe.get_doc("Workspace Sidebar", name) if frappe.db.exists("Workspace Sidebar", name) else frappe.new_doc("Workspace Sidebar")
+	doc.title = name
+	doc.header_icon = "home"
+	doc.set("items", [])
+	for label, link_type, link_to, icon, children in SIDEBAR:
+		if children is None:
+			if link_type == "Page" and not frappe.db.exists("Page", link_to):
+				continue
+			doc.append("items", {"type": "Link", "label": label, "link_type": link_type, "link_to": link_to, "icon": icon})
+			continue
+		rows = [c for c in children if frappe.db.exists("Report" if c[1] == "Report" else "DocType", c[2])]
+		if not rows:
+			continue
+		doc.append("items", {"type": "Section Break", "label": label, "icon": icon, "collapsible": 1, "indent": 1, "keep_closed": 1})
+		for clabel, ctype, ctarget in rows:
+			doc.append("items", {"type": "Link", "label": clabel, "link_type": ctype, "link_to": ctarget, "child": 1})
+	doc.save(ignore_permissions=True) if not doc.is_new() else doc.insert(ignore_permissions=True)
+
+
 def _ensure_desktop_icon(workspace: str) -> None:
 	"""Frappe v16 shows only Desktop Icons on /desk; a public workspace without an
 	icon (and a Workspace Sidebar) is invisible there (CORE-020). Put «فردا ERP»
@@ -419,6 +486,7 @@ def _ensure_desktop_icon(workspace: str) -> None:
 	from frappe.desk.doctype.desktop_icon.desktop_icon import add_workspace_to_desktop
 
 	add_workspace_to_desktop(workspace)
+	ensure_sidebar(workspace)
 	frappe.db.set_value(
 		"Desktop Icon", workspace, {"idx": -1, "hidden": 0, "icon": "home", "bg_color": "blue"}
 	)

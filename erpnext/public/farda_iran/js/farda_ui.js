@@ -183,8 +183,31 @@
 		}
 	};
 
+	/* Persian home (CORE-022): Persian users land on «فردا ERP» once per browser
+	 * session instead of the bare app grid, and the FardaERP workspace (whose
+	 * job is the sidebar) opens the home page. */
+	function homeRouting() {
+		if (!window.frappe || !frappe.router || !frappe.boot || (frappe.boot.lang || "").slice(0, 2) !== "fa") { return; }
+		if (!frappe.boot.farda_iran || frappe.boot.farda_iran.home === false) { return; }
+		var KEY = "farda_home_landed";
+		var check = function () {
+			var r = frappe.get_route() || [];
+			var atDesktop = r.length === 0 || (r.length === 1 && !r[0]);
+			var atFardaWs = r[0] === "Workspaces" && r[1] === "FardaERP";
+			var landed = false;
+			try { landed = sessionStorage.getItem(KEY) === "1"; } catch (e) { landed = true; }
+			if (atFardaWs || (atDesktop && !landed)) {
+				try { sessionStorage.setItem(KEY, "1"); } catch (e) { /* private mode */ }
+				frappe.set_route("farda-home");
+			}
+		};
+		frappe.router.on("change", check);
+		setTimeout(check, 0);
+	}
+
 	if (window.frappe) {
 		apply();
+		if (frappe.router) { homeRouting(); } else { $(document).on("app_ready", homeRouting); }
 	} else {
 		document.addEventListener("DOMContentLoaded", apply);
 	}
