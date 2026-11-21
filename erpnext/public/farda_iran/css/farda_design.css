@@ -175,3 +175,21 @@ html[lang="fa"] .flex-void {
 .farda-jpicker .fj-clear { color: var(--farda-color-text-muted); }
 .farda-jpicker .fj-foot button:hover { background: var(--farda-color-surface-alt); }
 .farda-jpicker :focus-visible { outline: 2px solid #0f6d5f; outline-offset: 1px; }
+
+/* ---------------------------------------------------------------
+ * سامانه مودیان dialogs (CORE-034)
+ * ------------------------------------------------------------- */
+.farda-md-target { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 10px 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid; }
+.farda-md-target.is-sandbox { background: rgba(37, 99, 165, 0.08); border-color: rgba(37, 99, 165, 0.35); color: #1d4f85; }
+.farda-md-target.is-live { background: rgba(179, 54, 43, 0.08); border-color: rgba(179, 54, 43, 0.45); color: #8f2a21; }
+.farda-md-sum { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
+.farda-md-sum th, .farda-md-sum td { padding: 6px 8px; border-bottom: 1px solid var(--farda-color-border); vertical-align: top; }
+.farda-md-sum th { width: 40%; font-weight: 600; color: var(--farda-color-text-muted); }
+.farda-md-sum td { font-variant-numeric: tabular-nums; }
+.farda-md-box { padding: 10px 14px; margin-bottom: 10px; border-radius: 10px; }
+.farda-md-box ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.farda-md-box.is-error { background: rgba(179, 54, 43, 0.08); color: #8f2a21; }
+.farda-md-box.is-warn { background: rgba(154, 107, 21, 0.1); color: #7a5410; }
+.farda-md-box.is-ok { background: rgba(31, 122, 61, 0.1); color: #1a6633; }
+.farda-md-json pre { max-height: 260px; overflow: auto; font-size: 12px; text-align: left; background: var(--farda-color-surface-alt); padding: 8px; border-radius: 8px; }
+.farda-md-json summary { cursor: pointer; color: var(--farda-color-text-muted); }

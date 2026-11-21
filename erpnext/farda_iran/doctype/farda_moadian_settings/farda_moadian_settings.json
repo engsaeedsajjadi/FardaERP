@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "issingle": 1,
+ "field_order": [
+  "enabled",
+  "connection_html",
+  "defaults_section",
+  "default_invoice_type",
+  "default_unit_code",
+  "column_break_d",
+  "auto_inquiry",
+  "last_serial"
+ ],
+ "fields": [
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "ارسال به سامانه مودیان فعال است",
+   "default": "1",
+   "description": "اگر خاموش باشد، دکمه ارسال در فاکتور فروش نمایش داده نمی‌شود."
+  },
+  {
+   "fieldname": "connection_html",
+   "fieldtype": "HTML",
+   "label": "وضعیت اتصال"
+  },
+  {
+   "fieldname": "defaults_section",
+   "fieldtype": "Section Break",
+   "label": "پیش‌فرض‌های صورتحساب"
+  },
+  {
+   "fieldname": "default_invoice_type",
+   "fieldtype": "Select",
+   "label": "نوع پیش‌فرض صورتحساب",
+   "options": "نوع اول (با اطلاعات خریدار)\nنوع دوم (بدون الزام اطلاعات خریدار)",
+   "default": "نوع اول (با اطلاعات خریدار)",
+   "description": "نوع اول برای خریدارانی است که می‌خواهند مالیات را اعتبار بگیرند و به اطلاعات هویتی خریدار نیاز دارد. انتخاب نوع با نظر حسابدار شماست."
+  },
+  {
+   "fieldname": "default_unit_code",
+   "fieldtype": "Data",
+   "label": "کد پیش‌فرض واحد اندازه‌گیری",
+   "description": "اختیاری. کد عددی واحد از فهرست رسمی واحدها (RC_UMGS). برای هر کالا می‌توانید در کارت کالا کد جدا بگذارید."
+  },
+  {
+   "fieldname": "column_break_d",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "auto_inquiry",
+   "fieldtype": "Check",
+   "label": "استعلام خودکار وضعیت هر ۱۰ دقیقه",
+   "default": "1"
+  },
+  {
+   "fieldname": "last_serial",
+   "fieldtype": "Int",
+   "label": "آخرین سریال داخلی استفاده‌شده",
+   "description": "سریال صورتحساب‌ها از عدد بعدی ادامه می‌یابد. اگر قبلاً با نرم‌افزار دیگری برای همین شناسه حافظه ارسال کرده‌اید، این عدد را بزرگ‌تر از آخرین سریال آن قرار دهید.",
+   "non_negative": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Moadian Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

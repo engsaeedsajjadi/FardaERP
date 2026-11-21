@@ -1,0 +1,282 @@
+{
+ "actions": [],
+ "autoname": "MOADIAN-.#####",
+ "creation": "2026-11-21 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_invoice",
+  "subject",
+  "status",
+  "target_label",
+  "column_break_1",
+  "company",
+  "customer",
+  "tbill",
+  "tvam",
+  "ids_section",
+  "taxid",
+  "serial",
+  "indatim",
+  "reference_taxid",
+  "column_break_2",
+  "uid",
+  "reference_number",
+  "sent_at",
+  "sent_by",
+  "last_inquiry_at",
+  "inquiry_count",
+  "result_section",
+  "messages",
+  "confirm_code",
+  "payload_section",
+  "invoice_json",
+  "response_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "label": "فاکتور فروش",
+   "options": "Sales Invoice",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Select",
+   "label": "موضوع",
+   "options": "اصلی\nابطال",
+   "default": "اصلی",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "وضعیت",
+   "options": "آماده ارسال\nارسال شد\nدر حال پردازش\nثبت شد\nرد شد\nیافت نشد\nخطای ارسال",
+   "default": "آماده ارسال",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "target_label",
+   "fieldtype": "Data",
+   "label": "محیط ارسال",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "شرکت",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "مشتری",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tbill",
+   "fieldtype": "Currency",
+   "label": "مبلغ کل صورتحساب (ریال)",
+   "options": "IRR",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tvam",
+   "fieldtype": "Currency",
+   "label": "مالیات بر ارزش افزوده (ریال)",
+   "options": "IRR",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ids_section",
+   "fieldtype": "Section Break",
+   "label": "شناسه‌ها"
+  },
+  {
+   "fieldname": "taxid",
+   "fieldtype": "Data",
+   "label": "شماره منحصر به فرد مالیاتی",
+   "unique": 1,
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "serial",
+   "fieldtype": "Int",
+   "label": "سریال داخلی",
+   "read_only": 1
+  },
+  {
+   "fieldname": "indatim",
+   "fieldtype": "Data",
+   "label": "زمان صدور (میلی‌ثانیه یونیکس)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_taxid",
+   "fieldtype": "Data",
+   "label": "شماره مالیاتی صورتحساب مرجع",
+   "description": "برای صورتحساب ابطالی",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "uid",
+   "fieldtype": "Data",
+   "label": "شناسه پیگیری (UID)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_number",
+   "fieldtype": "Data",
+   "label": "شماره مرجع سامانه",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_at",
+   "fieldtype": "Datetime",
+   "label": "زمان ارسال",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_by",
+   "fieldtype": "Link",
+   "label": "ارسال‌کننده",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_inquiry_at",
+   "fieldtype": "Datetime",
+   "label": "آخرین استعلام",
+   "read_only": 1
+  },
+  {
+   "fieldname": "inquiry_count",
+   "fieldtype": "Int",
+   "label": "تعداد استعلام",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "result_section",
+   "fieldtype": "Section Break",
+   "label": "نتیجه"
+  },
+  {
+   "fieldname": "messages",
+   "fieldtype": "Long Text",
+   "label": "خطاها و هشدارهای سامانه",
+   "read_only": 1
+  },
+  {
+   "fieldname": "confirm_code",
+   "fieldtype": "Data",
+   "label": "کد تأیید",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "payload_section",
+   "fieldtype": "Section Break",
+   "label": "داده‌های فنی",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "invoice_json",
+   "fieldtype": "Code",
+   "label": "صورتحساب ارسالی (JSON)",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "response_json",
+   "fieldtype": "Code",
+   "label": "پاسخ سامانه (JSON)",
+   "options": "JSON",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-11-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Moadian Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager",
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager",
+   "report": 1,
+   "export": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "title": "آماده ارسال",
+   "color": "Gray"
+  },
+  {
+   "title": "ارسال شد",
+   "color": "Blue"
+  },
+  {
+   "title": "در حال پردازش",
+   "color": "Orange"
+  },
+  {
+   "title": "ثبت شد",
+   "color": "Green"
+  },
+  {
+   "title": "رد شد",
+   "color": "Red"
+  },
+  {
+   "title": "یافت نشد",
+   "color": "Red"
+  },
+  {
+   "title": "خطای ارسال",
+   "color": "Red"
+  }
+ ],
+ "title_field": "sales_invoice",
+ "show_title_field_in_link": 0,
+ "track_changes": 1
+}

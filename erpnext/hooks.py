@@ -41,6 +41,7 @@ doctype_js = {
 	"Event": "public/js/event.js",
 	"Newsletter": "public/js/newsletter.js",
 	"Contact": "public/js/contact.js",
+	"Sales Invoice": "farda_iran/moadian/sales_invoice_moadian.js",  # CORE-034 سامانه مودیان
 }
 doctype_list_js = {
 	"Code List": [
@@ -796,7 +797,10 @@ _farda_merge_hooks(
 			"after_insert": "erpnext.farda_iran.audit.service.on_doc_update",
 			"on_update": "erpnext.farda_iran.audit.service.on_doc_update",
 		},
-		"Sales Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
+		"Sales Invoice": {
+			"validate": "erpnext.farda_iran.tax.service.on_invoice_validate",
+			"before_cancel": "erpnext.farda_iran.moadian.service.on_sales_invoice_cancel",
+		},
 		"Purchase Invoice": {"validate": "erpnext.farda_iran.tax.service.on_invoice_validate"},
 		"Payment Entry": {
 			"on_submit": [
@@ -824,6 +828,14 @@ scheduler_events["daily"] = [
 	*scheduler_events["daily"],
 	"erpnext.farda_iran.cheque.reminders.notify_cheques_due",
 	"erpnext.farda_iran.notifications.service.run",
+]
+
+# CORE-034: poll سامانه مودیان for invoices still being processed
+scheduler_events.setdefault("cron", {})
+scheduler_events["cron"].setdefault("*/10 * * * *", [])
+scheduler_events["cron"]["*/10 * * * *"] = [
+	*scheduler_events["cron"]["*/10 * * * *"],
+	"erpnext.farda_iran.moadian.service.poll_pending",
 ]
 
 del _farda_merge_hooks

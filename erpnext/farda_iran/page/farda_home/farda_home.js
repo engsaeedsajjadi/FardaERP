@@ -463,6 +463,15 @@ FardaHome.MODULES = [
 		],
 	},
 	{
+		title: "سامانه مودیان",
+		icon: "upload",
+		desc: "فاکتور فروش ثبت‌شده را با شماره منحصر به فرد مالیاتی به سامانه مودیان بفرستید و وضعیت آن را پیگیری کنید.",
+		links: [
+			{ label: "ارسال‌های سامانه مودیان", go: ["list", "Farda Moadian Log"] },
+			{ label: "تنظیمات سامانه مودیان", go: ["form", "Farda Moadian Settings"], doctype: "Farda Moadian Settings" },
+		],
+	},
+	{
 		title: "پرداخت آنلاین و پیامک",
 		icon: "phone",
 		desc: "پرداخت فاکتور از درگاه زرین‌پال، آیدی‌پی یا نکست‌پی، و پیامک یادآوری چک و کد تأیید.",
@@ -486,6 +495,7 @@ FardaHome.MODULES = [
 
 // 24px line icons (stroke = currentColor)
 FardaHome.ICONS = {
+	upload: '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
 	dot: '<circle cx="12" cy="12" r="3"/>',
 	receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
 	cash: '<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9v.01M17 15v.01"/>',

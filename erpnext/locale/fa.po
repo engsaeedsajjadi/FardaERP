@@ -64559,3 +64559,11 @@ msgstr "{0} هرگز ایمیل نمی‌فرستد، پس برای کاربرا
 #. Frappe core string, translated for FardaERP (CORE-028)
 msgid "{0}: Link field cannot reference DocType {1} without Guest read permission"
 msgstr "{0}: فیلد پیوند بدون دسترسی خواندن مهمان نمی‌تواند به نوع سند {1} اشاره کند"
+
+#. FardaERP سامانه مودیان (CORE-034)
+msgid "Farda Moadian Log"
+msgstr "ارسال‌های سامانه مودیان"
+
+#. FardaERP سامانه مودیان (CORE-034)
+msgid "Farda Moadian Settings"
+msgstr "تنظیمات سامانه مودیان"

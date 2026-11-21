@@ -25,3 +25,8 @@ erpnext/public/banking
 erpnext/www/banking.html
 # FardaERP (§26): docker secrets template copies — never commit real values
 .env
+
+# سامانه مودیان keys (CORE-034) — never commit
+secrets/
+*.pem
+*.key

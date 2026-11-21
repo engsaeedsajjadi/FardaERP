@@ -17,7 +17,8 @@ PARTY_FIELDS = [
 		fieldname="farda_person_type",
 		label="نوع شخصیت",
 		fieldtype="Select",
-		options="\nحقیقی\nحقوقی",
+		options="\nحقیقی\nحقوقی\nمشارکت مدنی\nاتباع غیرایرانی",
+		description="برای صورتحساب سامانه مودیان لازم است. اتباع غیرایرانی: کد فراگیر را در «کد ملی» وارد کنید.",
 		insert_after="tax_id",
 	),
 	dict(fieldname="farda_national_id", label="کد ملی", fieldtype="Data", insert_after="farda_person_type"),
@@ -127,14 +128,65 @@ ITEM_FIELDS = [
 ]
 
 
+# CORE-034 — سامانه مودیان
+MOADIAN_ITEM_FIELDS = [
+	dict(
+		fieldname="farda_sstid",
+		label="شناسه کالا/خدمت سامانه مودیان",
+		fieldtype="Data",
+		length=13,
+		insert_after="farda_vat_exempt",
+		description="شناسه ۱۳ رقمی از stuffid.tax.gov.ir؛ نرخ مالیات آن باید با نرخ فاکتور یکی باشد.",
+	),
+	dict(
+		fieldname="farda_moadian_unit",
+		label="کد واحد اندازه‌گیری (مودیان)",
+		fieldtype="Data",
+		insert_after="farda_sstid",
+		description="اختیاری؛ کد عددی واحد از فهرست رسمی واحدها.",
+	),
+]
+
+MOADIAN_INVOICE_FIELDS = [
+	dict(
+		fieldname="farda_moadian_section",
+		label="سامانه مودیان",
+		fieldtype="Section Break",
+		insert_after="outstanding_amount",
+		collapsible=1,
+		depends_on="eval:doc.docstatus>0 && doc.farda_moadian_log",
+	),
+	dict(fieldname="farda_moadian_status", label="وضعیت در سامانه مودیان", fieldtype="Data", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_section"),
+	dict(fieldname="farda_moadian_taxid", label="شماره منحصر به فرد مالیاتی", fieldtype="Data", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_status", print_hide=0),
+	dict(fieldname="farda_moadian_cb", fieldtype="Column Break", insert_after="farda_moadian_taxid"),
+	dict(fieldname="farda_moadian_reference", label="شماره مرجع سامانه", fieldtype="Data", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_cb"),
+	dict(fieldname="farda_moadian_log", label="آخرین سابقه ارسال", fieldtype="Link", options="Farda Moadian Log", read_only=1, allow_on_submit=1, no_copy=1, insert_after="farda_moadian_reference"),
+]
+
+
+def ensure_moadian_defaults() -> None:
+	"""First run only: turn the integration on with sandbox-safe defaults."""
+	if not frappe.db.exists("DocType", "Farda Moadian Settings"):
+		return
+	if frappe.db.sql("select count(*) from `tabSingles` where doctype='Farda Moadian Settings'")[0][0]:
+		return
+	for field, value in (
+		("enabled", 1),
+		("auto_inquiry", 1),
+		("default_invoice_type", "نوع اول (با اطلاعات خریدار)"),
+		("last_serial", 0),
+	):
+		frappe.db.set_single_value("Farda Moadian Settings", field, value)
+
+
 def ensure_custom_fields() -> None:
 	custom_fields = {
 		"Customer": PARTY_FIELDS,
 		"Supplier": PARTY_FIELDS,
 		"Company": COMPANY_FIELDS,
-		"Item": ITEM_FIELDS,
+		"Item": ITEM_FIELDS + MOADIAN_ITEM_FIELDS,
 		"Bank Account": BANK_ACCOUNT_FIELDS,
-		"Sales Invoice": INVOICE_FIELDS,
+		"Sales Invoice": INVOICE_FIELDS + MOADIAN_INVOICE_FIELDS,
 		"Purchase Invoice": INVOICE_FIELDS,
 		"Payment Entry": PAYMENT_ENTRY_FIELDS,
 	}
@@ -455,6 +507,11 @@ SIDEBAR = [
 		("قالب‌های مالیاتی کالا", "DocType", "Item Tax Template"),
 		("گزارش ارزش افزوده", "Report", "Farda VAT Report"),
 	]),
+	("سامانه مودیان", None, None, "upload", [
+		("ارسال‌های سامانه مودیان", "DocType", "Farda Moadian Log"),
+		("تنظیمات سامانه مودیان", "DocType", "Farda Moadian Settings"),
+		("فاکتورهای فروش", "DocType", "Sales Invoice"),
+	]),
 	("تنظیمات", None, None, "setting", [
 		("شرکت‌ها", "DocType", "Company"),
 		("کاربران", "DocType", "User"),
@@ -518,6 +575,7 @@ def ensure_irr_format() -> None:
 def execute() -> str:
 	ensure_custom_fields()
 	ensure_irr_format()
+	ensure_moadian_defaults()
 	ensure_vat_settings_defaults()
 	ensure_vat_item_tax_templates()
 	ensure_search_keys()

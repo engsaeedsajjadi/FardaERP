@@ -33,6 +33,7 @@ MODULES = (
 	"test_notifications_core",
 	"test_namespaces_core",
 	"test_flags_core",
+	"test_moadian_pure",
 )
 
 

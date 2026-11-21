@@ -31,6 +31,15 @@ x-farda-env: &farda-env
   ZARINPAL_MERCHANT_ID: ${ZARINPAL_MERCHANT_ID:-}
   IDPAY_API_KEY: ${IDPAY_API_KEY:-}
   NEXTPAY_API_KEY: ${NEXTPAY_API_KEY:-}
+  # سامانه مودیان (CORE-034): keys live in MOADIAN_KEYS_DIR on the host, mounted read-only
+  FARDA_MOADIAN_MEMORY_ID: ${FARDA_MOADIAN_MEMORY_ID:-}
+  FARDA_MOADIAN_PRIVATE_KEY_PATH: ${FARDA_MOADIAN_PRIVATE_KEY_PATH:-/run/secrets/moadian/private.pem}
+  FARDA_MOADIAN_PRIVATE_KEY_PASSWORD: ${FARDA_MOADIAN_PRIVATE_KEY_PASSWORD:-}
+  FARDA_MOADIAN_CERT_PATH: ${FARDA_MOADIAN_CERT_PATH:-/run/secrets/moadian/certificate.pem}
+  FARDA_MOADIAN_TARGET: ${FARDA_MOADIAN_TARGET:-sandbox}
+  FARDA_MOADIAN_SANDBOX_BASE_URL: ${FARDA_MOADIAN_SANDBOX_BASE_URL:-}
+  FARDA_MOADIAN_LIVE_BASE_URL: ${FARDA_MOADIAN_LIVE_BASE_URL:-}
+  FARDA_MOADIAN_ALLOW_LIVE: ${FARDA_MOADIAN_ALLOW_LIVE:-0}
 
 services:
   mariadb:
@@ -86,6 +95,7 @@ services:
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-0}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
+      - ${MOADIAN_KEYS_DIR:-./secrets/moadian}:/run/secrets/moadian:ro
     depends_on:
       mariadb:
         condition: service_healthy
@@ -105,6 +115,7 @@ services:
     environment: *farda-env
     volumes:
       - sites:/home/frappe/frappe-bench/sites
+      - ${MOADIAN_KEYS_DIR:-./secrets/moadian}:/run/secrets/moadian:ro
     depends_on:
       mariadb:
         condition: service_healthy
@@ -130,6 +141,7 @@ services:
     environment: *farda-env
     volumes:
       - sites:/home/frappe/frappe-bench/sites
+      - ${MOADIAN_KEYS_DIR:-./secrets/moadian}:/run/secrets/moadian:ro
     depends_on:
       mariadb:
         condition: service_healthy
