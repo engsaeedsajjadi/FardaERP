@@ -16,11 +16,18 @@ server {
         return 200 "ok";
     }
     # built JS/CSS assets (copied into the image at build time)
+    # CORE-023: only content-hashed bundles (/assets/<app>/dist/...) may be cached
+    # forever. Unhashed files such as farda_ui.js / farda_*.css / fonts keep their
+    # URL across releases, so they must revalidate or users never get fixes.
     location /assets/ {
-        alias /usr/share/nginx/html/assets/;
+        root /usr/share/nginx/html;
         try_files $uri =404;
-        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header Cache-Control "public, max-age=300, must-revalidate";
         access_log off;
+        location ~ ^/assets/[^/]+/dist/ {
+            try_files $uri =404;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+        }
     }
     # public files live on the shared sites volume: <site>/public/files
     location /files/ {

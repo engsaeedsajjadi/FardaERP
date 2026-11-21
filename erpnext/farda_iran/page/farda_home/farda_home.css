@@ -1,0 +1,218 @@
+/* FardaERP — Persian home (CORE-022). Scoped to .farda-home. */
+.farda-home-hide { display: none !important; }
+
+.farda-home {
+	--fh-ink: var(--text-color, #1d2a2e);
+	--fh-muted: var(--text-muted, #5b6b67);
+	--fh-line: var(--border-color, #dfe5e3);
+	--fh-card: var(--card-bg, #ffffff);
+	--fh-soft: var(--subtle-fg, #f3f6f5);
+	--fh-teal: #0f6d5f;
+	--fh-teal-deep: #0a4a41;
+	--fh-teal-tint: rgba(15, 109, 95, 0.09);
+	--fh-saffron: #c98a12;
+	--fh-red: #b3362b;
+	font-family: "Vazirmatn", Tahoma, sans-serif;
+	color: var(--fh-ink);
+	max-width: 1240px;
+	margin: 0 auto;
+	padding: 20px 4px 48px;
+	font-feature-settings: "ss01";
+}
+.farda-home h1, .farda-home h2, .farda-home h3, .farda-home p { margin: 0; }
+.farda-home a { color: inherit; text-decoration: none; }
+.farda-home a:focus-visible, .farda-home button:focus-visible, .farda-home select:focus-visible {
+	outline: 2px solid var(--fh-teal);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+.fh-ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------------------------------------------------------------- hero */
+.fh-hero {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 32px 36px 30px;
+	border-radius: 18px;
+	color: #f1f7f5;
+	background-color: var(--fh-teal-deep);
+	/* girih: eight-pointed stars, the classic Persian tile, kept very faint */
+	background-image:
+		linear-gradient(105deg, rgba(10, 74, 65, 0.15) 0%, rgba(10, 74, 65, 0.92) 62%),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.13' stroke-width='1'%3E%3Cpath d='M32 10l6.4 15.6L54 32l-15.6 6.4L32 54l-6.4-15.6L10 32l15.6-6.4z'/%3E%3Cpath d='M16.4 16.4h31.2v31.2H16.4z' transform='rotate(45 32 32)'/%3E%3Cpath d='M16.4 16.4h31.2v31.2H16.4z'/%3E%3Cpath d='M0 0l10 10M64 0L54 10M0 64l10-10M64 64L54 54'/%3E%3C/g%3E%3C/svg%3E");
+	background-size: auto, 64px 64px;
+	overflow: hidden;
+}
+.fh-greet { font-size: 15px; opacity: 0.85; margin-bottom: 6px; }
+.fh-date { font-size: 40px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px; color: #ffffff; }
+.fh-day { color: #f3c45a; }
+.fh-year { display: block; font-size: 16px; font-weight: 400; opacity: 0.8; letter-spacing: 0; margin-top: 4px; }
+.fh-sub { margin-top: 14px; font-size: 14px; opacity: 0.85; max-width: 46ch; line-height: 1.9; }
+.fh-company { display: flex; flex-direction: column; gap: 6px; font-size: 12px; opacity: 0.95; min-width: 220px; }
+.fh-company select {
+	appearance: none;
+	background: rgba(255, 255, 255, 0.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat left 12px center;
+	color: #fff;
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	border-radius: 10px;
+	padding: 9px 14px 9px 32px;
+	font: inherit;
+	font-size: 14px;
+	cursor: pointer;
+}
+.fh-company select option { color: #1d2a2e; }
+
+/* ---------------------------------------------------------------- quick actions */
+.fh-actions {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 10px;
+	margin: 18px 0 30px;
+}
+.fh-action {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 13px 14px;
+	background: var(--fh-card);
+	border: 1px solid var(--fh-line);
+	border-radius: 12px;
+	font-weight: 600;
+	font-size: 14px;
+	transition: border-color 0.15s, background 0.15s;
+}
+.fh-action .fh-ico { color: var(--fh-teal); }
+.fh-action:hover { border-color: var(--fh-teal); background: var(--fh-teal-tint); }
+.fh-action span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------------------------------------------------------------- section heads */
+.fh-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.fh-section-head h2 { font-size: 18px; font-weight: 700; }
+.fh-section-head p { font-size: 13px; color: var(--fh-muted); }
+
+/* ---------------------------------------------------------------- KPI strip */
+.fh-kpis { margin-bottom: 32px; }
+.fh-kpi-strip {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	background: var(--fh-card);
+	border: 1px solid var(--fh-line);
+	border-radius: 14px;
+	overflow: hidden;
+}
+.fh-kpi {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	padding: 18px 18px 16px;
+	background: none;
+	border: 0;
+	border-inline-start: 1px solid var(--fh-line);
+	text-align: start;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+.fh-kpi:first-child { border-inline-start: 0; }
+.fh-kpi:hover { background: var(--fh-soft); }
+.fh-kpi-label { font-size: 13px; color: var(--fh-muted); }
+.fh-kpi-value { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.fh-kpi-value.is-negative { color: var(--fh-red); }
+.fh-neg { font-size: 12px; font-weight: 600; }
+.fh-kpi-hint { font-size: 12px; color: var(--fh-muted); }
+.fh-skeleton { color: transparent !important; background: var(--fh-soft); border-radius: 6px; min-width: 90px; }
+
+/* ---------------------------------------------------------------- grid */
+.fh-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: start; margin-bottom: 24px; }
+
+/* module directory: a list, not a card wall */
+.fh-module-list { background: var(--fh-card); border: 1px solid var(--fh-line); border-radius: 14px; }
+.fh-module { display: flex; gap: 16px; padding: 18px 20px; border-top: 1px solid var(--fh-line); }
+.fh-module:first-child { border-top: 0; }
+.fh-module-icon {
+	width: 42px; height: 42px; border-radius: 11px; flex: none;
+	display: grid; place-items: center;
+	color: var(--fh-teal); background: var(--fh-teal-tint);
+}
+.fh-module-body { min-width: 0; }
+.fh-module h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.fh-module p { font-size: 13px; color: var(--fh-muted); line-height: 1.9; margin-bottom: 8px; max-width: 70ch; }
+.fh-module-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.fh-module-links a {
+	font-size: 13px; padding: 4px 11px; border-radius: 999px;
+	border: 1px solid var(--fh-line); background: var(--fh-card);
+}
+.fh-module-links a:hover { border-color: var(--fh-teal); color: var(--fh-teal); }
+.fh-module-links a.is-report { background: var(--fh-soft); border-color: transparent; }
+
+/* side panels */
+.fh-side { display: flex; flex-direction: column; gap: 16px; }
+.fh-panel { background: var(--fh-card); border: 1px solid var(--fh-line); border-radius: 14px; padding: 16px 18px; }
+.fh-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.fh-panel-head h3 { font-size: 14px; font-weight: 700; }
+.fh-more, .fh-muted { font-size: 12px; color: var(--fh-muted); }
+.fh-more:hover { color: var(--fh-teal); }
+
+.fh-list { list-style: none; margin: 0; padding: 0; }
+.fh-list li + li { border-top: 1px solid var(--fh-line); }
+.fh-li-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; }
+.fh-li-link:hover strong { color: var(--fh-teal); }
+.fh-li-main { display: flex; flex-direction: column; min-width: 0; }
+.fh-li-main strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fh-li-main small { font-size: 12px; color: var(--fh-muted); }
+.fh-li-main small.is-late { color: var(--fh-red); }
+.fh-li-amount { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fh-empty { font-size: 13px; color: var(--fh-muted); padding: 8px 0; line-height: 1.9; }
+.fh-empty a { color: var(--fh-teal); font-weight: 600; }
+.fh-status.s-overdue { color: var(--fh-red); }
+.fh-status.s-paid { color: var(--fh-teal); }
+.fh-status.s-unpaid, .fh-status.s-partly_paid { color: var(--fh-saffron); }
+
+/* setup checklist: a real sequence, so numbered */
+.fh-setup { border-color: rgba(201, 138, 18, 0.45); background: linear-gradient(var(--fh-card), var(--fh-card)) padding-box; }
+.fh-progress { font-size: 12px; color: var(--fh-saffron); font-weight: 700; }
+.fh-steps { list-style: none; counter-reset: fh; margin: 0; padding: 0; }
+.fh-steps li { counter-increment: fh; display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.fh-steps li::before {
+	content: counter(fh, persian);
+	width: 24px; height: 24px; border-radius: 50%; flex: none;
+	display: grid; place-items: center; font-size: 12px; font-weight: 700;
+	border: 1.5px solid var(--fh-line); color: var(--fh-muted);
+}
+.fh-steps li.is-done::before { content: "✓"; background: var(--fh-teal); border-color: var(--fh-teal); color: #fff; }
+.fh-step-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.fh-step-text strong { font-size: 13px; font-weight: 600; }
+.fh-step-text small { font-size: 12px; color: var(--fh-muted); }
+.fh-steps li.is-done .fh-step-text strong { color: var(--fh-muted); text-decoration: line-through; }
+.fh-check { display: none; }
+.fh-step-cta { font-size: 12px; font-weight: 700; color: #fff !important; background: var(--fh-teal); padding: 5px 12px; border-radius: 8px; }
+.fh-step-cta:hover { background: var(--fh-teal-deep); }
+
+.fh-chart-panel .fh-chart { min-height: 120px; }
+
+/* ---------------------------------------------------------------- responsive */
+@media (max-width: 1100px) {
+	.fh-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.fh-kpi-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.fh-kpi:nth-child(4) { border-inline-start: 0; }
+	.fh-kpi:nth-child(n + 4) { border-top: 1px solid var(--fh-line); }
+	.fh-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+	.farda-home { padding-top: 8px; }
+	.fh-hero { flex-direction: column; align-items: stretch; padding: 24px 20px; border-radius: 14px; }
+	.fh-date { font-size: 32px; }
+	.fh-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.fh-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.fh-kpi:nth-child(odd) { border-inline-start: 0; }
+	.fh-kpi:nth-child(4) { border-inline-start: 1px solid var(--fh-line); }
+	.fh-kpi:nth-child(n + 3) { border-top: 1px solid var(--fh-line); }
+	.fh-module { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.farda-home * { transition: none !important; }
+}
