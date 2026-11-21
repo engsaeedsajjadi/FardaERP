@@ -280,6 +280,16 @@ def ensure_vat_settings_defaults() -> None:
 	if not frappe.db.get_single_value("Farda VAT Settings", "default_rate"):
 		frappe.db.set_single_value("Farda VAT Settings", "enabled", 1)
 		frappe.db.set_single_value("Farda VAT Settings", "default_rate", 10.0)
+	# CORE-029: a company created from the Iranian chart already has the VAT
+	# account (210301); pick it so VAT works without a manual setup step.
+	if not frappe.db.get_single_value("Farda VAT Settings", "vat_account"):
+		company = frappe.defaults.get_global_default("company")
+		filters = {"account_type": "Tax", "is_group": 0, "account_number": "210301"}
+		if company:
+			filters["company"] = company
+		account = frappe.db.get_value("Account", filters, "name")
+		if account:
+			frappe.db.set_single_value("Farda VAT Settings", "vat_account", account)
 
 
 def ensure_ui_assets() -> None:

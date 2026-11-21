@@ -1,0 +1,376 @@
+{
+ "country_code": "ir",
+ "name": "ایران - کدینگ استاندارد فردا",
+ "tree": {
+  "دارایی‌ها": {
+   "account_number": "1",
+   "root_type": "Asset",
+   "دارایی‌های جاری": {
+    "account_number": "11",
+    "موجودی نقد و بانک": {
+     "account_number": "1101",
+     "صندوق": {
+      "account_number": "110101",
+      "account_type": "Cash"
+     },
+     "تنخواه‌گردان": {
+      "account_number": "110102",
+      "account_type": "Cash"
+     },
+     "بانک‌ها": {
+      "account_number": "110103",
+      "account_type": "Bank",
+      "حساب جاری بانک": {
+       "account_number": "11010301",
+       "account_type": "Bank"
+      }
+     }
+    },
+    "سرمایه‌گذاری‌های کوتاه‌مدت": {
+     "account_number": "1102",
+     "سپرده‌های کوتاه‌مدت بانکی": {
+      "account_number": "110201"
+     }
+    },
+    "حساب‌ها و اسناد دریافتنی تجاری": {
+     "account_number": "1103",
+     "account_type": "Receivable",
+     "حساب‌های دریافتنی تجاری": {
+      "account_number": "110301",
+      "account_type": "Receivable"
+     },
+     "اسناد دریافتنی (چک‌های دریافتی)": {
+      "account_number": "110302",
+      "account_type": "Receivable"
+     }
+    },
+    "سایر حساب‌ها و اسناد دریافتنی": {
+     "account_number": "1104",
+     "علی‌الحساب کارکنان": {
+      "account_number": "110401",
+      "account_type": "Receivable"
+     },
+     "سایر دریافتنی‌ها": {
+      "account_number": "110402"
+     }
+    },
+    "موجودی مواد و کالا": {
+     "account_number": "1105",
+     "account_type": "Stock",
+     "موجودی کالا": {
+      "account_number": "110501",
+      "account_type": "Stock"
+     },
+     "موجودی مواد اولیه": {
+      "account_number": "110502",
+      "account_type": "Stock"
+     },
+     "کالای در جریان ساخت": {
+      "account_number": "110503",
+      "account_type": "Stock"
+     }
+    },
+    "پیش‌پرداخت‌ها": {
+     "account_number": "1106",
+     "پیش‌پرداخت خرید": {
+      "account_number": "110601"
+     },
+     "پیش‌پرداخت مالیات": {
+      "account_number": "110602"
+     },
+     "پیش‌پرداخت بیمه": {
+      "account_number": "110603"
+     }
+    }
+   },
+   "دارایی‌های غیرجاری": {
+    "account_number": "12",
+    "دارایی‌های ثابت مشهود": {
+     "account_number": "1201",
+     "زمین": {
+      "account_number": "120101",
+      "account_type": "Fixed Asset"
+     },
+     "ساختمان": {
+      "account_number": "120102",
+      "account_type": "Fixed Asset"
+     },
+     "ماشین‌آلات و تجهیزات": {
+      "account_number": "120103",
+      "account_type": "Fixed Asset"
+     },
+     "وسایل نقلیه": {
+      "account_number": "120104",
+      "account_type": "Fixed Asset"
+     },
+     "اثاثه و منصوبات": {
+      "account_number": "120105",
+      "account_type": "Fixed Asset"
+     },
+     "رایانه و تجهیزات اداری": {
+      "account_number": "120106",
+      "account_type": "Fixed Asset"
+     },
+     "دارایی‌های در جریان تکمیل": {
+      "account_number": "120107",
+      "account_type": "Capital Work in Progress"
+     }
+    },
+    "استهلاک انباشته": {
+     "account_number": "1202",
+     "استهلاک انباشتهٔ دارایی‌های ثابت": {
+      "account_number": "120201",
+      "account_type": "Accumulated Depreciation"
+     }
+    },
+    "دارایی‌های نامشهود": {
+     "account_number": "1203",
+     "سرقفلی": {
+      "account_number": "120301"
+     },
+     "نرم‌افزار": {
+      "account_number": "120302"
+     }
+    },
+    "سرمایه‌گذاری‌های بلندمدت": {
+     "account_number": "1204",
+     "سرمایه‌گذاری در سهام": {
+      "account_number": "120401"
+     }
+    },
+    "سپرده‌ها": {
+     "account_number": "1205",
+     "سپرده‌های ضمانت": {
+      "account_number": "120501"
+     }
+    }
+   }
+  },
+  "بدهی‌ها": {
+   "account_number": "2",
+   "root_type": "Liability",
+   "بدهی‌های جاری": {
+    "account_number": "21",
+    "حساب‌ها و اسناد پرداختنی تجاری": {
+     "account_number": "2101",
+     "account_type": "Payable",
+     "حساب‌های پرداختنی تجاری": {
+      "account_number": "210101",
+      "account_type": "Payable"
+     },
+     "اسناد پرداختنی (چک‌های صادره)": {
+      "account_number": "210102",
+      "account_type": "Payable"
+     }
+    },
+    "سایر پرداختنی‌ها": {
+     "account_number": "2102",
+     "حقوق و دستمزد پرداختنی": {
+      "account_number": "210201",
+      "account_type": "Payable"
+     },
+     "حق بیمهٔ پرداختنی": {
+      "account_number": "210202"
+     },
+     "مالیات حقوق پرداختنی": {
+      "account_number": "210203"
+     },
+     "مالیات تکلیفی پرداختنی": {
+      "account_number": "210204",
+      "account_type": "Tax"
+     }
+    },
+    "مالیات‌ها": {
+     "account_number": "2103",
+     "account_type": "Tax",
+     "مالیات بر ارزش افزوده": {
+      "account_number": "210301",
+      "account_type": "Tax",
+      "tax_rate": 10.0
+     },
+     "ذخیرهٔ مالیات عملکرد": {
+      "account_number": "210302"
+     }
+    },
+    "پیش‌دریافت‌ها": {
+     "account_number": "2104",
+     "پیش‌دریافت فروش": {
+      "account_number": "210401"
+     }
+    },
+    "حساب‌های واسط": {
+     "account_number": "2105",
+     "کالای دریافتی صورتحساب‌نشده": {
+      "account_number": "210501",
+      "account_type": "Stock Received But Not Billed"
+     },
+     "دارایی دریافتی صورتحساب‌نشده": {
+      "account_number": "210502",
+      "account_type": "Asset Received But Not Billed"
+     }
+    },
+    "تسهیلات مالی کوتاه‌مدت": {
+     "account_number": "2106",
+     "وام‌های کوتاه‌مدت": {
+      "account_number": "210601"
+     }
+    }
+   },
+   "بدهی‌های غیرجاری": {
+    "account_number": "22",
+    "تسهیلات مالی بلندمدت": {
+     "account_number": "2201"
+    },
+    "ذخیرهٔ مزایای پایان خدمت کارکنان": {
+     "account_number": "2202"
+    }
+   }
+  },
+  "حقوق مالکانه": {
+   "account_number": "3",
+   "root_type": "Equity",
+   "سرمایه": {
+    "account_number": "31",
+    "سرمایهٔ ثبت‌شده": {
+     "account_number": "3101",
+     "account_type": "Equity"
+    }
+   },
+   "اندوخته‌ها": {
+    "account_number": "32",
+    "اندوختهٔ قانونی": {
+     "account_number": "3201",
+     "account_type": "Equity"
+    }
+   },
+   "سود (زیان) انباشته": {
+    "account_number": "33",
+    "سود و زیان انباشته": {
+     "account_number": "3301",
+     "account_type": "Equity"
+    }
+   },
+   "حساب‌های موقت": {
+    "account_number": "34",
+    "تراز افتتاحیه": {
+     "account_number": "3401",
+     "account_type": "Temporary"
+    }
+   }
+  },
+  "درآمدها": {
+   "account_number": "4",
+   "root_type": "Income",
+   "درآمدهای عملیاتی": {
+    "account_number": "41",
+    "فروش کالا": {
+     "account_number": "4101"
+    },
+    "درآمد ارائهٔ خدمات": {
+     "account_number": "4102"
+    },
+    "برگشت از فروش و تخفیفات": {
+     "account_number": "4103"
+    }
+   },
+   "درآمدهای غیرعملیاتی": {
+    "account_number": "42",
+    "درآمد سود سپرده": {
+     "account_number": "4201"
+    },
+    "سود فروش دارایی": {
+     "account_number": "4202"
+    },
+    "سود تسعیر ارز": {
+     "account_number": "4203"
+    },
+    "سایر درآمدها": {
+     "account_number": "4204"
+    }
+   }
+  },
+  "هزینه‌ها": {
+   "account_number": "5",
+   "root_type": "Expense",
+   "بهای تمام‌شده": {
+    "account_number": "51",
+    "بهای تمام‌شدهٔ کالای فروش‌رفته": {
+     "account_number": "5101",
+     "account_type": "Cost of Goods Sold"
+    },
+    "تعدیلات موجودی کالا": {
+     "account_number": "5102",
+     "account_type": "Stock Adjustment"
+    },
+    "هزینه‌های جذب‌شده در ارزش موجودی": {
+     "account_number": "5103",
+     "account_type": "Expenses Included In Valuation"
+    },
+    "هزینه‌های جذب‌شده در ارزش دارایی": {
+     "account_number": "5104",
+     "account_type": "Expenses Included In Asset Valuation"
+    }
+   },
+   "هزینه‌های عمومی، اداری و فروش": {
+    "account_number": "52",
+    "حقوق و دستمزد": {
+     "account_number": "5201"
+    },
+    "حق بیمهٔ سهم کارفرما": {
+     "account_number": "5202"
+    },
+    "اجاره": {
+     "account_number": "5203"
+    },
+    "آب، برق، گاز و تلفن": {
+     "account_number": "5204"
+    },
+    "حمل و نقل": {
+     "account_number": "5205",
+     "account_type": "Chargeable"
+    },
+    "تبلیغات و بازاریابی": {
+     "account_number": "5206"
+    },
+    "ملزومات اداری": {
+     "account_number": "5207"
+    },
+    "تعمیر و نگهداری": {
+     "account_number": "5208"
+    },
+    "هزینهٔ استهلاک": {
+     "account_number": "5209",
+     "account_type": "Depreciation"
+    },
+    "حق‌الزحمهٔ خدمات حرفه‌ای": {
+     "account_number": "5210"
+    },
+    "هزینه‌های متفرقه": {
+     "account_number": "5211"
+    }
+   },
+   "هزینه‌های مالی": {
+    "account_number": "53",
+    "کارمزد بانکی": {
+     "account_number": "5301"
+    },
+    "هزینهٔ سود تسهیلات": {
+     "account_number": "5302"
+    }
+   },
+   "سایر هزینه‌ها": {
+    "account_number": "54",
+    "زیان تسعیر ارز": {
+     "account_number": "5401"
+    },
+    "گرد کردن": {
+     "account_number": "5402",
+     "account_type": "Round Off"
+    },
+    "زیان فروش دارایی": {
+     "account_number": "5403"
+    }
+   }
+  }
+ }
+}
