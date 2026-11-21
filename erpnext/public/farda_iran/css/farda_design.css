@@ -125,3 +125,53 @@ html[lang="fa"] .flex-void {
 		transition-duration: 0.01ms !important;
 	}
 }
+
+/* ---------------------------------------------------------------
+ * Jalali date picker (CORE-026)
+ * ------------------------------------------------------------- */
+.farda-jdate-input { text-align: right; font-variant-numeric: tabular-nums; }
+.farda-jpicker {
+	position: absolute;
+	z-index: 1060;
+	width: 272px;
+	padding: 10px;
+	font-family: Vazirmatn, Tahoma, sans-serif;
+	color: var(--farda-color-text);
+	background: var(--farda-color-surface);
+	border: 1px solid var(--farda-color-border);
+	border-radius: 12px;
+	box-shadow: 0 12px 32px rgba(15, 40, 35, 0.16);
+}
+.farda-jpicker button, .farda-jpicker select, .farda-jpicker input { font: inherit; color: inherit; }
+.farda-jpicker .fj-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.farda-jpicker .fj-nav {
+	width: 30px; height: 30px; flex: none; border: 0; border-radius: 8px;
+	background: transparent; font-size: 20px; line-height: 1; cursor: pointer;
+}
+.farda-jpicker .fj-nav:hover { background: var(--farda-color-surface-alt); }
+.farda-jpicker select {
+	flex: 1; min-width: 0; height: 30px; padding: 0 6px;
+	border: 1px solid var(--farda-color-border); border-radius: 8px;
+	background: var(--farda-color-surface); font-size: 13px; font-weight: 600;
+}
+.farda-jpicker .fj-week, .farda-jpicker .fj-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.farda-jpicker .fj-week span { text-align: center; font-size: 11px; color: var(--farda-color-text-muted); padding: 4px 0; }
+.farda-jpicker .fj-day {
+	height: 32px; border: 0; border-radius: 8px; background: transparent;
+	font-size: 13px; cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.farda-jpicker .fj-day:hover { background: var(--farda-color-surface-alt); }
+.farda-jpicker .is-friday { color: #b3362b; }
+.farda-jpicker .fj-day.is-today { box-shadow: inset 0 0 0 1.5px #0f6d5f; font-weight: 700; }
+.farda-jpicker .fj-day.is-selected { background: #0f6d5f; color: #fff; font-weight: 700; }
+.farda-jpicker .fj-time { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 2px 0; font-size: 13px; }
+.farda-jpicker .fj-time input {
+	height: 30px; padding: 0 8px; border: 1px solid var(--farda-color-border);
+	border-radius: 8px; background: var(--farda-color-surface); direction: ltr;
+}
+.farda-jpicker .fj-foot { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--farda-color-border); }
+.farda-jpicker .fj-foot button { border: 0; background: transparent; font-size: 13px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.farda-jpicker .fj-today { color: #0f6d5f; font-weight: 700; }
+.farda-jpicker .fj-clear { color: var(--farda-color-text-muted); }
+.farda-jpicker .fj-foot button:hover { background: var(--farda-color-surface-alt); }
+.farda-jpicker :focus-visible { outline: 2px solid #0f6d5f; outline-offset: 1px; }
