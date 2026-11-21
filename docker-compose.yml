@@ -45,8 +45,10 @@ services:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 30s
+      retries: 30
+      # slow disks / Docker Desktop on Windows can need several minutes after a restart
+      start_period: 300s
+      start_interval: 5s
 
   redis-cache:
     image: redis:7.4.1-alpine
