@@ -12,12 +12,14 @@
  "fields": [
   {
    "default": "1",
+   "description": "اگر خاموش باشد، هیچ فاکتوری مالیات بر ارزش افزوده نمی‌گیرد.",
    "fieldname": "enabled",
    "fieldtype": "Check",
    "label": "فعال"
   },
   {
    "default": "10",
+   "description": "نرخ فعلی قانونی ۱۰٪ است. اگر نرخ عوض شد، فقط همین عدد را تغییر دهید.",
    "fieldname": "default_rate",
    "fieldtype": "Percent",
    "label": "نرخ پیش‌فرض مالیات بر ارزش افزوده (٪)",
@@ -25,11 +27,13 @@
    "reqd": 1
   },
   {
+   "description": "نرخ بالا برای فاکتورهای از این تاریخ به بعد اعمال می‌شود.",
    "fieldname": "effective_from",
    "fieldtype": "Date",
    "label": "تاریخ اجرا"
   },
   {
+   "description": "حسابی که مالیات فروش و خرید در آن ثبت می‌شود؛ معمولاً «مالیات بر ارزش افزوده» زیر بدهی‌های جاری.",
    "fieldname": "vat_account",
    "fieldtype": "Link",
    "label": "حساب مالیات بر ارزش افزوده",
@@ -39,7 +43,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-15 00:00:00.000000",
+ "modified": "2026-11-21 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Farda Iran",
  "name": "Farda VAT Settings",

@@ -141,6 +141,18 @@
 		return text.replace(num[0], label);
 	}
 
+	function inForm() {
+		try { return (frappe.get_route() || [])[0] === "Form"; } catch (e) { return false; }
+	}
+
+	function rializeOutput(out) {
+		var text = String(out);
+		if (!IRR_UNIT.test(text)) { return out; }
+		var num = text.match(/-?\d[\d,]*(?:\.\d+)?/);
+		text = text.replace(IRR_UNIT, "");
+		return num ? text.replace(num[0], num[0] + " ریال") : text;
+	}
+
 	function fieldCurrency(df, doc) {
 		if (frappe.meta && frappe.meta.get_field_currency) {
 			try { return frappe.meta.get_field_currency(df, doc); } catch (e) { /* fall through */ }
@@ -159,6 +171,11 @@
 		if (f.toman) {
 			wrapFormatter("Currency", function (out, df, doc, options) {
 				if (fieldCurrency(df, doc) !== "IRR") { return out; }
+				// UI-4: inside a document form amounts are TYPED in rial, so they are
+				// also SHOWN in rial (with an explicit unit) — showing Toman next to a
+				// rial input invites 10x entry errors. Toman is for lists, reports and
+				// dashboards, where nothing is typed.
+				if (inForm()) { return rializeOutput(out); }
 				return tomanizeOutput(out, f.ratio, options);
 			});
 		}
@@ -172,6 +189,7 @@
 		irrToTomanText: irrToTomanText,
 		jalaliizeOutput: jalaliizeOutput,
 		tomanizeOutput: tomanizeOutput,
+		rializeOutput: rializeOutput,
 		selfTest: function () {
 			var checks = [
 				["2026-09-15", "24/06/1405"],

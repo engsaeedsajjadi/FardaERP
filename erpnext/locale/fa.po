@@ -26505,7 +26505,7 @@ msgstr "آیا برای ایجاد فاکتور خرید، ارائه رسید �
 #. Label of the is_debit_note (Check) field in DocType 'Sales Invoice'
 #: erpnext/accounts/doctype/sales_invoice/sales_invoice.json
 msgid "Is Rate Adjustment Entry (Debit Note)"
-msgstr ""
+msgstr "اصلاحیهٔ نرخ (یادداشت بدهکار)"
 
 #. Label of the is_recursive (Check) field in DocType 'Pricing Rule'
 #. Label of the is_recursive (Check) field in DocType 'Promotional Scheme
@@ -26741,7 +26741,7 @@ msgstr "نوع مشکل"
 #. DocType 'Sales Invoice'
 #: erpnext/accounts/doctype/sales_invoice/sales_invoice.json
 msgid "Issue a debit note against an existing Sales Invoice to adjust the rate. The quantity will be retained from the original invoice."
-msgstr ""
+msgstr "برای اصلاح نرخ یک فاکتور فروش ثبت‌شده یادداشت بدهکار صادر کنید؛ مقدار از فاکتور اصلی گرفته می‌شود."
 
 #. Option for the 'Current State' (Select) field in DocType 'Share Balance'
 #. Option for the 'Status' (Select) field in DocType 'Material Request'
@@ -52543,7 +52543,7 @@ msgstr "تنظیمات موجودی"
 #. Title of the Module Onboarding 'Stock Onboarding'
 #: erpnext/stock/module_onboarding/stock_onboarding/stock_onboarding.json
 msgid "Stock Setup"
-msgstr ""
+msgstr "راه‌اندازی انبار"
 
 #. Label of the stock_summary_tab (Tab Break) field in DocType 'Plant Floor'
 #. Label of the stock_summary (HTML) field in DocType 'Plant Floor'
@@ -63592,3 +63592,98 @@ msgstr "{} {} قبلاً با {} {} پیوند داده شده است"
 msgid "{} {} is not affecting bank account {}"
 msgstr "{} {} تاثیری بر حساب بانکی {} ندارد"
 
+#. FardaERP UI (CORE-024)
+msgid "Farda VAT Settings"
+msgstr "تنظیمات مالیات بر ارزش افزوده"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Payment Log"
+msgstr "تراکنش‌های درگاه پرداخت"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Audit Log"
+msgstr "گزارش ممیزی"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda OTP Log"
+msgstr "کدهای تأیید پیامکی"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Iran"
+msgstr "فردا ایران"
+
+#. FardaERP UI (CORE-024)
+msgid "Series"
+msgstr "سری شماره‌گذاری"
+
+#. FardaERP UI (CORE-024)
+msgid "Item"
+msgstr "کالا"
+
+#. FardaERP UI (CORE-024)
+msgid "Last Edited By You"
+msgstr "آخرین ویرایش توسط شما"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Balance Sheet"
+msgstr "ترازنامه"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Bank Report"
+msgstr "گزارش بانک"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Cash Flow"
+msgstr "جریان وجوه نقد"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Cheque Report"
+msgstr "گزارش چک"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda General Ledger"
+msgstr "دفتر کل"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Party Balance"
+msgstr "مانده طرف‌حساب‌ها"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Profit and Loss"
+msgstr "سود و زیان"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Purchase Register"
+msgstr "گزارش خرید"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Sales Register"
+msgstr "گزارش فروش"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Stock Balance"
+msgstr "موجودی کالا"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Stock Movement"
+msgstr "کاردکس کالا"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Trial Balance"
+msgstr "تراز آزمایشی"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda VAT Report"
+msgstr "گزارش مالیات بر ارزش افزوده"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Persian Invoice"
+msgstr "صورتحساب فارسی فروش"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Persian Purchase Invoice"
+msgstr "صورتحساب فارسی خرید"
+
+#. FardaERP UI (CORE-024)
+msgid "Farda Thermal Receipt 80mm"
+msgstr "رسید حرارتی ۸۰ میلی‌متری"
