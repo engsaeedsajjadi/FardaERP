@@ -320,7 +320,7 @@ class FardaHome {
 		const rows =
 			(await this.call("frappe.client.get_list", {
 				doctype: "Sales Invoice",
-				fields: ["posting_date", "sum(base_grand_total) as total"],
+				fields: ["posting_date", { SUM: "base_grand_total", as: "total" }],
 				filters,
 				group_by: "posting_date",
 				order_by: "posting_date asc",

@@ -86,7 +86,7 @@
 }
 .fh-action .fh-ico { color: var(--fh-teal); }
 .fh-action:hover { border-color: var(--fh-teal); background: var(--fh-teal-tint); }
-.fh-action::before { content: "+"; order: 3; margin-inline-start: auto; color: var(--fh-muted); font-weight: 400; font-size: 18px; line-height: 1; }
+.fh-action span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------------------------------------------------------------- section heads */
 .fh-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
