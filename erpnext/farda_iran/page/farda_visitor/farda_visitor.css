@@ -1,6 +1,6 @@
 /* FardaERP — ویزیتور (CORE-038). Mobile first, scoped to .farda-visitor. */
 .farda-visitor {
-	--fv-teal: #0f6d5f;
+	--fv-teal: #2a3650;
 	--fv-line: var(--border-color, #dfe5e3);
 	--fv-muted: var(--text-muted, #5b6b67);
 	--fv-card: var(--card-bg, #fff);
@@ -17,14 +17,14 @@
 .fv-list, .fv-cart, .fv-orders { list-style: none; margin: 8px 0 0; padding: 0; }
 .fv-list li, .fv-orders li, .fv-orders a { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .fv-list li { min-height: 52px; padding: 8px 4px; border-bottom: 1px solid var(--fv-line); cursor: pointer; }
-.fv-list li:active { background: rgba(15, 109, 95, 0.08); }
+.fv-list li:active { background: rgba(42, 54, 80, 0.08); }
 .fv-list li span, .fv-line, .fv-orders a { display: flex; flex-direction: column; }
 .fv-orders li { padding: 8px 0; border-bottom: 1px solid var(--fv-line); }
 .fv-orders a { flex: 1; color: inherit; text-decoration: none; }
 .farda-visitor small { color: var(--fv-muted); }
 .farda-visitor em { font-style: normal; white-space: nowrap; color: var(--fv-teal); font-weight: 600; }
 .fv-empty { color: var(--fv-muted); cursor: default !important; }
-.fv-chosen { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 6px 12px; border-radius: 10px; background: rgba(15, 109, 95, 0.08); }
+.fv-chosen { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 6px 12px; border-radius: 10px; background: rgba(42, 54, 80, 0.08); }
 .fv-chosen button { border: 0; background: none; color: var(--fv-teal); font-weight: 600; min-height: 44px; }
 .fv-cart li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--fv-line); }
 .fv-qtybox { display: flex; align-items: center; gap: 4px; }
@@ -36,3 +36,5 @@
 .fv-total b { font-size: 17px; }
 .fv-send { min-height: 50px; padding: 0 28px; border: 0; border-radius: 12px; background: var(--fv-teal); color: #fff; font-size: 16px; font-weight: 700; }
 .fv-send:disabled { opacity: 0.6; }
+[data-theme="dark"] .farda-visitor { --fv-teal: #c9ced6; }
+[data-theme="dark"] .fv-send { color: #0b1426; }

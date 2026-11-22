@@ -535,6 +535,54 @@ def ensure_ui_assets() -> None:
 			frappe.log_error(f"farda_iran: missing UI asset {rel}")
 
 
+BRAND_NAME = "سیمراکس"
+BRAND = "/assets/erpnext/farda_iran/brand/"
+
+
+def ensure_brand() -> None:
+	"""SIMORAX name and logo in the desk navbar, login page, tab title and favicon
+	(CORE-039). Fills only values that are empty or still point at the stock
+	ERPNext/Frappe assets, so a logo the customer uploads later is kept."""
+
+	def stock(value) -> bool:
+		v = (value or "").lower()
+		return not v or "erpnext" in v or "frappe-framework" in v or "/frappe/images/" in v
+
+	wanted = {
+		"Website Settings": {
+			"app_name": BRAND_NAME,
+			"app_logo": BRAND + "simorax-app-icon.svg",
+			"favicon": BRAND + "favicon-32.png",
+			"splash_image": BRAND + "simorax-logo-stacked-on-light.svg",
+		},
+		"Navbar Settings": {"app_logo": BRAND + "simorax-app-icon.svg"},
+	}
+	for doctype, values in wanted.items():
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		meta = frappe.get_meta(doctype)
+		for field, value in values.items():
+			if not meta.has_field(field):
+				continue
+			current = frappe.db.get_single_value(doctype, field)
+			if field == "app_name":
+				if current in (None, "", "ERPNext", "Frappe", "FardaERP", "فردا ERP"):
+					frappe.db.set_single_value(doctype, field, value)
+			elif stock(current):
+				frappe.db.set_single_value(doctype, field, value)
+	for name in ("FardaERP",):
+		if frappe.db.exists("Workspace", name):
+			frappe.db.set_value("Workspace", name, "title", BRAND_NAME, update_modified=False)
+		if frappe.db.exists("DocType", "Workspace Sidebar") and frappe.db.exists("Workspace Sidebar", name):
+			frappe.db.set_value("Workspace Sidebar", name, "title", BRAND_NAME, update_modified=False)
+		if frappe.db.exists("DocType", "Desktop Icon") and frappe.db.exists("Desktop Icon", name):
+			meta = frappe.get_meta("Desktop Icon")
+			values = {f: v for f, v in (("label", BRAND_NAME), ("logo_url", BRAND + "simorax-app-icon.svg")) if meta.has_field(f)}
+			frappe.db.set_value("Desktop Icon", name, values, update_modified=False)
+			frappe.cache.delete_key("desktop_icons")
+	frappe.clear_cache()
+
+
 def ensure_audit_index() -> None:
 	"""Composite index for audit lookups (subject filters + retention sweeps)."""
 	try:
@@ -601,10 +649,10 @@ def ensure_workspace() -> None:
 		("مانده طرف‌حساب‌ها", "Report", "Farda Party Balance"),
 	]
 	# CORE-022: the workspace's job in v16 is the sidebar + desktop icon; its page
-	# redirects to the «فردا ERP» home (farda_ui.js). Content is kept to valid
+	# redirects to the «سیمراکس» home (farda_ui.js). Content is kept to valid
 	# shortcut blocks only — the old number-card/chart blocks had no matching child
 	# rows, which made Frappe v16 render an empty page.
-	content = [{"id": "farda_h1", "type": "header", "data": {"text": "<span class=\"h4\"><b>فردا ERP</b></span>", "col": 12}}]
+	content = [{"id": "farda_h1", "type": "header", "data": {"text": "<span class=\"h4\"><b>سیمراکس</b></span>", "col": 12}}]
 	content += [
 		{"id": f"farda_sc{i}", "type": "shortcut", "data": {"shortcut_name": lbl, "col": 3}}
 		for i, (lbl, _t, _x) in enumerate(shortcuts)
@@ -615,7 +663,7 @@ def ensure_workspace() -> None:
 		for label, stype, target in shortcuts:
 			if (label, stype, target) not in existing:
 				doc.append("shortcuts", {"label": label, "type": stype, "link_to": target})
-		doc.title = "فردا ERP"
+		doc.title = BRAND_NAME
 		doc.content = frappe.as_json(content)
 		doc.save(ignore_permissions=True)
 		_ensure_desktop_icon(name)
@@ -625,7 +673,7 @@ def ensure_workspace() -> None:
 		"doctype": "Workspace",
 		"name": name,
 		"label": name,
-		"title": "فردا ERP",
+		"title": BRAND_NAME,
 		"module": "Farda Iran",
 		"public": 1,
 		"content": frappe.as_json(content),
@@ -720,7 +768,7 @@ def ensure_sidebar(name: str = "FardaERP") -> None:
 	if not frappe.db.exists("DocType", "Workspace Sidebar"):
 		return  # Frappe < v16
 	doc = frappe.get_doc("Workspace Sidebar", name) if frappe.db.exists("Workspace Sidebar", name) else frappe.new_doc("Workspace Sidebar")
-	doc.title = name
+	doc.title = BRAND_NAME
 	doc.header_icon = "home"
 	doc.set("items", [])
 	for label, link_type, link_to, icon, children in SIDEBAR:
@@ -740,7 +788,7 @@ def ensure_sidebar(name: str = "FardaERP") -> None:
 
 def _ensure_desktop_icon(workspace: str) -> None:
 	"""Frappe v16 shows only Desktop Icons on /desk; a public workspace without an
-	icon (and a Workspace Sidebar) is invisible there (CORE-020). Put «فردا ERP»
+	icon (and a Workspace Sidebar) is invisible there (CORE-020). Put «سیمراکس»
 	first on the desktop so users start from the Persian navigation."""
 	if not frappe.db.exists("DocType", "Desktop Icon"):
 		return  # Frappe < v16
@@ -819,6 +867,10 @@ def execute() -> str:
 		ensure_workspace()
 	except Exception:
 		frappe.log_error("farda_iran: workspace setup failed")  # non-fatal
+	try:
+		ensure_brand()
+	except Exception:
+		frappe.log_error("farda_iran: brand setup failed")  # non-fatal
 	try:
 		ensure_ui_assets()
 	except Exception:

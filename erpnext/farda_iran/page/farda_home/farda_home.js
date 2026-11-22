@@ -4,7 +4,7 @@
 // everything the product can do. Real data only; every link respects permissions.
 
 frappe.pages["farda-home"].on_page_load = function (wrapper) {
-	const page = frappe.ui.make_app_page({ parent: wrapper, title: "فردا ERP", single_column: true });
+	const page = frappe.ui.make_app_page({ parent: wrapper, title: "سیمراکس", single_column: true });
 	wrapper.farda_home = new FardaHome(wrapper, page);
 };
 
@@ -92,6 +92,7 @@ class FardaHome {
 		this.$root.html(`
 			<section class="fh-hero">
 				<div class="fh-hero-text">
+					<img class="fh-brand" src="/assets/erpnext/farda_iran/brand/simorax-logo-fa-on-dark.svg" alt="سیمراکس">
 					<p class="fh-greet">سلام${name ? "، " + this.esc(name) : ""}</p>
 					<h1 class="fh-date"><span class="fh-day">${this.fa(j.jd)}</span> ${FardaHome.MONTHS[j.jm - 1]}
 						<span class="fh-year">${weekday}، ${String(j.jy).replace(/\d/g, (c) => "۰۱۲۳۴۵۶۷۸۹"[c])}</span></h1>
@@ -346,7 +347,7 @@ class FardaHome {
 		new frappe.Chart($c[0], {
 			type: "bar",
 			height: 220,
-			colors: ["#0f6d5f"],
+			colors: [document.documentElement.dataset.theme === "dark" ? "#c9ced6" : "#2a3650"],
 			data: {
 				labels: months.map((m) => FardaHome.MONTHS[m.jm - 1]),
 				datasets: [{ name: "فروش", values: months.map((m) => Math.round(m.total / this.ratio)) }],

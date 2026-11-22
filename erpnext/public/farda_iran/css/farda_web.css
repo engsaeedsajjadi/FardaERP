@@ -1,0 +1,29 @@
+/* SIMORAX brand on website pages (login, reset password) — CORE-039. */
+body[data-path="login"],
+body[data-path="update-password"] {
+	background-color: #f3f4f7;
+	background-image: url("/assets/erpnext/farda_iran/brand/simorax-watermark-light.svg");
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: left -90px bottom -90px;
+	background-size: 520px 520px;
+}
+body[data-path="login"] .page-card,
+body[data-path="update-password"] .page-card {
+	border-top: 3px solid #2a3650;
+}
+body[data-path="login"] .app-logo,
+body[data-path="update-password"] .app-logo {
+	width: 56px;
+	height: 56px;
+	border-radius: 12px;
+}
+[data-theme="dark"] body[data-path="login"],
+[data-theme="dark"] body[data-path="update-password"] {
+	background-color: #0b1426;
+	background-image: url("/assets/erpnext/farda_iran/brand/simorax-watermark-dark.svg");
+}
+[data-theme="dark"] body[data-path="login"] .page-card,
+[data-theme="dark"] body[data-path="update-password"] .page-card {
+	border-top-color: #8a93a3;
+}

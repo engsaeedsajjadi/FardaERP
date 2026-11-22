@@ -7,9 +7,11 @@
 	--fh-line: var(--border-color, #dfe5e3);
 	--fh-card: var(--card-bg, #ffffff);
 	--fh-soft: var(--subtle-fg, #f3f6f5);
-	--fh-teal: #0f6d5f;
-	--fh-teal-deep: #0a4a41;
-	--fh-teal-tint: rgba(15, 109, 95, 0.09);
+	/* SIMORAX palette (CORE-039); variable names kept for the existing rules */
+	--fh-teal: #2a3650;
+	--fh-teal-deep: #0b1426;
+	--fh-teal-tint: rgba(42, 54, 80, 0.08);
+	--fh-on-accent: #ffffff;
 	--fh-saffron: #c98a12;
 	--fh-red: #b3362b;
 	font-family: "Vazirmatn", Tahoma, sans-serif;
@@ -39,16 +41,19 @@
 	border-radius: 18px;
 	color: #f1f7f5;
 	background-color: var(--fh-teal-deep);
-	/* girih: eight-pointed stars, the classic Persian tile, kept very faint */
+	/* the SIMORAX mark, large and faint, behind the inline-end side of the hero */
 	background-image:
-		linear-gradient(105deg, rgba(10, 74, 65, 0.15) 0%, rgba(10, 74, 65, 0.92) 62%),
-		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.13' stroke-width='1'%3E%3Cpath d='M32 10l6.4 15.6L54 32l-15.6 6.4L32 54l-6.4-15.6L10 32l15.6-6.4z'/%3E%3Cpath d='M16.4 16.4h31.2v31.2H16.4z' transform='rotate(45 32 32)'/%3E%3Cpath d='M16.4 16.4h31.2v31.2H16.4z'/%3E%3Cpath d='M0 0l10 10M64 0L54 10M0 64l10-10M64 64L54 54'/%3E%3C/g%3E%3C/svg%3E");
-	background-size: auto, 64px 64px;
+		linear-gradient(105deg, rgba(11, 20, 38, 0) 0%, rgba(11, 20, 38, 0.55) 70%),
+		url("/assets/erpnext/farda_iran/brand/simorax-hero-mark.svg");
+	background-repeat: no-repeat;
+	background-size: auto, 300px 300px;
+	background-position: center, left -40px center;
 	overflow: hidden;
 }
 .fh-greet { font-size: 15px; opacity: 0.85; margin-bottom: 6px; }
 .fh-date { font-size: 40px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px; color: #ffffff; }
-.fh-day { color: #f3c45a; }
+.fh-day { color: #c9ced6; }
+.fh-brand { display: block; height: 30px; width: auto; margin-bottom: 18px; }
 .fh-year { display: block; font-size: 16px; font-weight: 400; opacity: 0.8; letter-spacing: 0; margin-top: 4px; }
 .fh-sub { margin-top: 14px; font-size: 14px; opacity: 0.85; max-width: 46ch; line-height: 1.9; }
 .fh-company { display: flex; flex-direction: column; gap: 6px; font-size: 12px; opacity: 0.95; min-width: 220px; }
@@ -183,13 +188,13 @@
 	display: grid; place-items: center; font-size: 12px; font-weight: 700;
 	border: 1.5px solid var(--fh-line); color: var(--fh-muted);
 }
-.fh-steps li.is-done::before { content: "✓"; background: var(--fh-teal); border-color: var(--fh-teal); color: #fff; }
+.fh-steps li.is-done::before { content: "✓"; background: var(--fh-teal); border-color: var(--fh-teal); color: var(--fh-on-accent); }
 .fh-step-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .fh-step-text strong { font-size: 13px; font-weight: 600; }
 .fh-step-text small { font-size: 12px; color: var(--fh-muted); }
 .fh-steps li.is-done .fh-step-text strong { color: var(--fh-muted); text-decoration: line-through; }
 .fh-check { display: none; }
-.fh-step-cta { font-size: 12px; font-weight: 700; color: #fff !important; background: var(--fh-teal); padding: 5px 12px; border-radius: 8px; }
+.fh-step-cta { font-size: 12px; font-weight: 700; color: var(--fh-on-accent) !important; background: var(--fh-teal); padding: 5px 12px; border-radius: 8px; }
 .fh-step-cta:hover { background: var(--fh-teal-deep); }
 
 .fh-chart-panel .fh-chart { min-height: 120px; }
@@ -204,7 +209,7 @@
 }
 @media (max-width: 640px) {
 	.farda-home { padding-top: 8px; }
-	.fh-hero { flex-direction: column; align-items: stretch; padding: 24px 20px; border-radius: 14px; }
+	.fh-hero { flex-direction: column; align-items: stretch; padding: 24px 20px; border-radius: 14px; background-size: auto, 220px 220px; background-position: center, left -70px top -50px; }
 	.fh-date { font-size: 32px; }
 	.fh-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.fh-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -215,4 +220,11 @@
 }
 @media (prefers-reduced-motion: reduce) {
 	.farda-home * { transition: none !important; }
+}
+
+/* dark theme: navy accents would vanish on a dark page, use titanium instead */
+[data-theme="dark"] .farda-home {
+	--fh-teal: #c9ced6;
+	--fh-teal-tint: rgba(201, 206, 214, 0.1);
+	--fh-on-accent: #0b1426;
 }

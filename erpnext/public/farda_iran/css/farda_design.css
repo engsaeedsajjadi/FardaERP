@@ -26,8 +26,9 @@
 /* ---------- tokens ---------- */
 :root,
 html[lang="fa"] {
-	--farda-color-primary: #0f6d5f;         /* brand green-teal */
-	--farda-color-primary-dark: #0b5247;
+	/* SIMORAX brand (CORE-039): midnight #0B1426, ink #2A3650, titanium #8A93A3 / #C9CED6 / #E8EBEF */
+	--farda-color-primary: #2a3650;
+	--farda-color-primary-dark: #0b1426;
 	--farda-color-success: #1f7a3d;
 	--farda-color-danger: #b3362b;
 	--farda-color-warning: #9a6b15;
@@ -90,7 +91,7 @@ html[lang="fa"] .link-field .form-control {
 }
 html[lang="fa"] .form-control:focus {
 	border-color: var(--farda-color-primary);
-	box-shadow: 0 0 0 2px rgba(15, 109, 95, 0.12);
+	box-shadow: 0 0 0 2px rgba(42, 54, 80, 0.14);
 }
 
 /* ---------- tables / list ---------- */
@@ -162,8 +163,8 @@ html[lang="fa"] .flex-void {
 }
 .farda-jpicker .fj-day:hover { background: var(--farda-color-surface-alt); }
 .farda-jpicker .is-friday { color: #b3362b; }
-.farda-jpicker .fj-day.is-today { box-shadow: inset 0 0 0 1.5px #0f6d5f; font-weight: 700; }
-.farda-jpicker .fj-day.is-selected { background: #0f6d5f; color: #fff; font-weight: 700; }
+.farda-jpicker .fj-day.is-today { box-shadow: inset 0 0 0 1.5px var(--farda-color-primary); font-weight: 700; }
+.farda-jpicker .fj-day.is-selected { background: var(--farda-color-primary); color: #fff; font-weight: 700; }
 .farda-jpicker .fj-time { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 2px 0; font-size: 13px; }
 .farda-jpicker .fj-time input {
 	height: 30px; padding: 0 8px; border: 1px solid var(--farda-color-border);
@@ -171,10 +172,10 @@ html[lang="fa"] .flex-void {
 }
 .farda-jpicker .fj-foot { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--farda-color-border); }
 .farda-jpicker .fj-foot button { border: 0; background: transparent; font-size: 13px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
-.farda-jpicker .fj-today { color: #0f6d5f; font-weight: 700; }
+.farda-jpicker .fj-today { color: var(--farda-color-primary); font-weight: 700; }
 .farda-jpicker .fj-clear { color: var(--farda-color-text-muted); }
 .farda-jpicker .fj-foot button:hover { background: var(--farda-color-surface-alt); }
-.farda-jpicker :focus-visible { outline: 2px solid #0f6d5f; outline-offset: 1px; }
+.farda-jpicker :focus-visible { outline: 2px solid var(--farda-color-primary); outline-offset: 1px; }
 
 /* ---------------------------------------------------------------
  * سامانه مودیان dialogs (CORE-034)
@@ -193,3 +194,26 @@ html[lang="fa"] .flex-void {
 .farda-md-box.is-ok { background: rgba(31, 122, 61, 0.1); color: #1a6633; }
 .farda-md-json pre { max-height: 260px; overflow: auto; font-size: 12px; text-align: left; background: var(--farda-color-surface-alt); padding: 8px; border-radius: 8px; }
 .farda-md-json summary { cursor: pointer; color: var(--farda-color-text-muted); }
+
+/* ---------- SIMORAX brand: faint mark behind the desk (CORE-039) ----------
+ * One large mark, fixed in the inline-end bottom corner, ~4.5 % ink baked into
+ * the SVG so text on top keeps its contrast. Cards and tables stay opaque. */
+html[lang="fa"] body,
+html[lang="fa"] .page-container {
+	background-image: url("/assets/erpnext/farda_iran/brand/simorax-watermark-light.svg");
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: left -70px bottom -70px;
+	background-size: 460px 460px;
+}
+html[lang="fa"][data-theme="dark"] body,
+html[lang="fa"][data-theme="dark"] .page-container {
+	background-image: url("/assets/erpnext/farda_iran/brand/simorax-watermark-dark.svg");
+}
+html[lang="fa"][data-theme="dark"] {
+	--farda-color-primary: #c9ced6;
+	--farda-color-primary-dark: #8a93a3;
+}
+@media print {
+	html[lang="fa"] body, html[lang="fa"] .page-container { background-image: none !important; }
+}

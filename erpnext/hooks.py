@@ -7,14 +7,14 @@ app_color = "#e74c3c"
 app_email = "hello@frappe.io"
 app_license = "GNU General Public License (v3)"
 source_link = "https://github.com/frappe/erpnext"
-app_logo_url = "/assets/erpnext/images/erpnext-logo.svg"
+app_logo_url = "/assets/erpnext/farda_iran/brand/simorax-app-icon.svg"  # FardaERP: SIMORAX brand (CORE-039)
 app_home = "/desk"
 
 add_to_apps_screen = [
 	{
 		"name": app_name,
-		"logo": "/assets/erpnext/images/erpnext-logo.svg",
-		"title": app_title,
+		"logo": "/assets/erpnext/farda_iran/brand/simorax-app-icon.svg",
+		"title": "سیمراکس",
 		"route": app_home,
 		"has_permission": "erpnext.check_app_permission",
 	}
@@ -24,7 +24,7 @@ develop_version = "15.x.x-develop"
 
 app_include_js = "erpnext.bundle.js"
 app_include_css = ["erpnext.bundle.css", "/assets/erpnext/farda_iran/css/farda_rtl.css", "/assets/erpnext/farda_iran/css/farda_design.css"]
-web_include_css = "erpnext-web.bundle.css"
+web_include_css = ["erpnext-web.bundle.css", "/assets/erpnext/farda_iran/css/farda_web.css"]
 email_css = "email_erpnext.bundle.css"
 
 app_include_icons = [
@@ -134,8 +134,8 @@ calendars = ["Task", "Work Order", "Sales Order", "Holiday List", "ToDo"]
 website_generators = ["BOM", "Sales Partner"]
 
 website_context = {
-	"favicon": "/assets/erpnext/images/erpnext-favicon.svg",
-	"splash_image": "/assets/erpnext/images/erpnext-logo.svg",
+	"favicon": "/assets/erpnext/farda_iran/brand/favicon-32.png",
+	"splash_image": "/assets/erpnext/farda_iran/brand/simorax-logo-stacked-on-light.svg",
 }
 
 # nosemgrep

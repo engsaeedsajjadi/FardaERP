@@ -431,7 +431,7 @@
 	window.FardaIR.parseJalaliInput = parseJalaliInput;
 	window.FardaIR.jMonthLength = jMonthLength;
 
-	/* Persian home (CORE-022): Persian users land on «فردا ERP» once per browser
+	/* Persian home (CORE-022): Persian users land on «سیمراکس» once per browser
 	 * session instead of the bare app grid, and the FardaERP workspace (whose
 	 * job is the sidebar) opens the home page. */
 	function homeRouting() {
