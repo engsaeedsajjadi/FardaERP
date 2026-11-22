@@ -1,0 +1,38 @@
+/* FardaERP — ویزیتور (CORE-038). Mobile first, scoped to .farda-visitor. */
+.farda-visitor {
+	--fv-teal: #0f6d5f;
+	--fv-line: var(--border-color, #dfe5e3);
+	--fv-muted: var(--text-muted, #5b6b67);
+	--fv-card: var(--card-bg, #fff);
+	font-family: "Vazirmatn", Tahoma, sans-serif;
+	max-width: 560px;
+	margin: 0 auto;
+	padding: 12px 0 96px;
+}
+.fv-block { background: var(--fv-card); border: 1px solid var(--fv-line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.fv-label, .fv-h { display: block; font-weight: 700; font-size: 15px; margin: 0 0 8px; }
+.fv-input { width: 100%; min-height: 48px; font-size: 16px; padding: 10px 12px; border: 1px solid var(--fv-line); border-radius: 10px; background: var(--control-bg, #f6f8f7); color: inherit; }
+.fv-input:focus { outline: 2px solid var(--fv-teal); outline-offset: 1px; }
+.fv-notes { margin-top: 10px; min-height: 64px; }
+.fv-list, .fv-cart, .fv-orders { list-style: none; margin: 8px 0 0; padding: 0; }
+.fv-list li, .fv-orders li, .fv-orders a { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.fv-list li { min-height: 52px; padding: 8px 4px; border-bottom: 1px solid var(--fv-line); cursor: pointer; }
+.fv-list li:active { background: rgba(15, 109, 95, 0.08); }
+.fv-list li span, .fv-line, .fv-orders a { display: flex; flex-direction: column; }
+.fv-orders li { padding: 8px 0; border-bottom: 1px solid var(--fv-line); }
+.fv-orders a { flex: 1; color: inherit; text-decoration: none; }
+.farda-visitor small { color: var(--fv-muted); }
+.farda-visitor em { font-style: normal; white-space: nowrap; color: var(--fv-teal); font-weight: 600; }
+.fv-empty { color: var(--fv-muted); cursor: default !important; }
+.fv-chosen { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 6px 12px; border-radius: 10px; background: rgba(15, 109, 95, 0.08); }
+.fv-chosen button { border: 0; background: none; color: var(--fv-teal); font-weight: 600; min-height: 44px; }
+.fv-cart li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--fv-line); }
+.fv-qtybox { display: flex; align-items: center; gap: 4px; }
+.fv-step { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--fv-line); background: var(--fv-card); font-size: 20px; }
+.fv-qty { width: 56px; height: 44px; text-align: center; font-size: 16px; border: 1px solid var(--fv-line); border-radius: 10px; background: transparent; color: inherit; }
+.fv-bar { position: fixed; inset-inline: 0; bottom: 0; z-index: 20; display: flex; gap: 12px; align-items: center; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--fv-card); border-top: 1px solid var(--fv-line); }
+.fv-bar[hidden], .farda-visitor [hidden] { display: none !important; }
+.fv-total { flex: 1; display: flex; flex-direction: column; }
+.fv-total b { font-size: 17px; }
+.fv-send { min-height: 50px; padding: 0 28px; border: 0; border-radius: 12px; background: var(--fv-teal); color: #fff; font-size: 16px; font-weight: 700; }
+.fv-send:disabled { opacity: 0.6; }

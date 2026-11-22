@@ -39,7 +39,8 @@ class TestRegistryIntegrity(unittest.TestCase):
 			os.path.basename(p) for p in glob.glob(os.path.join(report_dir, "farda_*"))
 		}
 		self.assertTrue(on_disk, "no farda report dirs found")
-		self.assertEqual(set(reg.REPORT_ALLOWLIST), on_disk)
+		self.assertEqual(set(reg.REPORT_ALLOWLIST), on_disk - set(reg.REPORT_API_EXCLUDED))
+		self.assertFalse(set(reg.REPORT_ALLOWLIST) & set(reg.REPORT_API_EXCLUDED))
 
 	def test_error_vocabulary(self):
 		self.assertEqual(

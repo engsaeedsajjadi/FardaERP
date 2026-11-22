@@ -51,7 +51,8 @@ def slips(filters) -> list[dict]:
 			"Employee",
 			filters={"name": ["in", list({r.employee for r in rows})]},
 			fields=["name", "first_name", "last_name", "farda_national_id", "farda_father_name",
-				"farda_insurance_number", "farda_job_code", "date_of_birth", "gender", "date_of_joining", "relieving_date"],
+				"farda_insurance_number", "farda_job_code", "date_of_birth", "gender", "date_of_joining", "relieving_date",
+				"designation", "farda_id_number", "farda_id_place"],
 		)
 	}
 	by_slip = {r.name: dict(r) for r in rows}

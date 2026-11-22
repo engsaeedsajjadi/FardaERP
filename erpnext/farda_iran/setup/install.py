@@ -251,7 +251,9 @@ PAYROLL_EMPLOYEE_FIELDS = [
 	dict(fieldname="farda_payroll_section", label="حقوق و دستمزد ایرانی", fieldtype="Section Break", insert_after="iban", collapsible=0),
 	dict(fieldname="farda_national_id", label="کد ملی", fieldtype="Data", length=10, insert_after="farda_payroll_section"),
 	dict(fieldname="farda_father_name", label="نام پدر", fieldtype="Data", insert_after="farda_national_id"),
-	dict(fieldname="farda_insurance_number", label="شماره بیمه تأمین اجتماعی", fieldtype="Data", insert_after="farda_father_name"),
+	dict(fieldname="farda_id_number", label="شماره شناسنامه", fieldtype="Data", insert_after="farda_father_name"),
+	dict(fieldname="farda_id_place", label="محل صدور شناسنامه", fieldtype="Data", insert_after="farda_id_number"),
+	dict(fieldname="farda_insurance_number", label="شماره بیمه تأمین اجتماعی", fieldtype="Data", insert_after="farda_id_place"),
 	dict(fieldname="farda_job_code", label="کد شغل (بیمه)", fieldtype="Data", insert_after="farda_insurance_number"),
 	dict(fieldname="farda_payroll_cb", fieldtype="Column Break", insert_after="farda_job_code"),
 	dict(fieldname="farda_children_count", label="تعداد فرزندان (مشمول حق اولاد)", fieldtype="Int", insert_after="farda_payroll_cb"),
@@ -259,6 +261,15 @@ PAYROLL_EMPLOYEE_FIELDS = [
 	dict(fieldname="farda_insured", label="بیمه‌شده تأمین اجتماعی", fieldtype="Check", default="1", insert_after="farda_seniority_daily"),
 	dict(fieldname="farda_housing_allowance", label="حق مسکن می‌گیرد", fieldtype="Check", default="1", insert_after="farda_insured"),
 	dict(fieldname="farda_grocery_allowance", label="کمک‌هزینه اقلام مصرفی (بن) می‌گیرد", fieldtype="Check", default="1", insert_after="farda_housing_allowance"),
+]
+
+PAYROLL_COMPANY_FIELDS = [
+	dict(fieldname="farda_sso_workshop_code", label="کد کارگاه تأمین اجتماعی", fieldtype="Data", length=10, insert_after="farda_registration_number", description="برای دیسکت لیست بیمه"),
+	dict(fieldname="farda_sso_workshop_name", label="نام کارگاه", fieldtype="Data", insert_after="farda_sso_workshop_code"),
+	dict(fieldname="farda_sso_employer_name", label="نام کارفرما", fieldtype="Data", insert_after="farda_sso_workshop_name"),
+	dict(fieldname="farda_sso_address", label="نشانی کارگاه", fieldtype="Data", insert_after="farda_sso_employer_name"),
+	dict(fieldname="farda_sso_contract_row", label="ردیف پیمان", fieldtype="Data", length=3, default="000", insert_after="farda_sso_address"),
+	dict(fieldname="farda_sso_encoding", label="کدگذاری متن فارسی دیسکت", fieldtype="Select", options="Iran System\nWindows-1256", default="Iran System", insert_after="farda_sso_contract_row"),
 ]
 
 PAYROLL_COMPONENT_FIELDS = [
@@ -331,7 +342,7 @@ def ensure_custom_fields() -> None:
 	custom_fields = {
 		"Customer": PARTY_FIELDS,
 		"Supplier": PARTY_FIELDS,
-		"Company": COMPANY_FIELDS,
+		"Company": COMPANY_FIELDS + PAYROLL_COMPANY_FIELDS,
 		"Item": ITEM_FIELDS + MOADIAN_ITEM_FIELDS,
 		"Bank Account": BANK_ACCOUNT_FIELDS,
 		"Sales Invoice": INVOICE_FIELDS + MOADIAN_INVOICE_FIELDS,
@@ -633,6 +644,7 @@ SIDEBAR = [
 		("مشتریان", "DocType", "Customer"),
 		("پیش‌فاکتورها", "DocType", "Quotation"),
 		("سفارش‌های فروش", "DocType", "Sales Order"),
+		("ویزیتور (موبایل)", "Page", "farda-visitor"),
 		("فاکتورهای فروش", "DocType", "Sales Invoice"),
 		("گزارش فروش", "Report", "Farda Sales Register"),
 	]),
@@ -680,6 +692,7 @@ SIDEBAR = [
 		("لیست حقوق", "Report", "Farda Payroll Register"),
 		("لیست بیمه", "Report", "Farda Insurance List"),
 		("لیست مالیات حقوق", "Report", "Farda Salary Tax List"),
+		("عیدی و سنوات", "Report", "Farda Eid Severance"),
 		("نرخ‌های قانونی سال", "DocType", "Farda Payroll Year"),
 	]),
 	("دارایی‌های ثابت", None, None, "assets", [
@@ -716,7 +729,7 @@ def ensure_sidebar(name: str = "FardaERP") -> None:
 				continue
 			doc.append("items", {"type": "Link", "label": label, "link_type": link_type, "link_to": link_to, "icon": icon})
 			continue
-		rows = [c for c in children if frappe.db.exists("Report" if c[1] == "Report" else "DocType", c[2])]
+		rows = [c for c in children if frappe.db.exists(c[1] if c[1] in ("Report", "Page") else "DocType", c[2])]
 		if not rows:
 			continue
 		doc.append("items", {"type": "Section Break", "label": label, "icon": icon, "collapsible": 1, "indent": 1, "keep_closed": 1})
@@ -764,6 +777,11 @@ def ensure_payroll() -> None:
 
 	ensure_year(1405)
 	ensure_components()
+	# Persian payslip as the default print for Salary Slip (only if nobody chose another)
+	if frappe.db.exists("Print Format", "Farda Persian Payslip") and not frappe.get_meta("Salary Slip").default_print_format:
+		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+		make_property_setter("Salary Slip", None, "default_print_format", "Farda Persian Payslip", "Data", for_doctype=True)
 
 
 def after_app_install(app_name: str | None = None, **_kwargs) -> None:

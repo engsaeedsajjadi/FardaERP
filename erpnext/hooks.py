@@ -120,6 +120,9 @@ jinja = {
 		"erpnext.farda_iran.invoice.persian.money_words_toman",
 		"erpnext.farda_iran.invoice.persian.toman_str",
 		"erpnext.farda_iran.tax.service.invoice_totals",
+		# FardaERP: Persian payslip (CORE-038)
+		"erpnext.farda_iran.payroll.printing.payslip_context",
+		"erpnext.farda_iran.payroll.printing.rial",
 	],
 }
 

@@ -397,6 +397,7 @@ FardaHome.MODULES = [
 			{ label: "مشتریان", go: ["list", "Customer"] },
 			{ label: "پیش‌فاکتورها", go: ["list", "Quotation"] },
 			{ label: "سفارش‌های فروش", go: ["list", "Sales Order"] },
+			{ label: "ویزیتور (سفارش‌گیری با موبایل)", go: ["route", "farda-visitor"], doctype: "Sales Order" },
 			{ label: "فاکتورهای فروش", go: ["list", "Sales Invoice"] },
 			{ label: "گزارش فروش", go: ["report", "Farda Sales Register"], report: 1 },
 		],

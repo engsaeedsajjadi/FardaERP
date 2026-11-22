@@ -54,6 +54,12 @@ REPORT_ALLOWLIST: frozenset[str] = frozenset(
 	}
 )
 
+# Reports deliberately NOT exposed through farda.reports.run: salary data is
+# for HR roles only and stays behind the standard Report permissions.
+REPORT_API_EXCLUDED: frozenset[str] = frozenset(
+	{"farda_payroll_register", "farda_insurance_list", "farda_salary_tax_list", "farda_eid_severance"}
+)
+
 # API identity (snake) → Report doc name (Title Case, as stored in tabReport).
 REPORT_DOC_NAMES: dict[str, str] = {
 	"farda_sales_register": "Farda Sales Register",

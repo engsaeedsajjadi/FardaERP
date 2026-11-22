@@ -64591,3 +64591,15 @@ msgstr "لیست بیمه تأمین اجتماعی"
 #. FardaERP payroll (CORE-036)
 msgid "Farda Salary Tax List"
 msgstr "لیست مالیات حقوق"
+
+#. FardaERP (CORE-038)
+msgid "Farda Eid Severance"
+msgstr "عیدی و سنوات"
+
+#. FardaERP (CORE-038)
+msgid "Farda Persian Payslip"
+msgstr "فیش حقوق فارسی"
+
+#. FardaERP (CORE-038)
+msgid "Farda Visitor"
+msgstr "ویزیتور (سفارش‌گیری موبایل)"
