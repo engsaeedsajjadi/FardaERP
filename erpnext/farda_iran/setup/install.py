@@ -246,6 +246,46 @@ MOADIAN_INVOICE_ITEM_FIELDS = [
 ]
 
 
+# CORE-036 — حقوق و دستمزد ایرانی (HRMS)
+PAYROLL_EMPLOYEE_FIELDS = [
+	dict(fieldname="farda_payroll_section", label="حقوق و دستمزد ایرانی", fieldtype="Section Break", insert_after="iban", collapsible=0),
+	dict(fieldname="farda_national_id", label="کد ملی", fieldtype="Data", length=10, insert_after="farda_payroll_section"),
+	dict(fieldname="farda_father_name", label="نام پدر", fieldtype="Data", insert_after="farda_national_id"),
+	dict(fieldname="farda_insurance_number", label="شماره بیمه تأمین اجتماعی", fieldtype="Data", insert_after="farda_father_name"),
+	dict(fieldname="farda_job_code", label="کد شغل (بیمه)", fieldtype="Data", insert_after="farda_insurance_number"),
+	dict(fieldname="farda_payroll_cb", fieldtype="Column Break", insert_after="farda_job_code"),
+	dict(fieldname="farda_children_count", label="تعداد فرزندان (مشمول حق اولاد)", fieldtype="Int", insert_after="farda_payroll_cb"),
+	dict(fieldname="farda_seniority_daily", label="پایه سنوات روزانه (ریال)", fieldtype="Currency", options="IRR", insert_after="farda_children_count", description="جمع پایه‌های سنواتی که تا امروز به مزد روزانه اضافه شده است"),
+	dict(fieldname="farda_insured", label="بیمه‌شده تأمین اجتماعی", fieldtype="Check", default="1", insert_after="farda_seniority_daily"),
+	dict(fieldname="farda_housing_allowance", label="حق مسکن می‌گیرد", fieldtype="Check", default="1", insert_after="farda_insured"),
+	dict(fieldname="farda_grocery_allowance", label="کمک‌هزینه اقلام مصرفی (بن) می‌گیرد", fieldtype="Check", default="1", insert_after="farda_housing_allowance"),
+]
+
+PAYROLL_COMPONENT_FIELDS = [
+	dict(
+		fieldname="farda_payroll_key", label="قلم حقوق ایرانی", fieldtype="Select", insert_after="salary_component_abbr", read_only=1,
+		options="\nbase\nseniority\nhousing\ngrocery\nmarriage\nchild\novertime\nnight\nholiday\ninsurance\ntax",
+		description="برای اقلام قانونی که فردا خودکار حساب می‌کند",
+	),
+	dict(fieldname="farda_insurable", label="مشمول بیمه تأمین اجتماعی", fieldtype="Check", default="1", insert_after="farda_payroll_key"),
+	dict(fieldname="farda_taxable", label="مشمول مالیات حقوق", fieldtype="Check", default="1", insert_after="farda_insurable"),
+]
+
+PAYROLL_SLIP_FIELDS = [
+	dict(fieldname="farda_hours_section", label="کارکرد ساعتی (ایران)", fieldtype="Section Break", insert_after="payment_days"),
+	dict(fieldname="farda_overtime_hours", label="ساعات اضافه‌کاری", fieldtype="Float", insert_after="farda_hours_section"),
+	dict(fieldname="farda_night_hours", label="ساعات شب‌کاری", fieldtype="Float", insert_after="farda_overtime_hours"),
+	dict(fieldname="farda_holiday_hours", label="ساعات تعطیل‌کاری", fieldtype="Float", insert_after="farda_night_hours"),
+	dict(fieldname="farda_statutory_section", label="بیمه و مالیات (ایران)", fieldtype="Section Break", insert_after="net_pay"),
+	dict(fieldname="farda_insurance_base", label="دستمزد مشمول بیمه", fieldtype="Currency", options="currency", read_only=1, insert_after="farda_statutory_section"),
+	dict(fieldname="farda_employer_insurance", label="بیمه سهم کارفرما (۲۰٪)", fieldtype="Currency", options="currency", read_only=1, insert_after="farda_insurance_base"),
+	dict(fieldname="farda_unemployment_insurance", label="بیمه بیکاری (۳٪)", fieldtype="Currency", options="currency", read_only=1, insert_after="farda_employer_insurance"),
+	dict(fieldname="farda_statutory_cb", fieldtype="Column Break", insert_after="farda_unemployment_insurance"),
+	dict(fieldname="farda_tax_base", label="درآمد مشمول مالیات", fieldtype="Currency", options="currency", read_only=1, insert_after="farda_statutory_cb"),
+	dict(fieldname="farda_payroll_year", label="سال نرخ‌ها", fieldtype="Int", read_only=1, insert_after="farda_tax_base"),
+]
+
+
 def ensure_moadian_defaults() -> None:
 	"""Fill only missing settings, sandbox-safe; never overwrite the user's choices."""
 	if not frappe.db.exists("DocType", "Farda Moadian Settings"):
@@ -298,7 +338,12 @@ def ensure_custom_fields() -> None:
 		"Sales Invoice Item": MOADIAN_INVOICE_ITEM_FIELDS,
 		"Purchase Invoice": INVOICE_FIELDS,
 		"Payment Entry": PAYMENT_ENTRY_FIELDS,
+		"Employee": PAYROLL_EMPLOYEE_FIELDS,
+		"Salary Component": PAYROLL_COMPONENT_FIELDS,  # HRMS
+		"Salary Slip": PAYROLL_SLIP_FIELDS,  # HRMS
 	}
+	# HRMS may not be installed yet (bench new-site installs erpnext first)
+	custom_fields = {dt: f for dt, f in custom_fields.items() if frappe.db.exists("DocType", dt)}
 	# a Table/Link to one of our DocTypes waits until migrate has created that DocType
 	for doctype, fields in custom_fields.items():
 		custom_fields[doctype] = [
@@ -627,6 +672,22 @@ SIDEBAR = [
 		("قالب‌های مالیاتی کالا", "DocType", "Item Tax Template"),
 		("گزارش ارزش افزوده", "Report", "Farda VAT Report"),
 	]),
+	("حقوق و دستمزد", None, None, "users", [
+		("کارکنان", "DocType", "Employee"),
+		("تخصیص ساختار حقوق (مزد روزانه)", "DocType", "Salary Structure Assignment"),
+		("محاسبه حقوق ماهانه", "DocType", "Payroll Entry"),
+		("فیش‌های حقوق", "DocType", "Salary Slip"),
+		("لیست حقوق", "Report", "Farda Payroll Register"),
+		("لیست بیمه", "Report", "Farda Insurance List"),
+		("لیست مالیات حقوق", "Report", "Farda Salary Tax List"),
+		("نرخ‌های قانونی سال", "DocType", "Farda Payroll Year"),
+	]),
+	("دارایی‌های ثابت", None, None, "assets", [
+		("دارایی‌ها", "DocType", "Asset"),
+		("گروه‌های دارایی (جدول استهلاک)", "DocType", "Asset Category"),
+		("ثبت استهلاک ماهانه", "DocType", "Asset Depreciation Schedule"),
+		("دفتر دارایی‌های ثابت", "Report", "Fixed Asset Register"),
+	]),
 	("سامانه مودیان", None, None, "upload", [
 		("ارسال‌های سامانه مودیان", "DocType", "Farda Moadian Log"),
 		("تنظیمات سامانه مودیان", "DocType", "Farda Moadian Settings"),
@@ -692,9 +753,39 @@ def ensure_irr_format() -> None:
 		frappe.db.set_single_value("System Settings", "use_number_format_from_currency", 1)
 
 
+def ensure_payroll() -> None:
+	"""Iranian payroll needs HRMS: seed the 1405 figures and the statutory components."""
+	if not (frappe.db.exists("DocType", "Salary Component") and frappe.db.exists("DocType", "Farda Payroll Year")):
+		return
+	meta = frappe.get_meta("Salary Component", cached=False)
+	if not meta.has_field("farda_payroll_key"):
+		return  # custom fields arrive in the after_migrate pass
+	from erpnext.farda_iran.payroll.setup import ensure_components, ensure_year
+
+	ensure_year(1405)
+	ensure_components()
+
+
+def after_app_install(app_name: str | None = None, **_kwargs) -> None:
+	"""HRMS installed after ERPNext on a new site: add the payroll fields then."""
+	if app_name == "hrms":
+		execute()
+
+
 def execute() -> str:
 	ensure_custom_fields()
 	ensure_irr_format()
+	try:
+		ensure_payroll()
+	except Exception:
+		frappe.log_error("farda_iran: payroll setup failed")  # non-fatal
+	try:
+		from erpnext.farda_iran.assets.depreciation import ensure_categories
+
+		for company in frappe.get_all("Account", filters={"account_number": "120201"}, pluck="company"):
+			ensure_categories(company)
+	except Exception:
+		frappe.log_error("farda_iran: asset categories setup failed")  # non-fatal
 	ensure_moadian_defaults()
 	ensure_levies_accounts()
 	ensure_vat_settings_defaults()

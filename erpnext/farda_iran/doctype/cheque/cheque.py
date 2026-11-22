@@ -21,6 +21,7 @@ TRANSITIONS = {
 class Cheque(Document):
 	def validate(self):
 		self._validate_identifiers()
+		self._validate_sayad()
 		self._validate_amount()
 		self._validate_dates()
 		self._validate_transition()
@@ -32,6 +33,41 @@ class Cheque(Document):
 			digits = validators.normalize_national_id(self.account_number)
 			if not digits.isdigit() or len(digits) > 20:
 				frappe.throw(frappe._("شماره حساب باید فقط رقم و حداکثر 20 رقم باشد"))
+
+	def _validate_sayad(self):
+		"""چک صیادی (CORE-037): 16-digit ID; since 1400 a cheque must be registered
+		in سامانه صیاد by the drawer and confirmed by the receiver to be payable."""
+		if self.get("sayad_id"):
+			sid = validators.normalize_national_id(self.sayad_id)
+			if not (sid.isdigit() and len(sid) == 16):
+				frappe.throw(frappe._("شناسه صیادی باید دقیقاً ۱۶ رقم باشد"))
+			self.sayad_id = sid
+		if self.get("sayad_receiver_id"):
+			rid = validators.normalize_national_id(self.sayad_receiver_id)
+			if not (rid.isdigit() and len(rid) in (10, 11)):
+				frappe.throw(frappe._("کد ملی (۱۰ رقم) یا شناسه ملی (۱۱ رقم) گیرنده نادرست است"))
+			self.sayad_receiver_id = rid
+		if self.flags.ignore_sayad_warnings:
+			return
+		status = self.get("sayad_status") or "ثبت نشده"
+		if self.direction == "Received" and self.status in ("Received", "Deposited") and status != "تأیید شده توسط گیرنده":
+			frappe.msgprint(
+				frappe._("این چک در سامانه صیاد «تأیید شده توسط گیرنده» نیست؛ چک ثبت‌نشده یا تأییدنشده قابل وصول نیست. پیش از تحویل گرفتن، ثبت و تأیید آن را در اپلیکیشن بانک بررسی کنید."),
+				indicator="orange",
+				alert=True,
+			)
+		if self.direction == "Issued" and status == "ثبت نشده":
+			frappe.msgprint(
+				frappe._("این چک صادره هنوز در سامانه صیاد ثبت نشده است؛ پیش از تحویل به گیرنده آن را در اپلیکیشن بانک ثبت کنید."),
+				indicator="orange",
+				alert=True,
+			)
+		if self.get("sayad_color") in ("قهوه‌ای", "قرمز"):
+			frappe.msgprint(
+				frappe._("وضعیت اعتباری صادرکننده {0} است؛ احتمال برگشت این چک بالاست.").format(self.sayad_color),
+				indicator="red",
+				alert=True,
+			)
 
 	def _validate_amount(self):
 		try:

@@ -64571,3 +64571,23 @@ msgstr "تنظیمات سامانه مودیان"
 #. FardaERP سامانه مودیان (CORE-035)
 msgid "Farda Moadian Carried Goods"
 msgstr "کالاهای حمل‌شده (بارنامه)"
+
+#. FardaERP payroll (CORE-036)
+msgid "Farda Payroll Year"
+msgstr "سال حقوق و دستمزد (نرخ‌های قانونی)"
+
+#. FardaERP payroll (CORE-036)
+msgid "Farda Payroll Tax Bracket"
+msgstr "پلهٔ مالیات حقوق"
+
+#. FardaERP payroll (CORE-036)
+msgid "Farda Payroll Register"
+msgstr "لیست حقوق"
+
+#. FardaERP payroll (CORE-036)
+msgid "Farda Insurance List"
+msgstr "لیست بیمه تأمین اجتماعی"
+
+#. FardaERP payroll (CORE-036)
+msgid "Farda Salary Tax List"
+msgstr "لیست مالیات حقوق"

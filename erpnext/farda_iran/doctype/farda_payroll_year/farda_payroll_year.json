@@ -1,0 +1,253 @@
+{
+ "actions": [],
+ "autoname": "field:year",
+ "creation": "2026-11-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "year",
+  "circular",
+  "cb0",
+  "setup_html",
+  "wage_section",
+  "min_daily_wage",
+  "seniority_daily",
+  "child_days",
+  "cb1",
+  "grocery",
+  "housing",
+  "marriage",
+  "overtime_section",
+  "hours_per_day",
+  "overtime_factor",
+  "cb2",
+  "night_extra",
+  "holiday_factor",
+  "insurance_section",
+  "insurance_employee",
+  "insurance_employer",
+  "cb3",
+  "unemployment",
+  "insurance_cap_multiple",
+  "tax_section",
+  "tax_insurance_exempt",
+  "tax_brackets",
+  "bonus_section",
+  "eid_days",
+  "eid_cap_min_days"
+ ],
+ "fields": [
+  {
+   "fieldname": "year",
+   "fieldtype": "Int",
+   "label": "سال (شمسی)",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1,
+   "description": "مثلاً ۱۴۰۵. برای هر فیش حقوق، سالِ تاریخ پایان دوره استفاده می‌شود."
+  },
+  {
+   "fieldname": "circular",
+   "fieldtype": "Data",
+   "label": "مرجع (شماره بخشنامه / مصوبه)",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb0",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "setup_html",
+   "fieldtype": "HTML",
+   "label": "راه‌اندازی"
+  },
+  {
+   "fieldname": "wage_section",
+   "fieldtype": "Section Break",
+   "label": "دستمزد و مزایای قانون کار"
+  },
+  {
+   "fieldname": "min_daily_wage",
+   "fieldtype": "Currency",
+   "label": "حداقل مزد روزانه",
+   "options": "IRR",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "seniority_daily",
+   "fieldtype": "Currency",
+   "label": "پایه سنوات روزانه (برای هر سال سابقه)",
+   "options": "IRR"
+  },
+  {
+   "fieldname": "child_days",
+   "fieldtype": "Float",
+   "label": "حق اولاد (روز حداقل مزد برای هر فرزند)",
+   "default": "3"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grocery",
+   "fieldtype": "Currency",
+   "label": "کمک‌هزینه اقلام مصرفی خانوار (ماهانه)",
+   "options": "IRR"
+  },
+  {
+   "fieldname": "housing",
+   "fieldtype": "Currency",
+   "label": "کمک‌هزینه مسکن (ماهانه)",
+   "options": "IRR"
+  },
+  {
+   "fieldname": "marriage",
+   "fieldtype": "Currency",
+   "label": "حق تأهل (ماهانه)",
+   "options": "IRR"
+  },
+  {
+   "fieldname": "overtime_section",
+   "fieldtype": "Section Break",
+   "label": "اضافه‌کاری و نوبت‌کاری"
+  },
+  {
+   "fieldname": "hours_per_day",
+   "fieldtype": "Float",
+   "label": "ساعات کار روزانه (مبنای نرخ ساعتی)",
+   "default": "7.33"
+  },
+  {
+   "fieldname": "overtime_factor",
+   "fieldtype": "Float",
+   "label": "ضریب اضافه‌کاری",
+   "default": "1.4"
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "night_extra",
+   "fieldtype": "Float",
+   "label": "فوق‌العاده شب‌کاری (کسر از نرخ ساعتی)",
+   "default": "0.35"
+  },
+  {
+   "fieldname": "holiday_factor",
+   "fieldtype": "Float",
+   "label": "ضریب تعطیل‌کاری",
+   "default": "1.4"
+  },
+  {
+   "fieldname": "insurance_section",
+   "fieldtype": "Section Break",
+   "label": "بیمه تأمین اجتماعی"
+  },
+  {
+   "fieldname": "insurance_employee",
+   "fieldtype": "Percent",
+   "label": "سهم بیمه‌شده",
+   "default": "7"
+  },
+  {
+   "fieldname": "insurance_employer",
+   "fieldtype": "Percent",
+   "label": "سهم کارفرما",
+   "default": "20"
+  },
+  {
+   "fieldname": "cb3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "unemployment",
+   "fieldtype": "Percent",
+   "label": "بیمه بیکاری (سهم کارفرما)",
+   "default": "3"
+  },
+  {
+   "fieldname": "insurance_cap_multiple",
+   "fieldtype": "Float",
+   "label": "سقف دستمزد مشمول بیمه (برابر حداقل مزد روزانه)",
+   "default": "7"
+  },
+  {
+   "fieldname": "tax_section",
+   "fieldtype": "Section Break",
+   "label": "مالیات حقوق"
+  },
+  {
+   "fieldname": "tax_insurance_exempt",
+   "fieldtype": "Float",
+   "label": "معافیت بیمه سهم کارگر از مالیات (کسر)",
+   "default": "0.285714",
+   "description": "۲/۷ = ۰٫۲۸۵۷۱۴"
+  },
+  {
+   "fieldname": "tax_brackets",
+   "fieldtype": "Table",
+   "label": "جدول نرخ پلکانی ماهانه",
+   "options": "Farda Payroll Tax Bracket",
+   "reqd": 1,
+   "description": "هر ردیف: سقف پله (ریال در ماه) و نرخ. ردیف آخر را بدون سقف (صفر) بگذارید."
+  },
+  {
+   "fieldname": "bonus_section",
+   "fieldtype": "Section Break",
+   "label": "عیدی و سنوات"
+  },
+  {
+   "fieldname": "eid_days",
+   "fieldtype": "Float",
+   "label": "عیدی (روز مزد)",
+   "default": "60"
+  },
+  {
+   "fieldname": "eid_cap_min_days",
+   "fieldtype": "Float",
+   "label": "سقف عیدی (روز حداقل مزد)",
+   "default": "90"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Payroll Year",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1,
+   "report": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager"
+  }
+ ],
+ "sort_field": "year",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "year",
+ "track_changes": 1
+}

@@ -791,6 +791,7 @@ _farda_merge_hooks(
 			"on_update": "erpnext.farda_iran.setup.company.apply_iran_chart_defaults",
 		},
 		"Item": {"validate": "erpnext.farda_iran.item.validate"},
+		"Asset": {"validate": "erpnext.farda_iran.assets.depreciation.on_asset_validate"},
 		"Bank Account": {
 			"validate": "erpnext.farda_iran.banking.hooks.validate_bank_account",
 			"before_insert": "erpnext.farda_iran.banking.hooks.validate_bank_account",
@@ -828,6 +829,15 @@ scheduler_events["daily"] = [
 	*scheduler_events["daily"],
 	"erpnext.farda_iran.cheque.reminders.notify_cheques_due",
 	"erpnext.farda_iran.notifications.service.run",
+]
+
+# CORE-036: Iranian payroll — HRMS calls this for companies whose country is Iran
+regional_overrides.setdefault("Iran", {})[
+	"hrms.payroll.doctype.salary_slip.salary_slip.apply_regional_deductions"
+] = "erpnext.farda_iran.payroll.salary.apply_regional_deductions"
+after_app_install = [
+	*([after_app_install] if isinstance(after_app_install, str) else after_app_install),
+	"erpnext.farda_iran.setup.install.after_app_install",
 ]
 
 # CORE-034: poll سامانه مودیان for invoices still being processed

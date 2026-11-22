@@ -463,6 +463,27 @@ FardaHome.MODULES = [
 		],
 	},
 	{
+		title: "حقوق و دستمزد",
+		icon: "user",
+		desc: "حقوق ماهانه طبق قانون کار و نرخ‌های سال، با بیمه و مالیات خودکار؛ لیست بیمه و لیست مالیات حقوق.",
+		links: [
+			{ label: "کارکنان", go: ["list", "Employee"] },
+			{ label: "محاسبه حقوق ماهانه", go: ["list", "Payroll Entry"] },
+			{ label: "لیست بیمه", go: ["report", "Farda Insurance List"] },
+			{ label: "نرخ‌های قانونی سال", go: ["list", "Farda Payroll Year"] },
+		],
+	},
+	{
+		title: "دارایی‌های ثابت",
+		icon: "box",
+		desc: "دارایی‌ها با گروه‌بندی جدول استهلاکات ماده ۱۴۹ و استهلاک ماهانه در پایان هر ماه شمسی.",
+		links: [
+			{ label: "دارایی‌ها", go: ["list", "Asset"] },
+			{ label: "گروه‌های دارایی", go: ["list", "Asset Category"] },
+			{ label: "دفتر دارایی‌های ثابت", go: ["report", "Fixed Asset Register"] },
+		],
+	},
+	{
 		title: "سامانه مودیان",
 		icon: "upload",
 		desc: "فاکتور فروش ثبت‌شده را با شماره منحصر به فرد مالیاتی به سامانه مودیان بفرستید و وضعیت آن را پیگیری کنید.",

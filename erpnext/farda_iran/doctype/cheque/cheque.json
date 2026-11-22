@@ -17,6 +17,16 @@
   "amount",
   "issue_date",
   "due_date",
+  "section_sayad",
+  "sayad_id",
+  "sayad_series",
+  "sayad_serial",
+  "sayad_status",
+  "column_break_sayad",
+  "sayad_color",
+  "sayad_receiver_id",
+  "sayad_reason",
+  "sayad_registered_on",
   "section_party",
   "company",
   "party_type",
@@ -142,11 +152,71 @@
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "label": "یادداشت"
+  },
+  {
+   "fieldname": "section_sayad",
+   "fieldtype": "Section Break",
+   "label": "چک صیادی"
+  },
+  {
+   "fieldname": "sayad_id",
+   "fieldtype": "Data",
+   "label": "شناسه صیادی (۱۶ رقمی)",
+   "length": 16,
+   "unique": 1,
+   "in_standard_filter": 1,
+   "description": "شماره ۱۶ رقمی روی برگه چک"
+  },
+  {
+   "fieldname": "sayad_series",
+   "fieldtype": "Data",
+   "label": "سری چک"
+  },
+  {
+   "fieldname": "sayad_serial",
+   "fieldtype": "Data",
+   "label": "سریال چک"
+  },
+  {
+   "fieldname": "sayad_status",
+   "fieldtype": "Select",
+   "label": "وضعیت در سامانه صیاد",
+   "options": "\nثبت نشده\nثبت شده (منتظر تأیید گیرنده)\nتأیید شده توسط گیرنده\nرد شده توسط گیرنده\nانتقال داده شده (پشت‌نویسی الکترونیکی)\nابطال شده",
+   "default": "ثبت نشده",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_sayad",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sayad_color",
+   "fieldtype": "Select",
+   "label": "وضعیت اعتباری صادرکننده (رنگ)",
+   "options": "\nسفید\nزرد\nنارنجی\nقهوه‌ای\nقرمز",
+   "description": "از استعلام رنگ چک در اپلیکیشن بانک یا سامانه صیاد"
+  },
+  {
+   "fieldname": "sayad_receiver_id",
+   "fieldtype": "Data",
+   "label": "کد/شناسه ملی گیرنده در صیاد",
+   "length": 11
+  },
+  {
+   "fieldname": "sayad_reason",
+   "fieldtype": "Data",
+   "label": "بابت (شرح ثبت در صیاد)"
+  },
+  {
+   "fieldname": "sayad_registered_on",
+   "fieldtype": "Date",
+   "label": "تاریخ ثبت در صیاد"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-15 00:00:00.000000",
+ "modified": "2026-11-22 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Farda Iran",
  "name": "Cheque",

@@ -38,7 +38,7 @@ def execute(filters=None):
 	rows = frappe.db.sql(
 		f"""
 		select name, direction, status, cheque_number, bank, amount,
-		       due_date, party_type, party, payment_entry
+		       due_date, party_type, party, payment_entry, sayad_id, sayad_status
 		from `tabCheque`
 		where status != 'Cancelled'{conditions}
 		order by due_date asc, name asc
@@ -52,6 +52,8 @@ def execute(filters=None):
 	columns = [
 		{"label": _("چک"), "fieldname": "name", "fieldtype": "Link", "options": "Cheque", "width": 150},
 		{"label": _("شماره چک"), "fieldname": "cheque_number", "width": 130},
+		{"label": _("شناسه صیادی"), "fieldname": "sayad_id", "width": 150},
+		{"label": _("وضعیت صیاد"), "fieldname": "sayad_status", "width": 170},
 		{"label": _("نوع"), "fieldname": "farda_direction", "width": 80},
 		{"label": _("وضعیت"), "fieldname": "farda_status", "width": 100},
 		{"label": _("بانک"), "fieldname": "bank", "width": 150},
@@ -77,6 +79,8 @@ def execute(filters=None):
 		data.append({
 			"name": r.name,
 			"cheque_number": r.cheque_number or "-",
+			"sayad_id": r.sayad_id or "-",
+			"sayad_status": r.sayad_status or "ثبت نشده",
 			"farda_direction": _("دریافتی") if r.direction == "Received" else _("صادره"),
 			"farda_status": _(STATUS_FA.get(r.status, r.status or "")),
 			"bank": r.bank or "-",

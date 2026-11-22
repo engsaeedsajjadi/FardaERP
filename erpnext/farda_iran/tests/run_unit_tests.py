@@ -34,6 +34,7 @@ MODULES = (
 	"test_namespaces_core",
 	"test_flags_core",
 	"test_moadian_pure",
+	"test_payroll_engine",
 )
 
 

@@ -1,0 +1,37 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "upper_limit",
+  "rate"
+ ],
+ "fields": [
+  {
+   "fieldname": "upper_limit",
+   "fieldtype": "Currency",
+   "label": "سقف پله (ریال در ماه، صفر = بدون سقف)",
+   "options": "IRR",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Percent",
+   "label": "نرخ مالیات",
+   "in_list_view": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Payroll Tax Bracket",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

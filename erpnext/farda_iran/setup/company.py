@@ -72,6 +72,14 @@ def apply_iran_chart_defaults(doc, method=None):
 	doc.flags.farda_defaults_applied = True
 	_ensure_vat_account(accounts, doc.name)
 
+	# CORE-037: statutory asset categories (Article 149) for the Iranian chart
+	try:
+		from erpnext.farda_iran.assets.depreciation import ensure_categories
+
+		ensure_categories(doc.name)
+	except Exception:
+		frappe.log_error("farda_iran: asset categories setup failed")
+
 
 def _auto_picked(doc, field):
 	"""True right after creation: the company was inserted in this request and
