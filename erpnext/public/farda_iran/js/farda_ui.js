@@ -456,6 +456,19 @@
 		setTimeout(check, 0);
 	}
 
+	/* Desk caches page scripts in localStorage keyed only by metadata_version,
+	 * which a rebuild does not always change — so an updated home page could
+	 * keep showing the old one. Drop our cached pages once per release. */
+	var FARDA_UI_RELEASE = "2026-11-22-brand";
+	try {
+		if (localStorage.getItem("farda_ui_release") !== FARDA_UI_RELEASE) {
+			Object.keys(localStorage).forEach(function (k) {
+				if (k.indexOf("_page:farda-") === 0) { localStorage.removeItem(k); }
+			});
+			localStorage.setItem("farda_ui_release", FARDA_UI_RELEASE);
+		}
+	} catch (e) { /* storage blocked */ }
+
 	if (window.frappe) {
 		apply();
 		if (frappe.router) { homeRouting(); } else { $(document).on("app_ready", homeRouting); }

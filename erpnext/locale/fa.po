@@ -64611,3 +64611,7 @@ msgstr "منابع انسانی"
 #. FardaERP desktop (CORE-040)
 msgid "Framework"
 msgstr "مدیریت سیستم"
+
+#. FardaERP brand (CORE-039): workspace, sidebar and desktop icon label
+msgid "FardaERP"
+msgstr "سیمراکس"

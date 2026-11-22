@@ -577,7 +577,9 @@ def ensure_brand() -> None:
 			frappe.db.set_value("Workspace Sidebar", name, "title", BRAND_NAME, update_modified=False)
 		if frappe.db.exists("DocType", "Desktop Icon") and frappe.db.exists("Desktop Icon", name):
 			meta = frappe.get_meta("Desktop Icon")
-			values = {f: v for f, v in (("label", BRAND_NAME), ("logo_url", BRAND + "simorax-app-icon.svg")) if meta.has_field(f)}
+			# keep label == "FardaERP": the desk matches icons to sidebars by label;
+			# the Persian name comes from the translation of "FardaERP" (fa.po)
+			values = {f: v for f, v in (("label", name), ("logo_url", BRAND + "simorax-app-icon.svg")) if meta.has_field(f)}
 			frappe.db.set_value("Desktop Icon", name, values, update_modified=False)
 			frappe.cache.delete_key("desktop_icons")
 	frappe.clear_cache()

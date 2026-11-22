@@ -228,3 +228,4 @@
 	--fh-teal-tint: rgba(201, 206, 214, 0.1);
 	--fh-on-accent: #0b1426;
 }
+[data-theme="dark"] .fh-hero { border: 1px solid rgba(201, 206, 214, 0.14); }
