@@ -71,6 +71,18 @@ def items(txt: str = "", customer: str | None = None) -> list:
 	return rows
 
 
+def _warehouse(item_code: str, company: str) -> str | None:
+	"""Item default for the company → Stock Settings default → first warehouse of the company."""
+	wh = frappe.db.get_value("Item Default", {"parent": item_code, "company": company}, "default_warehouse")
+	if not wh:
+		wh = frappe.db.get_single_value("Stock Settings", "default_warehouse")
+		if wh and frappe.db.get_value("Warehouse", wh, "company") != company:
+			wh = None
+	if not wh:
+		wh = frappe.db.get_value("Warehouse", {"company": company, "is_group": 0, "disabled": 0}, "name", order_by="creation asc")
+	return wh
+
+
 @frappe.whitelist(methods=["POST"])
 def create_order(customer: str, lines: str | list, notes: str = "", submit: int = 0) -> dict:
 	lines = json.loads(lines) if isinstance(lines, str) else lines
@@ -86,6 +98,8 @@ def create_order(customer: str, lines: str | list, notes: str = "", submit: int 
 	so.order_type = "Sales"
 	for l in lines:
 		row = {"item_code": l["item_code"], "qty": flt(l["qty"]), "delivery_date": so.delivery_date}
+		if frappe.db.get_value("Item", l["item_code"], "is_stock_item"):
+			row["warehouse"] = _warehouse(l["item_code"], so.company)
 		if flt(l.get("rate")):
 			row["rate"] = flt(l["rate"])
 		so.append("items", row)
@@ -102,7 +116,7 @@ def create_order(customer: str, lines: str | list, notes: str = "", submit: int 
 def my_orders() -> list:
 	return frappe.get_list(
 		"Sales Order",
-		filters={"owner": frappe.session.user, "transaction_date": [">=", add_days(nowdate(), -7)]},
+		filters={"owner": frappe.session.user, "transaction_date": ["between", [add_days(nowdate(), -7), nowdate()]]},
 		fields=["name", "customer_name", "grand_total", "docstatus", "status", "transaction_date"],
 		order_by="creation desc",
 		limit_page_length=30,

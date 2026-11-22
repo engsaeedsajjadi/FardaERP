@@ -9,7 +9,6 @@ frappe.query_reports["Farda Insurance List"] = {
 		{ fieldname: "year", label: "سال", fieldtype: "Int", default: farda_jnow()[0], reqd: 1 },
 		{ fieldname: "month", label: "ماه", fieldtype: "Select", options: FARDA_MONTHS.join("\n"), default: FARDA_MONTHS[farda_jnow()[1] - 1], reqd: 1 },
 	],
-,
 	onload(report) {
 		report.page.add_inner_button("دریافت دیسکت بیمه (DBF)", () => {
 			const f = report.get_values();
