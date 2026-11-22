@@ -36,6 +36,20 @@ def _price_list(customer: str | None) -> str | None:
 	return pl or frappe.db.get_single_value("Selling Settings", "selling_price_list")
 
 
+def _prices(price_list: str | None, codes: list) -> dict:
+	if not price_list or not codes:
+		return {}
+	out = {}
+	for p in frappe.get_all(
+		"Item Price",
+		filters={"price_list": price_list, "item_code": ["in", codes], "selling": 1},
+		fields=["item_code", "price_list_rate"],
+		order_by="valid_from asc",
+	):
+		out[p.item_code] = flt(p.price_list_rate)
+	return out
+
+
 @frappe.whitelist()
 def items(txt: str = "", customer: str | None = None) -> list:
 	txt = f"%{(txt or '').strip()}%"
@@ -50,16 +64,7 @@ def items(txt: str = "", customer: str | None = None) -> list:
 	if not rows:
 		return rows
 	codes = [r.item_code for r in rows]
-	pl = _price_list(customer)
-	prices = {}
-	if pl:
-		for p in frappe.get_all(
-			"Item Price",
-			filters={"price_list": pl, "item_code": ["in", codes], "selling": 1},
-			fields=["item_code", "price_list_rate"],
-			order_by="valid_from asc",
-		):
-			prices[p.item_code] = flt(p.price_list_rate)
+	prices = _prices(_price_list(customer), codes)
 	stock = dict(
 		frappe.db.sql(
 			"select item_code, sum(actual_qty) from `tabBin` where item_code in %s group by item_code", (codes,)
@@ -96,12 +101,14 @@ def create_order(customer: str, lines: str | list, notes: str = "", submit: int 
 	so.delivery_date = add_days(nowdate(), 1)
 	so.selling_price_list = _price_list(customer) or so.selling_price_list
 	so.order_type = "Sales"
+	prices = _prices(so.selling_price_list, [l["item_code"] for l in lines])
 	for l in lines:
 		row = {"item_code": l["item_code"], "qty": flt(l["qty"]), "delivery_date": so.delivery_date}
 		if frappe.db.get_value("Item", l["item_code"], "is_stock_item"):
 			row["warehouse"] = _warehouse(l["item_code"], so.company)
-		if flt(l.get("rate")):
-			row["rate"] = flt(l["rate"])
+		rate = prices.get(l["item_code"])  # the rate always comes from the price list, never the client
+		if rate:
+			row["price_list_rate"] = row["rate"] = rate
 		so.append("items", row)
 	so.set_missing_values()
 	so.insert()  # normal permissions
