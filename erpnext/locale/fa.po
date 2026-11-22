@@ -647,6 +647,9 @@ msgstr "<0"
 #: erpnext/assets/doctype/asset/asset.py:545
 msgid "<b>Cannot create asset.</b><br><br>You're trying to create <b>{0} asset(s)</b> from {2} {3}.<br>However, only <b>{1} item(s)</b> were purchased and <b>{4} asset(s)</b> already exist against {5}."
 msgstr ""
+"<b>نمی‌توان دارایی ساخت.</b><br><br>می‌خواهید <b>{0} دارایی</b> از {2} {3} "
+"بسازید.<br>اما فقط <b>{1} قلم</b> خریده شده و <b>{4} دارایی</b> برای {5} از "
+"قبل وجود دارد."
 
 #: erpnext/crm/doctype/appointment_booking_settings/appointment_booking_settings.py:69
 msgid "<b>From Time</b> cannot be later than <b>To Time</b> for {0}"
@@ -655,6 +658,9 @@ msgstr "<b>از زمان</b> نمی‌تواند دیرتر از <b>تا زما�
 #: erpnext/accounts/doctype/pos_invoice/pos_invoice.py:433
 msgid "<b>Row #{0}:</b> Bundle {1} in warehouse {2} has insufficient packed items:<br><div style='margin-top: 15px;'><ul style='line-height: 0.8;'>{3}</ul></div>"
 msgstr ""
+"<b>ردیف #{0}:</b> بستهٔ {1} در انبار {2} اقلام بسته‌بندی‌شدهٔ کافی "
+"ندارد:<br><div style='margin-top: 15px;'><ul style='line-height: "
+"0.8;'>{3}</ul></div>"
 
 #. Content of the 'Help Text' (HTML) field in DocType 'Process Statement Of
 #. Accounts'
@@ -677,6 +683,22 @@ msgid "<br>\n"
 "</ul>\n"
 "<!-- {% endraw %} -->"
 msgstr ""
+"<br>\n"
+"<h4>توجه</h4>\n"
+"<ul>\n"
+"<li>\n"
+"در فیلدهای <b>موضوع</b> و <b>متن</b> می‌توانید برای مقادیر پویا از <a href=\"https://jinja.palletsprojects.com/en/2.11.x/\" target=\"_blank\">برچسب‌های Jinja</a> استفاده کنید.\n"
+"</li><li>\n"
+"    همهٔ فیلدهای این نوع سند زیر شیء <b>doc</b> و همهٔ فیلدهای مشتری گیرندهٔ ایمیل زیر شیء <b>customer</b> در دسترس‌اند.\n"
+"</li></ul>\n"
+"<h4> مثال‌ها</h4>\n"
+"<!-- {% raw %} -->\n"
+"<ul>\n"
+"    <li><b>موضوع</b>:<br><br><pre><code>صورت‌حساب {{ customer.customer_name }}</code></pre><br></li>\n"
+"    <li><b>متن</b>: <br><br>\n"
+"<pre><code>{{ customer.customer_name }} گرامی،<br>صورت‌حساب شما از {{ doc.from_date }} تا {{ doc.to_date }} پیوست است.</code> </pre></li>\n"
+"</ul>\n"
+"<!-- {% endraw %} -->"
 
 #. Content of the 'Other Details' (HTML) field in DocType 'Purchase Receipt'
 #. Content of the 'Other Details' (HTML) field in DocType 'Subcontracting
@@ -710,6 +732,11 @@ msgstr "<div id=\\\"item-prices-container\\\"></div>"
 #: erpnext/stock/doctype/item/item.json
 msgid "<div style=\"margin-bottom:10px; color: var(--gray-500) !important;\">Define alternate units for this item. Eg: 1 Box = 12 Nos, set conversion factor as 12. (Will also apply for variants) <a href=\"https://docs.frappe.io/erpnext/uom\" target=\"_blank\">Learn more &#8594;</a></div>"
 msgstr ""
+"<div style=\"margin-bottom:10px; color: var(--gray-500) "
+"!important;\">واحدهای جایگزین این کالا را تعریف کنید. مثلاً ۱ جعبه = ۱۲ عدد؛"
+" ضریب تبدیل را ۱۲ بگذارید. (برای گونه‌ها هم اعمال می‌شود) <a "
+"href=\"https://docs.frappe.io/erpnext/uom\" target=\"_blank\">بیشتر بدانید "
+"&#8594;</a></div>"
 
 #. Content of the 'settings' (HTML) field in DocType 'Cheque Print Template'
 #: erpnext/accounts/doctype/cheque_print_template/cheque_print_template.json
@@ -740,6 +767,10 @@ msgid "<h3>Currency Exchange Settings Help</h3>\n"
 "<p>Exchange rate between {from_currency} and {to_currency} on {transaction_date} is fetched by the API.</p>\n"
 "<p>Example: If your endpoint is exchange.com/2021-08-01, then, you will have to input exchange.com/{transaction_date}</p>"
 msgstr ""
+"<h3>راهنمای تنظیمات نرخ ارز</h3>\n"
+"<p>سه متغیر در نشانی سرویس، کلید نتیجه و مقادیر پارامترها قابل استفاده است.</p>\n"
+"<p>نرخ تبدیل {from_currency} به {to_currency} در تاریخ {transaction_date} از سرویس دریافت می‌شود.</p>\n"
+"<p>مثال: اگر نشانی سرویس exchange.com/2021-08-01 است، باید exchange.com/{transaction_date} وارد کنید</p>"
 
 #. Content of the 'Body and Closing Text Help' (HTML) field in DocType 'Dunning
 #. Letter Text'
@@ -751,6 +782,17 @@ msgid "<h4>Body Text and Closing Text Example</h4>\n\n"
 "<h4>Templating</h4>\n\n"
 "<p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">read this documentation.</a></p>"
 msgstr ""
+"<h4>نمونهٔ متن اصلی و متن پایانی</h4>\n"
+"\n"
+"<div>متوجه شدیم فاکتور {{sales_invoice}} به مبلغ {{frappe.db.get_value(\"Currency\", currency, \"symbol\")}} {{outstanding_amount}} هنوز پرداخت نشده است. یادآوری می‌کنیم سررسید این فاکتور {{due_date}} بوده است. لطفاً برای جلوگیری از هزینه‌های پیگیری بیشتر، مبلغ را هرچه زودتر پرداخت کنید.</div>\n"
+"\n"
+"<h4>نام فیلدها را از کجا پیدا کنیم</h4>\n"
+"\n"
+"<p>نام فیلدهایی که در الگو استفاده می‌کنید، فیلدهای همان سند است. فیلدهای هر سند را از تنظیمات &gt; سفارشی‌سازی فرم و انتخاب نوع سند (مثلاً فاکتور فروش) ببینید</p>\n"
+"\n"
+"<h4>الگونویسی</h4>\n"
+"\n"
+"<p>الگوها با زبان Jinja ساخته می‌شوند. برای آشنایی بیشتر <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">این راهنما را بخوانید.</a></p>"
 
 #. Content of the 'Contract Template Help' (HTML) field in DocType 'Contract
 #. Template'
@@ -765,6 +807,21 @@ msgid "<h4>Contract Template Example</h4>\n\n"
 "<h4>Templating</h4>\n\n"
 "<p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">read this documentation.</a></p>"
 msgstr ""
+"<h4>نمونهٔ الگوی قرارداد</h4>\n"
+"\n"
+"<pre>قرارداد با مشتری {{ party_name }}\n"
+"\n"
+"-اعتبار از: {{ start_date }} \n"
+"-اعتبار تا: {{ end_date }}\n"
+"</pre>\n"
+"\n"
+"<h4>نام فیلدها را از کجا پیدا کنیم</h4>\n"
+"\n"
+"<p>نام فیلدهای قابل استفاده در الگوی قرارداد، فیلدهای همان قراردادی است که الگو را برایش می‌سازید. فیلدهای هر سند را از تنظیمات &gt; سفارشی‌سازی فرم و انتخاب نوع سند (مثلاً قرارداد) ببینید</p>\n"
+"\n"
+"<h4>الگونویسی</h4>\n"
+"\n"
+"<p>الگوها با زبان Jinja ساخته می‌شوند. برای آشنایی بیشتر <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">این راهنما را بخوانید.</a></p>"
 
 #. Content of the 'Terms and Conditions Help' (HTML) field in DocType 'Terms
 #. and Conditions'
@@ -779,6 +836,21 @@ msgid "<h4>Standard Terms and Conditions Example</h4>\n\n"
 "<h4>Templating</h4>\n\n"
 "<p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">read this documentation.</a></p>"
 msgstr ""
+"<h4>نمونهٔ شرایط و ضوابط استاندارد</h4>\n"
+"\n"
+"<pre>شرایط تحویل سفارش شمارهٔ {{ name }}\n"
+"\n"
+"-تاریخ سفارش: {{ transaction_date }} \n"
+"-تاریخ تحویل مورد انتظار: {{ delivery_date }}\n"
+"</pre>\n"
+"\n"
+"<h4>نام فیلدها را از کجا پیدا کنیم</h4>\n"
+"\n"
+"<p>نام فیلدهای قابل استفاده، فیلدهای سندی است که از آن ایمیل می‌فرستید. فیلدهای هر سند را از تنظیمات &gt; سفارشی‌سازی فرم و انتخاب نوع سند (مثلاً فاکتور فروش) ببینید</p>\n"
+"\n"
+"<h4>الگونویسی</h4>\n"
+"\n"
+"<p>الگوها با زبان Jinja ساخته می‌شوند. برای آشنایی بیشتر <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">این راهنما را بخوانید.</a></p>"
 
 #. Content of the 'account_no_settings' (HTML) field in DocType 'Cheque Print
 #. Template'
@@ -849,6 +921,26 @@ msgid "<p>In your <b>Email Template</b>, you can use the following special varia
 "<p></p>\n"
 "<p>Apart from these, you can access all values in this RFQ, like <code>{{ message_for_supplier }}</code> or <code>{{ terms }}</code>.</p>"
 msgstr ""
+"<p>در <b>الگوی ایمیل</b> می‌توانید از این متغیرهای ویژه استفاده کنید:\n"
+"</p>\n"
+"<ul>\n"
+"        <li>\n"
+"            <code>{{ update_password_link }}</code>: لینکی که تأمین‌کننده با آن برای ورود به پورتال گذرواژهٔ جدید می‌گذارد.\n"
+"        </li>\n"
+"        <li>\n"
+"            <code>{{ portal_link }}</code>: لینک این استعلام قیمت در پورتال تأمین‌کننده.\n"
+"        </li>\n"
+"        <li>\n"
+"            <code>{{ supplier_name }}</code>: نام شرکت تأمین‌کننده.\n"
+"        </li>\n"
+"        <li>\n"
+"            <code>{{ contact.salutation }} {{ contact.last_name }}</code>: نام شخص رابط تأمین‌کننده.\n"
+"        </li><li>\n"
+"            <code>{{ user_fullname }}</code>: نام کامل شما.\n"
+"        </li>\n"
+"    </ul>\n"
+"<p></p>\n"
+"<p>به‌جز این‌ها، به همهٔ مقادیر این استعلام قیمت مثل <code>{{ message_for_supplier }}</code> یا <code>{{ terms }}</code> دسترسی دارید.</p>"
 
 #: erpnext/accounts/doctype/bank_clearance/bank_clearance.py:119
 msgid "<p>Please correct the following row(s):</p><ul>"
@@ -890,6 +982,15 @@ msgid "<pre><h5>Message Example</h5>\n\n"
 "&lt;a href=\"{{ payment_url }}\"&gt; click here to pay &lt;/a&gt;\n\n"
 "</pre>\n"
 msgstr ""
+"<pre><h5>نمونهٔ پیام</h5>\n"
+"\n"
+"&lt;p&gt;{{ doc.contact_person }} گرامی،&lt;/p&gt;\n"
+"\n"
+"&lt;p&gt;درخواست پرداخت برای {{ doc.doctype }}، {{ doc.name }} به مبلغ {{ doc.grand_total }}.&lt;/p&gt;\n"
+"\n"
+"&lt;a href=\"{{ payment_url }}\"&gt; برای پرداخت اینجا را بزنید &lt;/a&gt;\n"
+"\n"
+"</pre>\n"
 
 #. Header text in the Stock Workspace
 #: erpnext/stock/workspace/stock/stock.json
@@ -957,6 +1058,9 @@ msgstr "<strong>مبلغ معوق:</strong> {0}"
 #: erpnext/public/js/utils/serial_no_batch_selector.js:690
 msgid "<strong>Total qty</strong> of the rows (<strong>{0}</strong>) does not match the <strong>Qty to Fetch</strong> (<strong>{1}</strong>). Qty of the item will be changed to <strong>{0}</strong>. Are you sure want to proceed?"
 msgstr ""
+"<strong>جمع مقدار</strong> ردیف‌ها (<strong>{0}</strong>) با <strong>مقدار "
+"دریافتی</strong> (<strong>{1}</strong>) یکی نیست. مقدار کالا به "
+"<strong>{0}</strong> تغییر می‌کند. ادامه می‌دهید؟"
 
 #. Content of the 'html_19' (HTML) field in DocType 'Inventory Dimension'
 #: erpnext/stock/doctype/inventory_dimension/inventory_dimension.json
@@ -987,6 +1091,41 @@ msgid "<table class=\"table table-bordered table-condensed\">\n"
 "</tbody>\n"
 "</table>\n\n\n\n\n\n\n"
 msgstr ""
+"<table class=\"table table-bordered table-condensed\">\n"
+"<thead>\n"
+"  <tr>\n"
+"         <th class=\"table-sr\" style=\"width: 50%;\">سند ردیفی (جدول فرزند)</th>\n"
+"         <th class=\"table-sr\" style=\"width: 50%;\">سند اصلی</th>\n"
+"   </tr>\n"
+"</thead>\n"
+"<tbody>\n"
+"<tr>\n"
+"         <td>\n"
+"                  <p> برای فیلد سند اصلی از parent.fieldname و برای فیلد ردیف جدول از doc.fieldname استفاده کنید </p>\n"
+"\n"
+"         </td>\n"
+"         <td>\n"
+"                    <p>برای فیلد سند از doc.fieldname استفاده کنید </p>\n"
+"         </td>\n"
+"</tr>\n"
+"<tr>\n"
+"        <td>\n"
+"                   <p><b>مثال: </b> parent.doctype == \"Stock Entry\" and doc.item_code == \"Test\" </p>\n"
+"\n"
+"        </td>\n"
+"         <td>\n"
+"                   <p><b>مثال: </b> doc.doctype == \"Stock Entry\" and doc.purpose == \"Manufacture\"</p>    \n"
+"          </td>\n"
+"</tr>\n"
+"\n"
+"</tbody>\n"
+"</table>\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
 
 #: erpnext/stock/report/stock_ledger_invariant_check/stock_ledger_invariant_check.py:233
 #: erpnext/stock/report/stock_ledger_variance/stock_ledger_variance.py:116
@@ -6286,6 +6425,8 @@ msgstr "دستیار"
 #: erpnext/stock/doctype/pick_list/pick_list.py:140
 msgid "At Row #{0}: The picked quantity {1} for the item {2} is greater than available stock {3} for the batch {4} in the warehouse {5}. Please restock the item."
 msgstr ""
+"ردیف #{0}: مقدار برداشت‌شدهٔ {1} برای کالای {2} از موجودی {3} سری ساخت {4} "
+"در انبار {5} بیشتر است. موجودی کالا را تأمین کنید."
 
 #: erpnext/stock/doctype/pick_list/pick_list.py:165
 msgid "At Row #{0}: The picked quantity {1} for the item {2} is greater than available stock {3} in the warehouse {4}."
@@ -6339,6 +6480,8 @@ msgstr "حداقل یک انبار اجباری است"
 #: erpnext/stock/doctype/stock_entry/stock_entry.py:925
 msgid "At row #{0}: the Difference Account must not be a Stock type account, please change the Account Type for the account {1} or select a different account"
 msgstr ""
+"ردیف #{0}: حساب تفاوت نباید از نوع موجودی کالا باشد. نوع حساب {1} را تغییر "
+"دهید یا حساب دیگری انتخاب کنید"
 
 #: erpnext/manufacturing/doctype/routing/routing.py:50
 msgid "At row #{0}: the sequence id {1} cannot be less than previous row sequence id {2}"
@@ -8732,6 +8875,9 @@ msgstr "مسدود کردن تأمین‌کننده"
 #: erpnext/selling/doctype/customer/customer.json
 msgid "Blocks new transactions and further accounting entries on this customer's account. Only users with the role set in Company's \"Roles Allowed to Set and Edit Frozen Account Entries\" can transact."
 msgstr ""
+"ثبت تراکنش و سند حسابداری جدید روی حساب این مشتری مسدود می‌شود. فقط کاربرانی"
+" که نقش تعیین‌شده در «نقش‌های مجاز برای ویرایش حساب‌های مسدود» شرکت را دارند"
+" می‌توانند تراکنش ثبت کنند."
 
 #. Description of the 'Disabled' (Check) field in DocType 'Customer'
 #: erpnext/selling/doctype/customer/customer.json
@@ -8845,6 +8991,10 @@ msgstr "دارایی ثابت رزرو شده"
 #: erpnext/accounts/doctype/accounts_settings/accounts_settings.json
 msgid "Books Purchase Expense and Expenses Added To Stock account pairs against stock value. On enabling this, the accounts become mandatory in Company or Item Defaults for Purchase Receipt, Purchase Invoice, Stock Entry, Stock Reconciliation and Landed Cost Voucher"
 msgstr ""
+"جفت حساب‌های «هزینهٔ خرید» و «هزینه‌های افزوده به موجودی» را در برابر ارزش "
+"موجودی ثبت می‌کند. با فعال‌سازی، این حساب‌ها در پیش‌فرض‌های شرکت یا کالا "
+"برای رسید خرید، فاکتور خرید، سند انبار، انبارگردانی و سند هزینهٔ تمام‌شدهٔ "
+"وارداتی الزامی می‌شوند"
 
 #: erpnext/accounts/general_ledger.py:849
 msgid "Books have been closed till the period ending on {0}"
@@ -9747,6 +9897,8 @@ msgstr "نمی‌توان تراکنش را لغو کرد. ارسال مجدد �
 #: erpnext/controllers/subcontracting_inward_controller.py:592
 msgid "Cannot cancel this Manufacturing Stock Entry as quantity of Finished Good produced cannot be less than quantity delivered in the linked Subcontracting Inward Order."
 msgstr ""
+"این سند تولید را نمی‌توان لغو کرد، چون مقدار کالای ساخته‌شده نمی‌تواند از "
+"مقدار تحویل‌شده در سفارش پیمانکاری ورودی مرتبط کمتر باشد."
 
 #: erpnext/accounts/doctype/journal_entry/journal_entry.py:584
 msgid "Cannot cancel this document as it is linked with the submitted Asset Value Adjustment <b>{0}</b>. Please cancel the Asset Value Adjustment to continue."
@@ -9767,6 +9919,8 @@ msgstr "پس از تراکنش موجودی نمی‌توان ویژگی‌ها 
 #: erpnext/stock/doctype/item/item.py:1132
 msgid "Cannot change Item {0} from serialized to non-serialized because a Serial and Batch Bundle exists for it. Please delete or cancel the Serial and Batch Bundle first."
 msgstr ""
+"کالای {0} را نمی‌توان از سریال‌دار به بدون سریال تغییر داد، چون برایش بستهٔ "
+"سریال و سری ساخت وجود دارد. اول آن بسته را حذف یا لغو کنید."
 
 #: erpnext/accounts/doctype/accounting_dimension/accounting_dimension.py:82
 msgid "Cannot change Reference Document Type."
@@ -9882,6 +10036,9 @@ msgstr "جداسازی {0} عدد برای سند انبار {1} ممکن نیس
 #: erpnext/setup/doctype/company/company.py:226
 msgid "Cannot enable Item-wise Inventory Account, as there are existing Stock Ledger Entries for the company {0} with Warehouse-wise Inventory Account. Please cancel the stock transactions first and try again."
 msgstr ""
+"حساب موجودی به تفکیک کالا را نمی‌توان فعال کرد، چون برای شرکت {0} ثبت‌هایی "
+"در دفتر انبار با حساب موجودی به تفکیک انبار وجود دارد. اول تراکنش‌های انبار "
+"را لغو کنید و دوباره امتحان کنید."
 
 #: erpnext/crm/doctype/crm_settings/crm_settings.py:45
 msgid "Cannot enable Opportunity creation from Contact Us because the Contact Us form is disabled."
@@ -10402,6 +10559,8 @@ msgstr "تغییر گروه مشتری برای مشتری انتخابی مجا
 #: erpnext/accounts/doctype/accounts_settings/accounts_settings.json
 msgid "Changing the account in any transaction of the DocTypes listed below will trigger a repost. To prevent reposting, remove the relevant DocType from the list."
 msgstr ""
+"تغییر حساب در هر تراکنش از انواع سند زیر باعث ارسال دوبارهٔ اسناد می‌شود. "
+"برای جلوگیری، نوع سند مربوط را از فهرست حذف کنید."
 
 #: erpnext/stock/doctype/item/item.js:22
 msgid "Changing the valuation method to Moving Average will affect new transactions. If backdated entries are added, earlier FIFO-based entries will be reposted, which may change closing balances."
@@ -10827,6 +10986,8 @@ msgstr "برای تأیید ایمیل خود و تأیید قرار ملاقا�
 #: erpnext/subcontracting/doctype/subcontracting_receipt/subcontracting_receipt.json
 msgid "Click this button if you encounter a negative stock error for a serial or batch item. The system will fetch the available serials or batches automatically."
 msgstr ""
+"اگر برای کالای سریال‌دار یا دارای سری ساخت خطای موجودی منفی گرفتید این دکمه "
+"را بزنید. سیستم سریال‌ها یا سری‌های موجود را خودکار پیدا می‌کند."
 
 #: erpnext/selling/page/point_of_sale/pos_item_cart.js:485
 msgid "Click to add email / phone"
@@ -19269,12 +19430,16 @@ msgstr "اگر با کنترل‌کنندهٔ جدید بودجه مشکل دا�
 #: erpnext/accounts/doctype/accounts_settings/accounts_settings.json
 msgid "Enable this option to calculate daily depreciation by considering the total number of days in the entire depreciation period, (including leap years) while using daily pro-rata based depreciation"
 msgstr ""
+"با این گزینه، استهلاک روزانه با در نظر گرفتن کل روزهای دورهٔ استهلاک (با "
+"سال‌های کبیسه) محاسبه می‌شود؛ وقتی از استهلاک روزانهٔ تناسبی استفاده می‌کنید"
 
 #. Description of the 'Allow negative rates for Items' (Check) field in DocType
 #. 'Selling Settings'
 #: erpnext/selling/doctype/selling_settings/selling_settings.json
 msgid "Enable this option to permit the use of negative rates for items in sales transactions. This setting is useful for applying substantial discounts, processing refunds or returns, and handling special promotional pricing."
 msgstr ""
+"با این گزینه، نرخ منفی برای کالا در اسناد فروش مجاز می‌شود. برای تخفیف‌های "
+"بزرگ، برگشت و قیمت‌گذاری‌های تبلیغاتی خاص کاربرد دارد."
 
 #. Description of the 'Validate selling price for Item against purchase or
 #. valuation rate' (Check) field in DocType 'Selling Settings'
@@ -19325,6 +19490,8 @@ msgstr "فعال‌سازی این گزینه تضمین می‌کند که هر
 #: erpnext/accounts/doctype/accounts_settings/accounts_settings.json
 msgid "Enabling this option prevents the creation of a new Sales Invoice when the customer has an overdue limit set and their outstanding overdue amount exceeds that limit."
 msgstr ""
+"با این گزینه، اگر مشتری سقف معوقه داشته باشد و مبلغ معوقه‌اش از آن بیشتر "
+"شود، صدور فاکتور فروش جدید برایش ممکن نیست."
 
 #. Description of the 'Book Advance Payments in Separate Party Account' (Check)
 #. field in DocType 'Company'
@@ -19352,6 +19519,12 @@ msgid "Enabling this will do the following:\n"
 "</ul>\n"
 "Note: If this is enabled, updating the rate of the Product Bundle in the Items table will not change its price. It will get reset to the price based on its Child Items on saving the doc."
 msgstr ""
+"با فعال کردن این گزینه:\n"
+"<ul style=\"padding-left:16px\">\n"
+"<li>ستون نرخ در همهٔ جدول‌های اقلام بسته‌بندی‌شده قابل ویرایش می‌شود.</li>\n"
+"<li>قیمت همهٔ <a href=\"/desk/product-bundle\" rel=\"noopener noreferrer\">بسته‌های کالا</a> در جدول اقلام بر اساس قیمت اقلام داخل بسته محاسبه می‌شود.</li>\n"
+"</ul>\n"
+"توجه: اگر فعال باشد، تغییر نرخ بستهٔ کالا در جدول اقلام قیمت آن را تغییر نمی‌دهد و هنگام ذخیره، به قیمت حاصل از اقلام داخل بسته برمی‌گردد."
 
 #. Label of the encashment_date (Date) field in DocType 'Employee'
 #: erpnext/setup/doctype/employee/employee.json
@@ -19530,6 +19703,9 @@ msgstr "کدی را که مشتری برای این کالا استفاده می
 msgid "Enter the Operation, the table will fetch the Operation details like Hourly Rate, Workstation automatically.\n\n"
 " After that, set the Operation Time in minutes and the table will calculate the Operation Costs based on the Hourly Rate and Operation Time."
 msgstr ""
+"عملیات را وارد کنید تا جزئیات آن مثل نرخ ساعتی و ایستگاه کاری خودکار پر شود.\n"
+"\n"
+" سپس زمان عملیات را به دقیقه وارد کنید تا هزینهٔ عملیات بر اساس نرخ ساعتی و زمان محاسبه شود."
 
 #: banking/src/components/features/BankReconciliation/BankBalance.tsx:250
 msgctxt "Do MMM YYYY"
@@ -19662,6 +19838,9 @@ msgid "Error: This asset already has {0} depreciation periods booked.\n"
 "\t\t\t\t\tThe `depreciation start` date must be at least {1} periods after the `available for use` date.\n"
 "\t\t\t\t\tPlease correct the dates accordingly."
 msgstr ""
+"خطا: برای این دارایی {0} دورهٔ استهلاک ثبت شده است.\n"
+"\t\t\t\t\tتاریخ «شروع استهلاک» باید دست‌کم {1} دوره بعد از تاریخ «آمادهٔ بهره‌برداری» باشد.\n"
+"\t\t\t\t\tتاریخ‌ها را اصلاح کنید."
 
 #: erpnext/accounts/doctype/payment_entry/payment_entry.js:980
 msgid "Error: {0} is mandatory field"
@@ -19718,6 +19897,8 @@ msgstr "نمونه ای از یک سند پیوندی: {0}"
 msgid "Example: ABCD.#####\n"
 "If series is set and Serial No is not mentioned in transactions, then automatic serial number will be created based on this series. If you always want to explicitly mention Serial Nos for this item. leave this blank."
 msgstr ""
+"مثال: ABCD.#####\n"
+"اگر سری تعیین شده باشد و شمارهٔ سریال در تراکنش‌ها وارد نشود، شمارهٔ سریال خودکار بر اساس این سری ساخته می‌شود. اگر همیشه می‌خواهید شمارهٔ سریال را خودتان وارد کنید، خالی بگذارید."
 
 #. Description of the 'Batch Number Series' (Data) field in DocType 'Item'
 #: erpnext/stock/doctype/item/item.json
@@ -19888,6 +20069,9 @@ msgstr "نرخ ارز باید برابر با {0} {1} ({2}) باشد"
 #: erpnext/accounts/doctype/purchase_invoice/purchase_invoice.py:357
 msgid "Exchange rate {0} does not match the exchange rate of Purchase Receipt {1}. Use the same exchange rate as the Purchase Receipt or enable {2} in {3} to adjust the landed cost based on this invoice."
 msgstr ""
+"نرخ ارز {0} با نرخ ارز رسید خرید {1} یکی نیست. همان نرخ رسید خرید را استفاده"
+" کنید یا {2} را در {3} فعال کنید تا هزینهٔ تمام‌شده بر اساس این فاکتور اصلاح"
+" شود."
 
 #. Option for the 'Entry Type' (Select) field in DocType 'Journal Entry'
 #. Option for the 'Journal Entry Type' (Select) field in DocType 'Journal Entry
@@ -20619,6 +20803,9 @@ msgstr "تداخل نام فیلد"
 #: erpnext/accounts/doctype/accounting_dimension/accounting_dimension.py:95
 msgid "Fieldname {0} already exists in the following doctypes: {1}. A separate dimension field will not be added to these doctypes. GL Entries will use the value of the existing field as the dimension value."
 msgstr ""
+"نام فیلد {0} در این انواع سند وجود دارد: {1}. فیلد بعد حسابداری جدایی به "
+"آن‌ها اضافه نمی‌شود و ثبت‌های دفتر کل از مقدار همان فیلد موجود استفاده "
+"می‌کنند."
 
 #. Description of the 'Do not update variants on save' (Check) field in DocType
 #. 'Item Variant Settings'
@@ -21012,6 +21199,9 @@ msgstr "آیتم تمام شده {0} با دستور کار {1} مطابقت ن�
 #: erpnext/stock/doctype/stock_entry/stock_entry.py:1089
 msgid "Finished good quantity being consumed ({0} in stock UOM) must equal the quantity to disassemble ({1}). Do not change the UOM, conversion factor or quantity of the finished good row."
 msgstr ""
+"مقدار کالای ساخته‌شدهٔ مصرفی ({0} به واحد انبار) باید با مقدار قابل دمونتاژ "
+"({1}) برابر باشد. واحد، ضریب تبدیل یا مقدار ردیف کالای ساخته‌شده را تغییر "
+"ندهید."
 
 #: erpnext/selling/doctype/sales_order/sales_order.js:585
 msgid "First Delivery Date"
@@ -21409,10 +21599,16 @@ msgstr "برای مثال 2012، 2012-13"
 #: banking/src/components/features/Settings/Preferences.tsx:154
 msgid "For example, if set to 4, the system will try to find matching transactions in other banks 4 days before and after the transaction date. This is because transactions can clear on different days on different bank accounts."
 msgstr ""
+"مثلاً اگر ۴ باشد، سیستم تراکنش‌های مطابق را در بانک‌های دیگر از ۴ روز قبل تا"
+" ۴ روز بعد از تاریخ تراکنش جستجو می‌کند؛ چون تراکنش‌ها ممکن است در حساب‌های "
+"مختلف در روزهای متفاوتی تسویه شوند."
 
 #: banking/src/components/features/Settings/Preferences.tsx:60
 msgid "For example, if set to 4, the system will try to find matching transfer transactions in other banks 4 days before and after the transaction date. This is because transactions can clear on different days on different bank accounts."
 msgstr ""
+"مثلاً اگر ۴ باشد، سیستم تراکنش‌های انتقالی مطابق را در بانک‌های دیگر از ۴ "
+"روز قبل تا ۴ روز بعد از تاریخ تراکنش جستجو می‌کند؛ چون تراکنش‌ها ممکن است در"
+" حساب‌های مختلف در روزهای متفاوتی تسویه شوند."
 
 #. Description of the 'Collection Factor (=1 LP)' (Currency) field in DocType
 #. 'Loyalty Program Collection'
@@ -21429,6 +21625,8 @@ msgstr "برای تأمین‌کننده فردی"
 #: erpnext/stock/doctype/landed_cost_voucher/landed_cost_voucher.py:374
 msgid "For item <b>{0}</b>, only <b>{1}</b> asset have been created or linked to <b>{2}</b>. Please create or link <b>{3}</b> more asset with the respective document."
 msgstr ""
+"برای کالای <b>{0}</b> فقط <b>{1}</b> دارایی ساخته یا به <b>{2}</b> وصل شده "
+"است. <b>{3}</b> دارایی دیگر با سند مربوط بسازید یا وصل کنید."
 
 #: erpnext/controllers/status_updater.py:302
 msgid "For item {0}, rate must be a positive number. To Allow negative rates, enable {1} in {2}"
@@ -22653,6 +22851,9 @@ msgstr "برگرد"
 #: erpnext/accounts/doctype/bank_statement_import_log/bank_statement_import_log.js:7
 msgid "Go to <a href='/banking/statement-importer' target='_blank' style='text-decoration: underline;'>Bank Statement Importer</a> in the Banking module to use this importer."
 msgstr ""
+"برای استفاده از این ابزار به <a href='/banking/statement-importer' "
+"target='_blank' style='text-decoration: underline;'>ورود صورتحساب بانک</a> "
+"در بخش بانکداری بروید."
 
 #: banking/src/pages/BankReconciliation.tsx:96
 msgid "Go to Desktop"
@@ -23657,6 +23858,8 @@ msgstr "اگر «ماه‌ها» انتخاب شود، صرف نظر از تعد
 msgid "If <b>Enabled</b> - Reconciliation happens on the <b>Advance Payment posting date</b><br>\n"
 "If <b>Disabled</b> - Reconciliation happens on oldest of 2 Dates: <b>Invoice Date</b> or the <b>Advance Payment posting date</b><br>\n"
 msgstr ""
+"اگر <b>فعال</b> باشد - تطبیق در <b>تاریخ ثبت پیش‌پرداخت</b> انجام می‌شود<br>\n"
+"اگر <b>غیرفعال</b> باشد - تطبیق در قدیمی‌ترین از دو تاریخ انجام می‌شود: <b>تاریخ فاکتور</b> یا <b>تاریخ ثبت پیش‌پرداخت</b><br>\n"
 
 #: erpnext/accounts/doctype/loyalty_program/loyalty_program.js:34
 msgid "If Auto Opt In is checked, then the customers will be automatically linked with the concerned Loyalty Program (on save)"
@@ -23707,6 +23910,9 @@ msgstr "اگر علامت زده شود، مقدار انتخاب شده به‌
 #: erpnext/accounts/doctype/purchase_taxes_and_charges/purchase_taxes_and_charges.json
 msgid "If checked, the entire amount (e.g. Freight) is allocated to the valuation of stock & asset items only. If unchecked, the amount is distributed across all items and the portion belonging to non-stock items is not added to valuation."
 msgstr ""
+"اگر علامت بخورد، کل مبلغ (مثلاً کرایهٔ حمل) فقط به ارزش کالاهای انباری و "
+"دارایی‌ها اضافه می‌شود. اگر نخورد، مبلغ بین همهٔ اقلام پخش می‌شود و سهم "
+"اقلام غیرانباری به ارزش موجودی اضافه نمی‌شود."
 
 #. Description of the 'Considered In Paid Amount' (Check) field in DocType
 #. 'Purchase Taxes and Charges'
@@ -23736,6 +23942,8 @@ msgstr "اگر تیک بخورد، موجودی به‌روز می‌شود و �
 #: erpnext/accounts/doctype/purchase_invoice/purchase_invoice.json
 msgid "If checked, updates inventory; stock and accounting entries are created together. Leave unchecked if a Purchase Receipt is created separately."
 msgstr ""
+"اگر علامت بخورد، موجودی به‌روز می‌شود و سند انبار و حسابداری با هم ساخته "
+"می‌شوند. اگر رسید خرید جداگانه ثبت می‌شود علامت نزنید."
 
 #: erpnext/public/js/setup_wizard.js:151
 msgid "If checked, we will create demo data for you to explore the system. This demo data can be erased later."
@@ -23781,6 +23989,9 @@ msgstr "در صورت فعال بودن، چاپی از این سند به هر 
 #: erpnext/stock/doctype/stock_reposting_settings/stock_reposting_settings.json
 msgid "If enabled, a weekly scheduler scans the Stock Ledger Variance for item-warehouses with incorrect valuation in the current financial year and auto-creates Item & Warehouse based reposts to fix them."
 msgstr ""
+"اگر فعال باشد، یک کار زمان‌بندی‌شدهٔ هفتگی ناهمخوانی دفتر انبار را برای کالا"
+" و انبارهایی که در سال مالی جاری ارزش‌گذاری نادرست دارند بررسی می‌کند و برای"
+" اصلاحشان خودکار ارسال دوباره می‌سازد."
 
 #. Description of the 'Enable discount accounting for selling' (Check) field in
 #. DocType 'Selling Settings'
@@ -23808,6 +24019,8 @@ msgstr "در صورت فعال بودن، مقادیر سریال / دسته ر�
 msgid "If enabled, formula for <b>Qty to Order</b>: <br>\n"
 "Required Qty (BOM) - <a href=\"https://docs.frappe.io/erpnext/user/manual/en/projected-quantity\">Projected Qty</a>. <br> This helps avoid over-ordering."
 msgstr ""
+"اگر فعال باشد، فرمول <b>مقدار قابل سفارش</b>: <br>\n"
+"مقدار لازم (فرمول ساخت) - <a href=\"https://docs.frappe.io/erpnext/user/manual/en/projected-quantity\">مقدار پیش‌بینی‌شده</a>. <br> این کار از سفارش بیش از نیاز جلوگیری می‌کند."
 
 #. Description of the 'Consider Projected Qty in Calculation (RM)' (Check)
 #. field in DocType 'Production Plan'
@@ -23815,6 +24028,8 @@ msgstr ""
 msgid "If enabled, formula for <b>Required Qty</b>: <br>\n"
 "Required Qty (BOM) - <a href=\"https://docs.frappe.io/erpnext/user/manual/en/projected-quantity\">Projected Qty</a>. <br> This helps avoid over-ordering."
 msgstr ""
+"اگر فعال باشد، فرمول <b>مقدار لازم</b>: <br>\n"
+"مقدار لازم (فرمول ساخت) - <a href=\"https://docs.frappe.io/erpnext/user/manual/en/projected-quantity\">مقدار پیش‌بینی‌شده</a>. <br> این کار از سفارش بیش از نیاز جلوگیری می‌کند."
 
 #. Description of the 'Create Ledger Entries for Change Amount' (Check) field
 #. in DocType 'POS Settings'
@@ -23838,6 +24053,8 @@ msgstr "اگر فعال باشد، فروش این کالا در محاسبهٔ 
 #: erpnext/selling/doctype/selling_settings/selling_settings.json
 msgid "If enabled, system will allow user to deliver the entire quantity of the finished goods produced against the Subcontracting Inward Order. If disabled, system will allow delivery of only the ordered quantity."
 msgstr ""
+"اگر فعال باشد، کاربر می‌تواند کل کالای ساخته‌شده برای سفارش پیمانکاری ورودی "
+"را تحویل دهد. اگر غیرفعال باشد، فقط مقدار سفارش‌داده‌شده قابل تحویل است."
 
 #. Description of the 'Set incoming rate as zero for expired Batch' (Check)
 #. field in DocType 'Selling Settings'
@@ -23862,6 +24079,9 @@ msgstr "اگر فعال باشد، گرد کردن جمع در فاکتورها�
 #: erpnext/stock/doctype/stock_settings/stock_settings.json
 msgid "If enabled, the item rate won't adjust to the valuation rate during internal transfers, but accounting will still use the valuation rate. This will allow the user to specify a different rate for printing or taxation purposes."
 msgstr ""
+"اگر فعال باشد، نرخ کالا در انتقال‌های داخلی با نرخ ارزش‌گذاری تنظیم نمی‌شود "
+"ولی حسابداری همچنان از نرخ ارزش‌گذاری استفاده می‌کند. این امکان می‌دهد برای "
+"چاپ یا مالیات نرخ دیگری وارد کنید."
 
 #. Description of the 'Validate Material Transfer warehouses' (Check) field in
 #. DocType 'Stock Settings'
@@ -23874,12 +24094,19 @@ msgstr "در صورت فعال بودن، انبار مبدا و مقصد در �
 #: erpnext/stock/doctype/stock_settings/stock_settings.json
 msgid "If enabled, the system will allow negative stock entries for the batch. But, this may lead to incorrect valuation rates, so it is recommended to avoid using this option. The system will permit negative stock only when it is caused by backdated entries and will validate and block negative stock in all other cases."
 msgstr ""
+"اگر فعال باشد، ثبت موجودی منفی برای سری ساخت مجاز می‌شود. این کار ممکن است "
+"نرخ ارزش‌گذاری را نادرست کند، پس بهتر است استفاده نشود. موجودی منفی فقط وقتی"
+" مجاز است که به خاطر ثبت با تاریخ گذشته باشد و در بقیهٔ حالت‌ها جلوگیری "
+"می‌شود."
 
 #. Description of the 'Allow Negative Stock for Batch' (Check) field in DocType
 #. 'Batch'
 #: erpnext/stock/doctype/batch/batch.json
 msgid "If enabled, the system will allow negative stock entries for this batch, overriding the 'Allow negative stock for Batch' setting in Stock Settings. This may lead to incorrect valuation rates, so it is recommended to avoid using this option."
 msgstr ""
+"اگر فعال باشد، برای این سری ساخت ثبت موجودی منفی مجاز می‌شود و تنظیم «اجازهٔ"
+" موجودی منفی برای سری ساخت» در تنظیمات انبار نادیده گرفته می‌شود. این کار "
+"ممکن است نرخ ارزش‌گذاری را نادرست کند، پس بهتر است استفاده نشود."
 
 #. Description of the 'Allow UOM with conversion rate defined in Item' (Check)
 #. field in DocType 'Stock Settings'
@@ -23904,6 +24131,8 @@ msgstr "در صورت فعال بودن، سیستم برای مواد رد شد
 #: erpnext/setup/doctype/company/company.json
 msgid "If enabled, the system will use the inventory account set in the Item Master or Item Group or Brand. Otherwise, it will use the inventory account set in the Warehouse."
 msgstr ""
+"اگر فعال باشد، سیستم از حساب موجودی تعیین‌شده در کالا، گروه کالا یا برند "
+"استفاده می‌کند. در غیر این صورت از حساب موجودی انبار استفاده می‌شود."
 
 #. Description of the 'Do not use Batch-wise Valuation' (Check) field in
 #. DocType 'Stock Settings'
@@ -23916,6 +24145,8 @@ msgstr "اگر فعال شود، سیستم از روش ارزیابی میان�
 #: erpnext/accounts/doctype/pricing_rule/pricing_rule.json
 msgid "If enabled, then system will only validate the pricing rule and not apply automatically. User has to manually set the discount percentage / margin / free items to validate the pricing rule"
 msgstr ""
+"اگر فعال باشد، سیستم قانون قیمت‌گذاری را فقط بررسی می‌کند و خودکار اعمال "
+"نمی‌کند. کاربر باید درصد تخفیف، حاشیه یا کالای رایگان را دستی وارد کند"
 
 #. Description of the 'Include in Charts' (Check) field in DocType 'Financial
 #. Report Row'
@@ -23998,6 +24229,10 @@ msgstr "اگر قاعده منطبق بود، آنگاه:"
 #: erpnext/accounts/doctype/pricing_rule/pricing_rule.js:51
 msgid "If selected Pricing Rule is made for 'Rate', it will overwrite Price List. Pricing Rule rate is the final rate, so no further discount should be applied. Hence, in transactions like Sales Order, Purchase Order etc, it will be fetched in 'Rate' field, rather than 'Price List Rate' field."
 msgstr ""
+"اگر قانون قیمت‌گذاری انتخاب‌شده برای «نرخ» باشد، جای فهرست قیمت را می‌گیرد. "
+"نرخ این قانون نرخ نهایی است و تخفیف دیگری روی آن اعمال نمی‌شود. برای همین در"
+" اسنادی مثل سفارش فروش و سفارش خرید در فیلد «نرخ» می‌آید، نه «نرخ فهرست "
+"قیمت»."
 
 #. Description of the 'Default Accounts' (Table) field in DocType 'Customer'
 #: erpnext/selling/doctype/customer/customer.json
@@ -24028,6 +24263,8 @@ msgstr "اگر آیتم به عنوان یک آیتم نرخ ارزش‌گذار
 #: erpnext/stock/doctype/material_request_item/material_request_item.json
 msgid "If the reorder check is set at the Group warehouse level, the available quantity becomes the sum of the projected quantities of all its child warehouses."
 msgstr ""
+"اگر بررسی نقطهٔ سفارش در سطح انبار گروهی تنظیم شود، مقدار موجود برابر جمع "
+"مقدار پیش‌بینی‌شدهٔ همهٔ انبارهای زیرمجموعه است."
 
 #: erpnext/manufacturing/doctype/work_order/work_order.js:1327
 msgid "If the selected BOM has Operations mentioned in it, the system will fetch all Operations from BOM, these values can be changed."
@@ -24095,6 +24332,9 @@ msgstr "در صورت علامت زدن، هزینه BOM به طور خودکا�
 #: erpnext/accounts/doctype/pricing_rule/pricing_rule.js:82
 msgid "If two or more Pricing Rules are found based on the above conditions, Priority is applied. Priority is a number between 0 to 20 while default value is zero (blank). Higher number means it will take precedence if there are multiple Pricing Rules with same conditions."
 msgstr ""
+"اگر بر اساس شرایط بالا دو یا چند قانون قیمت‌گذاری پیدا شود، اولویت اعمال "
+"می‌شود. اولویت عددی بین ۰ تا ۲۰ است و پیش‌فرض صفر (خالی) است. عدد بزرگ‌تر "
+"یعنی اگر چند قانون با شرایط یکسان باشند، آن قانون مقدم است."
 
 #: erpnext/accounts/doctype/loyalty_program/loyalty_program.js:31
 msgid "If unlimited expiry for the Loyalty Points, keep the Expiry Duration empty or 0."
@@ -24585,6 +24825,8 @@ msgstr "در برنامهٔ چندسطحی، مشتریان بر اساس میز
 #, python-format
 msgid "In this case, the amount will be calculated as 25% of the transaction amount. If the transaction amount is 200, then this will be calculated as 200 * 0.25 = 50."
 msgstr ""
+"در این حالت مبلغ ۲۵٪ مبلغ تراکنش محاسبه می‌شود. اگر مبلغ تراکنش ۲۰۰ باشد، "
+"۲۰۰ × ۰٫۲۵ = ۵۰ می‌شود."
 
 #: erpnext/stock/doctype/item/item.js:1319
 msgid "In this section, you can define Company-wide transaction-related defaults for this Item. Eg. Default Warehouse, Default Price List, Supplier, etc."
@@ -28801,6 +29043,8 @@ msgstr "آخرین سال مالی"
 #: erpnext/accounts/doctype/account/account.py:692
 msgid "Last GL Entry update was done {}. This operation is not allowed while system is actively being used. Please wait for 5 minutes before retrying."
 msgstr ""
+"آخرین به‌روزرسانی ثبت‌های دفتر کل {} انجام شد. این عملیات در زمان استفادهٔ "
+"فعال از سیستم مجاز نیست. ۵ دقیقه صبر کنید و دوباره امتحان کنید."
 
 #. Label of the last_integration_date (Date) field in DocType 'Bank Account'
 #: erpnext/accounts/doctype/bank_account/bank_account.json
@@ -31441,6 +31685,9 @@ msgstr "حداقل مقدار باید بر اساس واحد انبار باش�
 #: erpnext/stock/doctype/item/item.json
 msgid "Minimum stock level to maintain as a buffer. Used to calculate recommended reorder level: Reorder Level = Safety Stock + (Average Daily Consumption × Lead Time)."
 msgstr ""
+"حداقل موجودی که باید به‌عنوان ذخیرهٔ اطمینان نگه داشت. برای محاسبهٔ نقطهٔ "
+"سفارش پیشنهادی استفاده می‌شود: نقطهٔ سفارش = ذخیرهٔ اطمینان + (میانگین مصرف "
+"روزانه × زمان تحویل)."
 
 #. Label of the minute (Text Editor) field in DocType 'Quality Meeting Minutes'
 #. Name of a UOM
@@ -31739,6 +31986,8 @@ msgstr "بیشتر/کمتر از 12 ماه."
 #: erpnext/selling/doctype/selling_settings/selling_settings.json
 msgid "Most Customers have a unique Tax ID that is fetched into selling transactions. Enable this setting if you do not want Customer Tax IDs to appear in sales transactions."
 msgstr ""
+"بیشتر مشتریان شناسهٔ مالیاتی یکتا دارند که در اسناد فروش می‌آید. اگر "
+"نمی‌خواهید شناسهٔ مالیاتی مشتری در اسناد فروش بیاید این گزینه را فعال کنید."
 
 #: erpnext/setup/setup_wizard/data/industry_type.txt:32
 msgid "Motion Picture & Video"
@@ -32438,6 +32687,9 @@ msgstr "فاکتور فروش جدید"
 #: erpnext/selling/doctype/customer_credit_limit/customer_credit_limit.json
 msgid "New Sales Invoices are blocked when the customer's overdue amount exceeds this. Requires 'Restrict Customer Over Billing' in Accounts Settings."
 msgstr ""
+"وقتی مبلغ معوقهٔ مشتری از این عدد بیشتر شود، صدور فاکتور فروش جدید مسدود "
+"می‌شود. گزینهٔ «محدودیت فروش بیش از اعتبار مشتری» در تنظیمات حسابداری باید "
+"فعال باشد."
 
 #. Label of the sales_order (Check) field in DocType 'Email Digest'
 #: erpnext/setup/doctype/email_digest/email_digest.json
@@ -33209,6 +33461,8 @@ msgstr "توجه: برای کاربران غیرفعال ایمیل ارسال �
 #: erpnext/manufacturing/doctype/bom/bom.py:851
 msgid "Note: If you want to use the finished good {0} as a raw material, then enable the 'Do Not Explode' checkbox in the Items table against the same raw material."
 msgstr ""
+"توجه: اگر می‌خواهید کالای ساخته‌شدهٔ {0} را به‌عنوان مادهٔ اولیه استفاده "
+"کنید، گزینهٔ «باز نشود» را در جدول اقلام برای همان مادهٔ اولیه فعال کنید."
 
 #: erpnext/manufacturing/doctype/blanket_order/blanket_order.py:134
 msgid "Note: Item {0} added multiple times"
@@ -34004,6 +34258,9 @@ msgstr "ابزار فاکتور افتتاحیه"
 #: erpnext/accounts/doctype/sales_invoice/sales_invoice.py:2044
 msgid "Opening Invoice has rounding adjustment of {0}.<br><br> '{1}' account is required to post these values. Please set it in Company: {2}.<br><br> Or, '{3}' can be enabled to not post any rounding adjustment."
 msgstr ""
+"فاکتور افتتاحیه {0} اختلاف گردکردن دارد.<br><br> برای ثبت آن حساب «{1}» لازم"
+" است. آن را در شرکت {2} تنظیم کنید.<br><br> یا «{3}» را فعال کنید تا اختلاف "
+"گردکردن ثبت نشود."
 
 #: erpnext/accounts/doctype/opening_invoice_creation_tool/opening_invoice_creation_tool_dashboard.html:8
 msgid "Opening Invoices"
@@ -37239,12 +37496,16 @@ msgstr "تخصیص درصد باید برابر با 100٪ باشد"
 #: erpnext/stock/doctype/item/item.json
 msgid "Percentage by which over-billing is allowed against a Sales/Purchase Order for this item. If not set, value from Accounts Settings will be used."
 msgstr ""
+"درصدی که برای این کالا صدور فاکتور بیش از سفارش فروش یا خرید مجاز است. اگر "
+"خالی باشد از تنظیمات حسابداری استفاده می‌شود."
 
 #. Description of the 'Over Delivery/Receipt Allowance (%)' (Float) field in
 #. DocType 'Item'
 #: erpnext/stock/doctype/item/item.json
 msgid "Percentage by which over-delivery or over-receipt is allowed against a Sales/Purchase Order for this item. If not set, value from Stock Settings will be used."
 msgstr ""
+"درصدی که برای این کالا تحویل یا دریافت بیش از سفارش فروش یا خرید مجاز است. "
+"اگر خالی باشد از تنظیمات انبار استفاده می‌شود."
 
 #. Description of the 'Blanket Order Allowance (%)' (Float) field in DocType
 #. 'Buying Settings'
@@ -38337,6 +38598,8 @@ msgstr "لطفاً مطمئن شوید که فایلی که استفاده می�
 #: erpnext/setup/doctype/company/company.js:229
 msgid "Please make sure you really want to delete all the transactions for {0}. Your master data will remain as it is. This action cannot be undone."
 msgstr ""
+"مطمئن شوید واقعاً می‌خواهید همهٔ تراکنش‌های {0} را حذف کنید. اطلاعات پایه سر"
+" جایش می‌ماند. این کار برگشت‌پذیر نیست."
 
 #: erpnext/stock/doctype/item/item.js:750
 msgid "Please mention 'Weight UOM' along with Weight."
@@ -41806,6 +42069,9 @@ msgstr "قانون جانمایی از قبل برای آیتم {0} در انب�
 #: erpnext/stock/doctype/inventory_dimension/inventory_dimension.json
 msgid "Python expression evaluated on the server. Use doc.fieldname for the row and parent.fieldname for the parent document. When it evaluates to true the dimension becomes mandatory. Example: doc.t_warehouse and doc.qty > 0"
 msgstr ""
+"عبارت پایتون که روی سرور ارزیابی می‌شود. برای ردیف از doc.fieldname و برای "
+"سند اصلی از parent.fieldname استفاده کنید. اگر نتیجه درست باشد، این بعد "
+"الزامی می‌شود. مثال: doc.t_warehouse and doc.qty > 0"
 
 #: banking/src/components/features/BankReconciliation/BankRecDateFilter.tsx:41
 msgid "Q1"
@@ -42008,6 +42274,9 @@ msgstr "مقدار برای تولید ({0}) نمی‌تواند کسری از U
 #: erpnext/manufacturing/doctype/job_card/job_card.py:266
 msgid "Qty To Manufacture in the job card cannot be greater than Qty To Manufacture in the work order for the operation {0}. <br><br><b>Solution: </b> Either you can reduce the Qty To Manufacture in the job card or set the 'Overproduction Percentage For Work Order' in the {1}."
 msgstr ""
+"مقدار قابل ساخت در کارت کار نمی‌تواند از مقدار قابل ساخت دستور تولید برای "
+"عملیات {0} بیشتر باشد. <br><br><b>راه‌حل: </b> مقدار قابل ساخت کارت کار را "
+"کم کنید یا «درصد تولید اضافه برای دستور تولید» را در {1} تنظیم کنید."
 
 #. Label of the qty_to_produce (Float) field in DocType 'Batch'
 #: erpnext/stock/doctype/batch/batch.json
@@ -44564,6 +44833,8 @@ msgstr "BOM را جایگزین کنید"
 msgid "Replace a particular BOM in all other BOMs where it is used. It will replace the old BOM link, update cost and regenerate \"BOM Explosion Item\" table as per new BOM.\n"
 "It also updates latest price in all the BOMs."
 msgstr ""
+"یک فرمول ساخت را در همهٔ فرمول‌های دیگری که از آن استفاده می‌کنند جایگزین کنید. لینک فرمول قدیمی جایگزین می‌شود، هزینه به‌روز می‌شود و جدول «اقلام باز شدهٔ فرمول ساخت» بر اساس فرمول جدید دوباره ساخته می‌شود.\n"
+"آخرین قیمت هم در همهٔ فرمول‌ها به‌روز می‌شود."
 
 #. Label of the report_date (Date) field in DocType 'Quality Inspection'
 #: erpnext/accounts/report/accounts_payable/accounts_payable.html:120
@@ -45858,6 +46129,9 @@ msgstr "بررسی و اقدام"
 #: banking/src/components/features/BankStatementImporter/PDF/PDFTableEditor.tsx:176
 msgid "Review each page. In the Table view, map each column, click a row number to set/clear the header row, and exclude anything that is not transactions (ads, summaries)."
 msgstr ""
+"هر صفحه را بررسی کنید. در نمای جدول، هر ستون را تطبیق دهید، با زدن شمارهٔ "
+"ردیف سطر سرتیتر را تعیین یا حذف کنید، و هرچه تراکنش نیست (تبلیغ، خلاصه) را "
+"کنار بگذارید."
 
 #. Group in Quality Procedure's connections
 #. Label of the reviews (Table) field in DocType 'Quality Review'
@@ -46312,6 +46586,8 @@ msgstr "ردیف #{0}: این سند انبار تولید قابل لغو نی�
 #: erpnext/controllers/subcontracting_inward_controller.py:483
 msgid "Row #{0}: Cannot cancel this Stock Entry as returned quantity cannot be greater than delivered quantity for Item {1} in the linked Subcontracting Inward Order"
 msgstr ""
+"ردیف #{0}: این سند انبار لغو نمی‌شود، چون مقدار برگشتی کالای {1} نمی‌تواند "
+"از مقدار تحویل‌شده در سفارش پیمانکاری ورودی مرتبط بیشتر باشد"
 
 #: erpnext/accounts/doctype/tax_withholding_entry/tax_withholding_entry.py:78
 msgid "Row #{0}: Cannot create entry with different taxable AND withholding document links."
@@ -46572,6 +46848,8 @@ msgstr "ردیف #{0}: کالای {1} مطابقت ندارد. تغییر کد �
 #: erpnext/stock/doctype/stock_entry/stock_entry.py:1133
 msgid "Row #{0}: Item {1} quantity ({2} in stock UOM) does not match the quantity derived from the source ({3}). Do not change the UOM, conversion factor or quantity of disassembly rows."
 msgstr ""
+"ردیف #{0}: مقدار کالای {1} ({2} به واحد انبار) با مقدار حاصل از مبدأ ({3}) "
+"یکی نیست. واحد، ضریب تبدیل یا مقدار ردیف‌های دمونتاژ را تغییر ندهید."
 
 #: erpnext/accounts/doctype/payment_entry/payment_entry.py:780
 msgid "Row #{0}: Journal Entry {1} does not have account {2} or already matched against another voucher"
@@ -46733,6 +47011,10 @@ msgid "Row #{0}: Selling rate for item {1} is lower than its {2}.\n"
 "\t\t\t\t\tyou can disable '{5}' in {6} to bypass\n"
 "\t\t\t\t\tthis validation."
 msgstr ""
+"ردیف #{0}: نرخ فروش کالای {1} از {2} آن کمتر است.\n"
+"\t\t\t\t\t{3} فروش باید دست‌کم {4} باشد.<br><br>یا می‌توانید\n"
+"\t\t\t\t\t«{5}» را در {6} غیرفعال کنید تا\n"
+"\t\t\t\t\tاین بررسی انجام نشود."
 
 #: erpnext/manufacturing/doctype/work_order/work_order.py:361
 msgid "Row #{0}: Sequence ID must be {1} or {2} for Operation {3}."
@@ -47293,6 +47575,8 @@ msgstr "ردیف {0}: فاکتور فروش {1} قبلاً برای {2} صادر
 #: erpnext/stock/doctype/stock_entry/stock_entry.py:373
 msgid "Row {0}: Serial/Batch has been reset to values linked with Work Order {1} because the previously selected serial/batch does not belong to this Work Order."
 msgstr ""
+"ردیف {0}: سریال یا سری ساخت به مقادیر مرتبط با دستور تولید {1} برگشت، چون "
+"سریال یا سری انتخاب‌شدهٔ قبلی متعلق به این دستور تولید نبود."
 
 #: erpnext/assets/doctype/asset_shift_allocation/asset_shift_allocation.py:58
 msgid "Row {0}: Shift cannot be changed since the depreciation has already been processed"
@@ -48705,6 +48989,9 @@ msgid "Scorecard variables can be used, as well as:\n"
 "{total_score} (the total score from that period),\n"
 "{period_number} (the number of periods to present day)\n"
 msgstr ""
+"متغیرهای کارنامه و همچنین این‌ها قابل استفاده‌اند:\n"
+"{total_score} (امتیاز کل آن دوره)،\n"
+"{period_number} (تعداد دوره‌ها تا امروز)\n"
 
 #: erpnext/buying/doctype/supplier_scorecard/supplier_scorecard_dashboard.py:10
 msgid "Scorecards"
@@ -51315,6 +51602,9 @@ msgid "Simple Python formula applied on Reading fields.<br> Numeric eg. 1: <b>re
 "Numeric eg. 2: <b>mean &gt; 3.5</b> (mean of populated fields)<br>\n"
 "Value based eg.:  <b>reading_value in (\"A\", \"B\", \"C\")</b>"
 msgstr ""
+"فرمول سادهٔ پایتون روی فیلدهای قرائت.<br> مثال عددی ۱: <b>reading_1 &gt; 0.2 and reading_1 &lt; 0.5</b><br>\n"
+"مثال عددی ۲: <b>mean &gt; 3.5</b> (میانگین فیلدهای پرشده)<br>\n"
+"مثال مقداری:  <b>reading_value in (\"A\", \"B\", \"C\")</b>"
 
 #. Option for the 'Call Routing' (Select) field in DocType 'Incoming Call
 #. Settings'
@@ -51329,6 +51619,9 @@ msgstr "از آنجایی که برای کالای نهایی {1}، اتلاف �
 #: erpnext/manufacturing/doctype/bom/bom.py:351
 msgid "Since you have enabled 'Track Semi Finished Goods', at least one operation must have 'Is Final Finished Good' checked. For that set the FG / Semi FG Item as {0} against an operation."
 msgstr ""
+"چون «پیگیری کالای نیمه‌ساخته» را فعال کرده‌اید، دست‌کم یک عملیات باید گزینهٔ"
+" «کالای ساخته‌شدهٔ نهایی» داشته باشد. برای این کار کالای ساخته‌شده یا "
+"نیمه‌ساخته را {0} برای یک عملیات تعیین کنید."
 
 #: erpnext/stock/doctype/repost_item_valuation/repost_item_valuation.py:133
 msgid "Since {0} are Serial No/Batch No items, you cannot enable 'Recreate Stock Ledgers' in Repost Item Valuation."
@@ -51777,11 +52070,17 @@ msgstr "منابع دارای رتبه استاندارد در {0}"
 #: erpnext/accounts/doctype/purchase_taxes_and_charges_template/purchase_taxes_and_charges_template.json
 msgid "Standard tax template that can be applied to all Purchase Transactions. This template can contain a list of tax heads and also other expense heads like \"Shipping\", \"Insurance\", \"Handling\", etc."
 msgstr ""
+"الگوی مالیات استاندارد که روی همهٔ اسناد خرید قابل اعمال است. این الگو "
+"می‌تواند فهرستی از سرفصل‌های مالیات و هزینه‌های دیگر مثل «حمل»، «بیمه» و "
+"«جابه‌جایی» داشته باشد."
 
 #. Description of a DocType
 #: erpnext/accounts/doctype/sales_taxes_and_charges_template/sales_taxes_and_charges_template.json
 msgid "Standard tax template that can be applied to all Sales Transactions. This template can contain a list of tax heads and also other expense/income heads like \"Shipping\", \"Insurance\", \"Handling\" etc."
 msgstr ""
+"الگوی مالیات استاندارد که روی همهٔ اسناد فروش قابل اعمال است. این الگو "
+"می‌تواند فهرستی از سرفصل‌های مالیات و هزینه یا درآمدهای دیگر مثل «حمل»، "
+"«بیمه» و «جابه‌جایی» داشته باشد."
 
 #. Label of the standing_name (Link) field in DocType 'Supplier Scorecard
 #. Scoring Standing'
@@ -52792,10 +53091,16 @@ msgstr "چون فاکتور کالای ارسال مستقیم دارد، موج
 #: erpnext/accounts/doctype/purchase_invoice/purchase_invoice.py:806
 msgid "Stock cannot be updated for Purchase Invoice {0} because a Purchase Receipt {1} has already been created for this transaction. Please disable the 'Update Stock' checkbox in the Purchase Invoice and save the invoice."
 msgstr ""
+"موجودی برای فاکتور خرید {0} به‌روز نمی‌شود، چون برای این تراکنش رسید خرید "
+"{1} ساخته شده است. گزینهٔ «به‌روزرسانی موجودی» را در فاکتور خرید بردارید و "
+"ذخیره کنید."
 
 #: erpnext/stock/doctype/warehouse/warehouse.py:144
 msgid "Stock entries exist with the old account. Changing the account may lead to a mismatch between the warehouse closing balance and the account closing balance. The overall closing balance will still match, but not for the specific account."
 msgstr ""
+"ثبت‌های انبار با حساب قدیمی وجود دارد. تغییر حساب ممکن است ماندهٔ پایانی "
+"انبار و ماندهٔ پایانی حساب را ناهمخوان کند. ماندهٔ کل همچنان برابر است، ولی "
+"برای این حساب خاص نه."
 
 #. Label of the stock_frozen_upto (Date) field in DocType 'Stock Settings'
 #: erpnext/stock/doctype/stock_settings/stock_settings.json
@@ -52825,6 +53130,8 @@ msgstr "تراکنش‌های موجودی قبل از {0} مسدود می‌ش�
 #: erpnext/stock/stock_ledger.py:74
 msgid "Stock transactions dated on or before {0} are frozen because the period is closed and the Stock Closing Entry {1} has been generated. To make changes, cancel the Period Closing Voucher first."
 msgstr ""
+"تراکنش‌های انبار تا تاریخ {0} قفل هستند، چون دوره بسته شده و سند بستن انبار "
+"{1} ساخته شده است. برای تغییر، اول سند بستن دوره را لغو کنید."
 
 #. Description of the 'Freeze stocks older than (days)' (Int) field in DocType
 #. 'Stock Settings'
@@ -54211,6 +54518,8 @@ msgstr "سیستم به طور خودکار شماره سریال / دسته ر�
 msgid "System will do an implicit conversion using the pegged currency. <br>\n"
 "Ex: Instead of AED -&gt; INR, system will do AED -&gt; USD -&gt; INR using the pegged exchange rate of AED against USD."
 msgstr ""
+"سیستم تبدیل را به‌طور غیرمستقیم از طریق ارز مبنا انجام می‌دهد. <br>\n"
+"مثال: به جای AED -&gt; INR، سیستم با نرخ AED به USD تبدیل AED -&gt; USD -&gt; INR را انجام می‌دهد."
 
 #. Description of the 'Invoice Limit' (Int) field in DocType 'Payment
 #. Reconciliation'
@@ -54236,6 +54545,8 @@ msgstr "سیستم برای افزایش یا کاهش مقدار یا مبلغ 
 msgid "System will use the latest saved Currency Exchange rate on or before the transaction date, however old it is. <br>\n"
 "Uncheck to ignore rates older than Stale Days and fetch a fresh rate from the exchange rate provider instead."
 msgstr ""
+"سیستم آخرین نرخ ارز ذخیره‌شده تا تاریخ تراکنش را استفاده می‌کند، هر قدر هم قدیمی باشد. <br>\n"
+"برای نادیده گرفتن نرخ‌های قدیمی‌تر از «روزهای کهنگی» و دریافت نرخ تازه از سرویس، علامت را بردارید."
 
 #. Description of the 'Tax Withholding Category' (Link) field in DocType
 #. 'Supplier'
@@ -55437,6 +55748,8 @@ msgstr "BOM که جایگزین خواهد شد"
 #: erpnext/stock/serial_batch_bundle.py:1635
 msgid "The Batch {0} has negative batch quantity {1}. To fix this, go to the batch and click on Recalculate Batch Qty. If the issue still persists, create an inward entry."
 msgstr ""
+"سری ساخت {0} مقدار منفی {1} دارد. برای اصلاح، به سری ساخت بروید و «محاسبهٔ "
+"دوبارهٔ مقدار سری» را بزنید. اگر مشکل ماند، یک سند ورودی ثبت کنید."
 
 #: erpnext/crm/doctype/email_campaign/email_campaign.py:85
 msgid "The Campaign '{0}' already exists for the {1} '{2}'"
@@ -55465,6 +55778,9 @@ msgstr "ثبت‌های دفتر کل در پس‌زمینه لغو می‌شو�
 #: erpnext/stock/doctype/stock_entry/stock_entry.py:3316
 msgid "The Job Card {0} has only {1} left to produce, but this entry books {2} ({3} finished goods and {4} process loss). Cancel or update its other manufacture entries first."
 msgstr ""
+"کارت کار {0} فقط {1} برای ساخت باقی دارد، اما این سند {2} ثبت می‌کند ({3} "
+"کالای ساخته‌شده و {4} ضایعات فرایند). اول سندهای تولید دیگر آن را لغو یا "
+"اصلاح کنید."
 
 #: erpnext/accounts/doctype/loyalty_program/loyalty_program.py:178
 msgid "The Loyalty Program isn't valid for the selected company"
@@ -55545,10 +55861,15 @@ msgstr "این حساب بانکی متعلق به شرکت نیست؛ یک حس
 #: erpnext/controllers/stock_controller.py:1505
 msgid "The batch {0} is reserved for {1} in the warehouse {2} and the remaining quantity is not enough to cover the reservations. So, cannot proceed with the {3} {4}."
 msgstr ""
+"سری ساخت {0} برای {1} در انبار {2} رزرو شده و مقدار باقی‌مانده برای رزروها "
+"کافی نیست. بنابراین {3} {4} ادامه پیدا نمی‌کند."
 
 #: erpnext/accounts/doctype/period_closing_voucher/period_closing_voucher.py:179
 msgid "The closing balance {0} of the Stock Asset accounts does not match the closing value {1} of the Stock Balance report as on {2}. Resolve the difference using the Stock Ledger Variance report before closing the period."
 msgstr ""
+"ماندهٔ پایانی {0} حساب‌های موجودی کالا با ارزش پایانی {1} گزارش موجودی در "
+"تاریخ {2} یکی نیست. قبل از بستن دوره، اختلاف را با گزارش ناهمخوانی دفتر "
+"انبار برطرف کنید."
 
 #: erpnext/regional/report/vat_audit_report/vat_audit_report.py:43
 msgid "The company {0} is not in South Africa. VAT Audit Report is only available for companies in South Africa."
@@ -55630,6 +55951,8 @@ msgstr "فیلدهای From Shareholder و To Shareholder نمی‌توانند 
 #: banking/src/pages/BankStatementImporter.tsx:171
 msgid "The file should contain the following columns with a distinct header row. You can upload most bank statements as is without changing the columns."
 msgstr ""
+"فایل باید این ستون‌ها را با یک ردیف سرتیتر مشخص داشته باشد. بیشتر "
+"صورتحساب‌های بانکی را می‌توانید بدون تغییر ستون‌ها بارگذاری کنید."
 
 #. Description of the 'Item to Manufacture' (Link) field in DocType 'BOM'
 #: erpnext/manufacturing/doctype/bom/bom.json
@@ -55702,6 +56025,8 @@ msgstr "{0} زیر ایجاد شد: {1}"
 #: erpnext/selling/doctype/selling_settings/selling_settings.json
 msgid "The frequency at which project progress and company transaction details will be updated. Set it to daily or monthly if you post a lot of transactions."
 msgstr ""
+"تناوب به‌روزرسانی پیشرفت پروژه و جزئیات تراکنش‌های شرکت. اگر تراکنش زیاد ثبت"
+" می‌کنید روی روزانه یا ماهانه بگذارید."
 
 #. Description of the 'Gross Weight' (Float) field in DocType 'Packing Slip'
 #: erpnext/stock/doctype/packing_slip/packing_slip.json
@@ -55801,6 +56126,8 @@ msgstr "درصدی که شما مجاز به سفارش بیشتر از مقدا
 #: erpnext/accounts/doctype/accounts_settings/accounts_settings.json
 msgid "The percentage you are allowed to bill more against the amount ordered. For example, if the order value is $100 for an item and tolerance is set as 10%, then you are allowed to bill up to $110 "
 msgstr ""
+"درصدی که مجازید بیش از مبلغ سفارش فاکتور صادر کنید. مثلاً اگر ارزش سفارش یک "
+"کالا ۱۰۰ و تلورانس ۱۰٪ باشد، تا ۱۱۰ می‌توانید فاکتور کنید "
 
 #. Description of the 'Over Picking Allowance (%)' (Percent) field in DocType
 #. 'Stock Settings'
@@ -55856,6 +56183,8 @@ msgstr "مورد انتخاب شده نمی‌تواند دسته ای داشت�
 #: erpnext/assets/doctype/asset/asset.js:669
 msgid "The sell quantity is less than the total asset quantity. The remaining quantity will be split into a new asset. This action cannot be undone. <br><br><b>Do you want to continue?</b>"
 msgstr ""
+"مقدار فروش از کل مقدار دارایی کمتر است. مقدار باقی‌مانده به یک دارایی جدید "
+"تفکیک می‌شود. این کار برگشت‌پذیر نیست. <br><br><b>ادامه می‌دهید؟</b>"
 
 #: erpnext/accounts/doctype/share_transfer/share_transfer.py:194
 msgid "The seller and the buyer cannot be the same"
@@ -55907,6 +56236,8 @@ msgstr "سیستم تلاش می‌کند طرف حساب تراکنش بانک�
 #: erpnext/accounts/doctype/pos_settings/pos_settings.json
 msgid "The system will create a Sales Invoice or a POS Invoice from the POS interface based on this setting. For high-volume transactions, it is recommended to use POS Invoice."
 msgstr ""
+"بر اساس این تنظیم، از صفحهٔ صندوق فروش فاکتور فروش یا فاکتور صندوق ساخته "
+"می‌شود. برای فروش پرحجم، فاکتور صندوق پیشنهاد می‌شود."
 
 #: erpnext/stock/doctype/stock_reconciliation/stock_reconciliation.py:1112
 msgid "The task has been enqueued as a background job. In case there is any issue on processing in background, the system will add a comment about the error on this Stock Reconciliation and revert to the Draft stage"
@@ -55963,6 +56294,8 @@ msgstr "مقدار {0} قبلاً به یک مورد موجود {1} اختصاص
 #: erpnext/stock/doctype/stock_reposting_settings/stock_reposting_settings.py:309
 msgid "The warehouse account(s) below are not of type 'Stock'. Please set a correct Stock asset account on the warehouse (Account Type must be 'Stock'):"
 msgstr ""
+"حساب‌های انبار زیر از نوع «موجودی کالا» نیستند. یک حساب دارایی موجودی درست "
+"برای انبار تعیین کنید (نوع حساب باید «موجودی کالا» باشد):"
 
 #: erpnext/manufacturing/doctype/work_order/work_order.js:1296
 msgid "The warehouse where you store finished Items before they are shipped."
@@ -56056,6 +56389,8 @@ msgstr "هیچ گونه آیتمی برای آیتم انتخاب کردنی و�
 #: erpnext/accounts/doctype/loyalty_program/loyalty_program.js:21
 msgid "There can be multiple tiered collection factor based on the total spent. But the conversion factor for redemption will always be same for all the tier."
 msgstr ""
+"بسته به کل خرید، چند پلهٔ ضریب جمع‌آوری امتیاز می‌توان داشت. اما ضریب تبدیل "
+"برای استفادهٔ امتیاز در همهٔ پله‌ها یکسان است."
 
 #: erpnext/accounts/party.py:611
 msgid "There can only be 1 Account per Company in {0} {1}"
@@ -56132,6 +56467,8 @@ msgstr "این سال مالی"
 #: erpnext/stock/doctype/item/item.js:200
 msgid "This Item is a Template and cannot be used in transactions.<br>All fields present in the 'Copy Fields to Variant' table in Item Variant Settings will be copied to its variant items."
 msgstr ""
+"این کالا الگو است و در تراکنش‌ها استفاده نمی‌شود.<br>همهٔ فیلدهای جدول «کپی "
+"فیلدها به گونه» در تنظیمات گونهٔ کالا به گونه‌های آن کپی می‌شوند."
 
 #: erpnext/stock/doctype/item/item.js:257
 msgid "This Item is a Variant of {0} (Template)."
@@ -56174,6 +56511,8 @@ msgstr "این عمل پیوند این حساب را با هر سرویس خا�
 #: erpnext/selling/doctype/selling_settings/selling_settings.json
 msgid "This allows creation of sales orders from quotations that have passed their expiration date, providing flexibility in processing orders despite outdated quotes."
 msgstr ""
+"امکان ساخت سفارش فروش از پیش‌فاکتورهای منقضی‌شده را می‌دهد تا با وجود "
+"پیش‌فاکتور قدیمی، سفارش قابل پردازش باشد."
 
 #: erpnext/assets/doctype/asset/asset.py:435
 msgid "This asset category is marked as non-depreciable. Please disable depreciation calculation or choose a different category."
@@ -56999,6 +57338,8 @@ msgstr "گنجاندن آیتم‌های غیر موجودی در برنامه�
 #: erpnext/manufacturing/doctype/manufacturing_settings/manufacturing_settings.json
 msgid "To include sub-assembly costs and secondary items in Finished Goods on a work order without using a job card, when the 'Use Multi-Level BOM' option is enabled."
 msgstr ""
+"برای افزودن هزینهٔ زیرمونتاژها و اقلام ثانویه به کالای ساخته‌شده در دستور "
+"تولید بدون کارت کار، وقتی گزینهٔ «فرمول ساخت چندسطحی» فعال است."
 
 #: erpnext/accounts/doctype/payment_entry/payment_entry.py:2268
 #: erpnext/controllers/accounts_controller.py:3336
@@ -58286,6 +58627,9 @@ msgstr "معاملات در مقابل شرکت در حال حاضر وجود د
 #: erpnext/selling/doctype/customer/customer.json
 msgid "Transactions are blocked when the outstanding balance exceeds the credit limit. When Restrict Customer Over Billing is enabled, new invoices are also blocked when the customer's overdue amount exceeds the Overdue Limit."
 msgstr ""
+"وقتی مانده از سقف اعتبار بیشتر شود، تراکنش مسدود می‌شود. اگر «محدودیت فروش "
+"بیش از اعتبار مشتری» فعال باشد، وقتی مبلغ معوقهٔ مشتری از سقف معوقه بیشتر "
+"شود فاکتور جدید هم مسدود می‌شود."
 
 #: banking/src/components/features/BankStatementImporter/CSV/StatementDetails.tsx:239
 msgid "Transactions to be imported into the system"
@@ -60131,6 +60475,10 @@ msgstr "نرخ ارزش‌گذاری وجود ندارد"
 #, python-format
 msgid "Valuation Rate and Manual value this item on its own and deduct that cost from the raw material cost, like the pre-v16 scrap items. % of FG Cost allocates a percentage of the remaining raw material cost."
 msgstr ""
+"«نرخ ارزش‌گذاری» و «دستی» این کالا را جداگانه ارزش‌گذاری می‌کنند و هزینه‌اش "
+"را از هزینهٔ مواد اولیه کم می‌کنند، مثل اقلام ضایعات نسخه‌های قبل از ۱۶. "
+"«درصد از هزینهٔ کالای ساخته‌شده» درصدی از باقی‌ماندهٔ هزینهٔ مواد اولیه را "
+"تخصیص می‌دهد."
 
 #: erpnext/stock/stock_ledger.py:2101
 msgid "Valuation Rate for the Item {0}, is required to do accounting entries for {1} {2}."
@@ -61196,6 +61544,8 @@ msgstr "هشدار: تعداد مواد درخواستی کمتر از حداق�
 #: erpnext/manufacturing/doctype/work_order/work_order.py:1657
 msgid "Warning: Quantity exceeds maximum producible quantity based on quantity of raw materials received through the Subcontracting Inward Order {0}."
 msgstr ""
+"هشدار: مقدار از سقف قابل تولید بر اساس مواد اولیهٔ دریافتی از سفارش "
+"پیمانکاری ورودی {0} بیشتر است."
 
 #: erpnext/selling/doctype/sales_order/sales_order.py:351
 msgid "Warning: Sales Order {0} already exists against Customer's Purchase Order {1}"
@@ -61311,15 +61661,21 @@ msgstr "جزئیات فایل صورت‌حساب خودکار شناسایی ش
 #: banking/src/components/features/BankStatementImporter/CSV/StatementDetails.tsx:300
 msgid "We've found 1 existing transaction in the system that conflicts with the transactions in the statement file. Are you sure you want to proceed with the import?"
 msgstr ""
+"یک تراکنش در سیستم پیدا شد که با تراکنش‌های فایل صورتحساب تداخل دارد. "
+"مطمئنید می‌خواهید ورود اطلاعات را ادامه دهید؟"
 
 #: banking/src/components/features/BankStatementImporter/CSV/StatementDetails.tsx:232
 msgid "We've found 1 transaction in the statement file that will be imported into the system. Please review the details below and click the 'Import' button to proceed."
 msgstr ""
+"یک تراکنش در فایل صورتحساب پیدا شد که وارد سیستم می‌شود. جزئیات زیر را بررسی"
+" کنید و برای ادامه دکمهٔ «ورود» را بزنید."
 
 #: banking/src/components/features/BankStatementImporter/CSV/StatementDetails.tsx:283
 #: banking/src/components/features/BankStatementImporter/CSV/StatementDetails.tsx:301
 msgid "We've found {0} existing transactions in the system that conflict with the transactions in the statement file. Are you sure you want to proceed with the import?"
 msgstr ""
+"{0} تراکنش در سیستم پیدا شد که با تراکنش‌های فایل صورتحساب تداخل دارند. "
+"مطمئنید می‌خواهید ورود اطلاعات را ادامه دهید؟"
 
 #. Name of a DocType
 #: erpnext/portal/doctype/website_attribute/website_attribute.json
@@ -61493,6 +61849,8 @@ msgstr "اگر تیک بخورد، فقط آستانهٔ تراکنش برای �
 #: erpnext/setup/doctype/global_defaults/global_defaults.json
 msgid "When checked, the system will use the posting datetime of the document for naming the document instead of the creation datetime of the document."
 msgstr ""
+"اگر علامت بخورد، برای نام‌گذاری سند به جای زمان ساخت از تاریخ و زمان ثبت سند"
+" استفاده می‌شود."
 
 #: erpnext/stock/doctype/item/item.js:1312
 msgid "When creating an Item, entering a value for this field will automatically create an Item Price at the backend."
@@ -61503,6 +61861,9 @@ msgstr "هنگام ایجاد یک آیتم، با وارد کردن یک مقد
 #: erpnext/selling/doctype/selling_settings/selling_settings.json
 msgid "When enabled, it adds a cutoff date filter to Delivery Notes created in bulk from Sales Orders. This allows you to process orders only with a transaction date up to the specified cutoff date, which is useful for period-end processing and batch fulfillment."
 msgstr ""
+"اگر فعال باشد، به حواله‌های فروشی که گروهی از سفارش‌های فروش ساخته می‌شوند "
+"فیلتر تاریخ برش اضافه می‌شود تا فقط سفارش‌های تا آن تاریخ پردازش شوند؛ برای "
+"پایان دوره و تحویل گروهی مفید است."
 
 #. Description of the 'Block Supplier' (Check) field in DocType 'Supplier'
 #: erpnext/buying/doctype/supplier/supplier.json
@@ -61512,6 +61873,9 @@ msgstr "اگر فعال باشد، تراکنش با این تأمین‌کنن�
 #: erpnext/stock/doctype/stock_entry/stock_entry.py:437
 msgid "When there are multiple finished goods ({0}) in a Repack stock entry, the basic rate for all finished goods must be set manually. To set rate manually, enable the checkbox 'Set Basic Rate Manually' in the respective finished good row."
 msgstr ""
+"وقتی سند بسته‌بندی دوباره چند کالای ساخته‌شده ({0}) دارد، نرخ پایهٔ همهٔ "
+"آن‌ها باید دستی وارد شود. برای این کار گزینهٔ «تعیین دستی نرخ پایه» را در "
+"ردیف هر کالای ساخته‌شده فعال کنید."
 
 #. Description of the 'Deferred Expense Account' (Link) field in DocType 'Item
 #. Default'
@@ -62173,6 +62537,8 @@ msgstr "برای ادامه می‌توانید فاکتور اصلی {} را ب
 #: banking/src/components/features/BankReconciliation/Rules/RuleForm.tsx:743
 msgid "You can also add credit or debit values to pre-fill - these support both static values (like 200) or formulas (like transaction_amount * 0.25)."
 msgstr ""
+"می‌توانید مقدار بدهکار یا بستانکار را هم از پیش پر کنید؛ هم مقدار ثابت (مثل "
+"۲۰۰) و هم فرمول (مثل transaction_amount * 0.25) پشتیبانی می‌شود."
 
 #: erpnext/templates/emails/confirm_appointment.html:11
 msgid "You can also copy-paste this link in your browser"
@@ -64615,3 +64981,2156 @@ msgstr "مدیریت سیستم"
 #. FardaERP brand (CORE-039): workspace, sidebar and desktop icon label
 msgid "FardaERP"
 msgstr "سیمراکس"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid ""
+"<p><strong>{{ __(\"Condition Examples\") }}:</strong></p>\n"
+"<pre><code class=\"language-python\">doc.status==\"Open\"<br>doc.due_date==nowdate()<br>doc.total &gt; 40000\n"
+"</code></pre>\n"
+msgstr ""
+"<p><strong>{{ __(\"Condition Examples\") }}:</strong></p>\n"
+"<pre><code class=\"language-python\">doc.status==\"Open\"<br>doc.due_date==nowdate()<br>doc.total &gt; 40000\n"
+"</code></pre>\n"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid ""
+"<p><strong>{{ __(\"Condition Examples\") }}:</strong></p>\n"
+"<pre>doc.status==\"Open\"<br>doc.due_date==nowdate()<br>doc.total &gt; 40000\n"
+"</pre>"
+msgstr ""
+"<p><strong>{{ __(\"Condition Examples\") }}:</strong></p>\n"
+"<pre>doc.status==\"Open\"<br>doc.due_date==nowdate()<br>doc.total &gt; 40000\n"
+"</pre>"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Cron"
+msgstr "زمان‌بندی Cron"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "DuckDB Sync"
+msgstr "همگام‌سازی DuckDB"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "DuckDB Sync Item"
+msgstr "قلم همگام‌سازی DuckDB"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid ""
+"Frappe no longer uses Gravatar because it can disclose hashed email "
+"addresses to a third-party service. To fully stop this behavior, existing "
+"Gravatar image URLs must be deleted."
+msgstr ""
+"Frappe دیگر از Gravatar استفاده نمی‌کند، چون ممکن است هش نشانی‌های ایمیل را "
+"در اختیار یک سرویس بیرونی بگذارد. برای توقف کامل این رفتار، نشانی‌های تصویر "
+"Gravatar موجود باید حذف شوند."
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Geoapify"
+msgstr "Geoapify"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "HERE"
+msgstr "HERE"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Idx"
+msgstr "ردیف"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid ""
+"If no Print Format is selected, the default template for this report will be"
+" used."
+msgstr "اگر قالب چاپی انتخاب نشود، قالب پیش‌فرض این گزارش استفاده می‌شود."
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Message-id"
+msgstr "شناسهٔ پیام"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "New Role Name"
+msgstr "نام نقش جدید"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "New role created successfully."
+msgstr "نقش جدید با موفقیت ساخته شد."
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Nomatim"
+msgstr "Nominatim"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Replicate Role"
+msgstr "رونوشت نقش"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Replicating Role..."
+msgstr "در حال رونوشت نقش..."
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Salesforce"
+msgstr "Salesforce"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Sendgrid"
+msgstr "Sendgrid"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Show Users"
+msgstr "نمایش کاربران"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Slack"
+msgstr "Slack"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "SparkPost"
+msgstr "SparkPost"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "UIDVALIDITY"
+msgstr "UIDVALIDITY"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "Yahoo Mail"
+msgstr "Yahoo Mail"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "fairlogin"
+msgstr "fairlogin"
+
+# FardaERP CORE-042: frappe string missing from its fa.po
+msgid "nonce"
+msgstr "nonce"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"<h3>Help</h3>\n"
+"\n"
+"<p>Notes:</p>\n"
+"\n"
+"<ol>\n"
+"<li>Use field <code>base</code> for using base salary of the Employee</li>\n"
+"<li>Use Salary Component abbreviations in conditions and formulas. <code>BS = Basic Salary</code></li>\n"
+"<li>Use field name for employee details in conditions and formulas. <code>Employment Type = employment_type</code><code>Branch = branch</code></li>\n"
+"<li>Use field name from Salary Slip in conditions and formulas. <code>Payment Days = payment_days</code><code>Leave without pay = leave_without_pay</code></li>\n"
+"<li>Direct Amount can also be entered based on Condition. See example 3</li></ol>\n"
+"\n"
+"<h4>Examples</h4>\n"
+"<ol>\n"
+"<li>Calculating Basic Salary based on <code>base</code>\n"
+"<pre><code>Condition: base &lt; 10000</code></pre>\n"
+"<pre><code>Formula: base * .2</code></pre></li>\n"
+"<li>Calculating HRA based on Basic Salary<code>BS</code> \n"
+"<pre><code>Condition: BS &gt; 2000</code></pre>\n"
+"<pre><code>Formula: BS * .1</code></pre></li>\n"
+"<li>Calculating TDS based on Employment Type<code>employment_type</code> \n"
+"<pre><code>Condition: employment_type==\"Intern\"</code></pre>\n"
+"<pre><code>Amount: 1000</code></pre></li>\n"
+"</ol>"
+msgstr ""
+"<h3>راهنما</h3>\n"
+"\n"
+"<p>نکته‌ها:</p>\n"
+"\n"
+"<ol>\n"
+"<li>برای استفاده از حقوق پایهٔ کارمند از فیلد <code>base</code> استفاده کنید</li>\n"
+"<li>در شرط‌ها و فرمول‌ها از کد اختصاری اجزای حقوق استفاده کنید. <code>BS = Basic Salary</code></li>\n"
+"<li>برای مشخصات کارمند در شرط‌ها و فرمول‌ها از نام فیلد استفاده کنید. <code>Employment Type = employment_type</code><code>Branch = branch</code></li>\n"
+"<li>در شرط‌ها و فرمول‌ها از نام فیلدهای فیش حقوق استفاده کنید. <code>Payment Days = payment_days</code><code>Leave without pay = leave_without_pay</code></li>\n"
+"<li>مبلغ مستقیم را هم می‌توان بر اساس شرط وارد کرد. مثال ۳ را ببینید</li></ol>\n"
+"\n"
+"<h4>مثال‌ها</h4>\n"
+"<ol>\n"
+"<li>محاسبهٔ حقوق پایه بر اساس <code>base</code>\n"
+"<pre><code>Condition: base &lt; 10000</code></pre>\n"
+"<pre><code>Formula: base * .2</code></pre></li>\n"
+"<li>محاسبهٔ حق مسکن بر اساس حقوق پایه <code>BS</code> \n"
+"<pre><code>Condition: BS &gt; 2000</code></pre>\n"
+"<pre><code>Formula: BS * .1</code></pre></li>\n"
+"<li>محاسبهٔ کسر مالیات بر اساس نوع استخدام <code>employment_type</code> \n"
+"<pre><code>Condition: employment_type==\"Intern\"</code></pre>\n"
+"<pre><code>Amount: 1000</code></pre></li>\n"
+"</ol>"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"<h4>Condition Examples</h4>\n"
+"<ol>\n"
+"<li>Applying tax if employee born between 31-12-1937 and 01-01-1958 (Employees aged 60 to 80)<br>\n"
+"<code>Condition: date_of_birth&gt;date(1937, 12, 31) and date_of_birth&lt;date(1958, 01, 01)</code></li><br><li>Applying tax by employee gender<br>\n"
+"<code>Condition: gender==\"Male\"</code></li><br>\n"
+"<li>Applying tax by Salary Component<br>\n"
+"<code>Condition: base &gt; 10000</code></li></ol>"
+msgstr ""
+"<h4>مثال‌های شرط</h4>\n"
+"<ol>\n"
+"<li>اعمال مالیات اگر کارمند بین 31-12-1937 و 01-01-1958 متولد شده باشد (کارکنان ۶۰ تا ۸۰ ساله)<br>\n"
+"<code>Condition: date_of_birth&gt;date(1937, 12, 31) and date_of_birth&lt;date(1958, 01, 01)</code></li><br><li>اعمال مالیات بر اساس جنسیت کارمند<br>\n"
+"<code>Condition: gender==\"Male\"</code></li><br>\n"
+"<li>اعمال مالیات بر اساس جزء حقوق<br>\n"
+"<code>Condition: base &gt; 10000</code></li></ol>"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "<h5>Employees on Half Day</h5>"
+msgstr "<h5>کارکنان نیمه‌وقت امروز</h5>"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "<h5>Unmarked Employees</h5>"
+msgstr "<h5>کارکنان بدون ثبت حضور</h5>"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"A Job Requisition already exists for {0} requested by {1} for the same "
+"department.<br> Do you want to continue?"
+msgstr ""
+"برای {0} درخواست استخدامی از طرف {1} برای همین واحد وجود دارد.<br> ادامه "
+"می‌دهید؟"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Account type should be set {0} for payroll payable account {1}, please set "
+"and try again"
+msgstr ""
+"نوع حساب برای حساب حقوق پرداختنی {1} باید {0} باشد؛ آن را تنظیم کنید و "
+"دوباره امتحان کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrual"
+msgstr "ذخیره"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrual Arrears"
+msgstr "معوقات ذخیره"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrual Component"
+msgstr "جزء ذخیره"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrual Component can only be set for Earning Salary Components."
+msgstr "جزء ذخیره فقط برای اجزای حقوقی از نوع مزایا قابل تنظیم است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Accrual Component can only be set for Flexible Benefit Salary Components "
+"with accrual payout methods."
+msgstr ""
+"جزء ذخیره فقط برای اجزای مزایای انعطاف‌پذیر با روش پرداخت ذخیره‌ای قابل "
+"تنظیم است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Accrual Component must be set for Flexible Benefit Salary Components with "
+"accrual payout methods."
+msgstr ""
+"برای اجزای مزایای انعطاف‌پذیر با روش پرداخت ذخیره‌ای، تعیین جزء ذخیره الزامی"
+" است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrue and payout at end of payroll period"
+msgstr "ذخیره و پرداخت در پایان دورهٔ حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrue per cycle, pay only on claim"
+msgstr "ذخیره در هر دوره، پرداخت فقط با درخواست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Accrued Earnings Report"
+msgstr "گزارش مزایای ذخیره‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Accrued amount {0} is less than paid amount {1} for Benefit {2} in payroll "
+"period {3}"
+msgstr ""
+"مبلغ ذخیره‌شدهٔ {0} از مبلغ پرداخت‌شدهٔ {1} برای مزیت {2} در دورهٔ حقوق {3} "
+"کمتر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Actual Overtime Duration"
+msgstr "مدت واقعی اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Advance Account Required"
+msgstr "حساب پیش‌پرداخت لازم است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Advance Account is mandatory. Please set the {0} in the Company {1} and "
+"submit this document."
+msgstr ""
+"حساب پیش‌پرداخت الزامی است. {0} را در شرکت {1} تنظیم کنید و این سند را ثبت "
+"نهایی کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Advance Account {} currency should be same as Salary Currency of Employee "
+"{}. Please select same currency Advance Account"
+msgstr ""
+"ارز حساب پیش‌پرداخت {} باید با ارز حقوق کارمند {} یکی باشد. حساب پیش‌پرداختی"
+" با همان ارز انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "All Exchange Gain/Loss amount of {0} has been booked through {1}"
+msgstr "همهٔ سود یا زیان تسعیر ارز {0} از طریق {1} ثبت شده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Allocated Amount (Company Currency)"
+msgstr "مبلغ تخصیص‌یافته (به ارز شرکت)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Allocated Via"
+msgstr "تخصیص از طریق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Allocation was skipped due to exceeding annual allocation set in leave "
+"policy"
+msgstr "تخصیص به دلیل گذشتن از سقف سالانهٔ سیاست مرخصی انجام نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Allocation was skipped due to maximum leave allocation limit set in leave "
+"type. Please increase the limit and retry failed allocation."
+msgstr ""
+"تخصیص به دلیل سقف تخصیص تعیین‌شده در نوع مرخصی انجام نشد. سقف را افزایش دهید"
+" و تخصیص ناموفق را دوباره انجام دهید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Allow Leave Application After (Calendar Days)"
+msgstr "اجازهٔ درخواست مرخصی پس از (روز تقویمی)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Allow claim for full benefit amount"
+msgstr "اجازهٔ درخواست کل مبلغ مزیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"An Arrear document already exists for employee {0} with salary structure {1}"
+" in payroll period {2}"
+msgstr ""
+"برای کارمند {0} با ساختار حقوق {1} در دورهٔ حقوق {2} سند معوقات وجود دارد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Annual Allocation Exceeded"
+msgstr "از سقف سالانه بیشتر شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Annual CTC"
+msgstr "هزینهٔ سالانهٔ کارمند (CTC)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Applicable Salary Components"
+msgstr "اجزای حقوقی مشمول"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Application Web Form Route"
+msgstr "مسیر فرم وب درخواست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Apply for Public Holiday"
+msgstr "اعمال برای تعطیلات رسمی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Apply for Weekend"
+msgstr "اعمال برای آخر هفته"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Approve"
+msgstr "تأیید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Arrear"
+msgstr "معوقه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Arrear Component"
+msgstr "جزء معوقات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Arrear Component cannot be set for Salary Components based on taxable "
+"salary."
+msgstr ""
+"برای اجزای حقوقی که بر اساس حقوق مشمول مالیات حساب می‌شوند، نمی‌توان جزء "
+"معوقات تعیین کرد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Arrear Start Date"
+msgstr "تاریخ شروع معوقات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Arrears"
+msgstr "معوقات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Asset Recovery Cost for {0}: {1}"
+msgstr "هزینهٔ بازیافت دارایی برای {0}: {1}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Assign Structure"
+msgstr "تخصیص ساختار"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Assigning Salary Structure"
+msgstr "در حال تخصیص ساختار حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Assigning Structure..."
+msgstr "در حال تخصیص ساختار..."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Assignment Date: "
+msgstr "تاریخ تخصیص: "
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Assignment Starts From"
+msgstr "شروع تخصیص از"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Assignment start date cannot be outside holiday list dates"
+msgstr "تاریخ شروع تخصیص نمی‌تواند خارج از بازهٔ فهرست تعطیلات باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Attach Proof"
+msgstr "پیوست مدرک"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Attempted"
+msgstr "انجام‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Attendance for employee {0} is already marked for the following dates: {1}"
+msgstr "حضور کارمند {0} برای این تاریخ‌ها از قبل ثبت شده است: {1}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Attendance for the following dates will be skipped/overwritten on submission"
+msgstr "هنگام ثبت نهایی، حضور این تاریخ‌ها نادیده گرفته یا جایگزین می‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Attendance has been marked for all the employees between the selected "
+"payroll dates."
+msgstr "حضور همهٔ کارکنان در بازهٔ حقوق انتخاب‌شده ثبت شده است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Attendance is pending for these employees between the selected payroll "
+"dates. Mark attendance to proceed. Refer {0} for details."
+msgstr ""
+"حضور این کارکنان در بازهٔ حقوق انتخاب‌شده هنوز ثبت نشده است. برای ادامه، "
+"حضور را ثبت کنید. جزئیات در {0}."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Attendance marked successfully."
+msgstr "حضور با موفقیت ثبت شد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Automatic Leave Allocation has failed for the following Earned Leaves: {0}. "
+"Please check {1} for more details."
+msgstr ""
+"تخصیص خودکار مرخصی کسب‌شده برای این موارد ناموفق بود: {0}. جزئیات در {1}."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Automatically update Last Sync of Checkin"
+msgstr "به‌روزرسانی خودکار آخرین همگام‌سازی ورود و خروج"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Average of Goal Score, Feedback Score, and Self Appraisal Score"
+msgstr "میانگین امتیاز اهداف، امتیاز بازخورد و امتیاز خودارزیابی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Base, Variable & Leave Encashment"
+msgstr "پایه، متغیر و بازخرید مرخصی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Benefit Amount"
+msgstr "مبلغ مزیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Benefit Application"
+msgstr "درخواست مزیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Benefit Claim"
+msgstr "مطالبهٔ مزیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Benefit Details"
+msgstr "جزئیات مزیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Benefit amount of component {0} exceeds {1}"
+msgstr "مبلغ مزیت جزء {0} از {1} بیشتر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Benefit amount of component {0} should be greater than 0"
+msgstr "مبلغ مزیت جزء {0} باید بیشتر از صفر باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Benefit amount {0} for Salary Component {1} should not be greater than "
+"maximum benefit amount {2} set in {3}"
+msgstr ""
+"مبلغ مزیت {0} برای جزء حقوق {1} نباید از سقف مزیت {2} تعیین‌شده در {3} بیشتر"
+" باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Boarding Status"
+msgstr "وضعیت ورود به کار"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Bulk attendance marking is already in progress for employee {0}. You can "
+"monitor the job status {1}"
+msgstr ""
+"ثبت گروهی حضور برای کارمند {0} در حال انجام است. وضعیت کار را در {1} ببینید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Bulk attendance marking is queued with a background job. It may take a "
+"while. You can monitor the job status {0}"
+msgstr ""
+"ثبت گروهی حضور در صف پس‌زمینه قرار گرفت و ممکن است کمی طول بکشد. وضعیت کار "
+"را در {0} ببینید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"By default, the Final Score is calculated as the average of Goal Score, "
+"Feedback Score, and Self Appraisal Score. Enable this to set a different "
+"formula"
+msgstr ""
+"به‌طور پیش‌فرض امتیاز نهایی میانگین امتیاز اهداف، بازخورد و خودارزیابی است. "
+"برای تعیین فرمول دیگر این گزینه را فعال کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "CTC Missing for Employee"
+msgstr "هزینهٔ سالانهٔ کارمند (CTC) ثبت نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Cannot allocate more leaves due to maximum leave allocation limit of {0} in "
+"leave policy assignment"
+msgstr ""
+"به دلیل سقف تخصیص {0} در تخصیص سیاست مرخصی، مرخصی بیشتری قابل تخصیص نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Cannot allocate more leaves due to maximum leaves allowed limit of {0} in "
+"{1} leave type."
+msgstr "به دلیل سقف مجاز {0} در نوع مرخصی {1}، مرخصی بیشتری قابل تخصیص نیست."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Cannot break shift after end date"
+msgstr "شیفت را نمی‌توان بعد از تاریخ پایان شکست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Cannot break shift before start date"
+msgstr "شیفت را نمی‌توان قبل از تاریخ شروع شکست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Cannot create or change transactions against an Appraisal Cycle with status "
+"{0}."
+msgstr "برای دورهٔ ارزیابی با وضعیت {0} نمی‌توان سندی ساخت یا تغییر داد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Changed the Status for Other Half from {0} to {1} via Attendance Request as "
+"the status is Half Day"
+msgstr ""
+"وضعیت نیمهٔ دیگر روز از طریق درخواست حضور از {0} به {1} تغییر کرد، چون وضعیت"
+" نیمه‌وقت است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Changed the status from {0} to {1} and Status for Other Half to {2} via "
+"Attendance Request"
+msgstr ""
+"وضعیت از طریق درخواست حضور از {0} به {1} و وضعیت نیمهٔ دیگر روز به {2} تغییر"
+" کرد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Check <a href='/app/List/Error Log?reference_doctype={0}'>{1}</a> for more "
+"details"
+msgstr ""
+"جزئیات بیشتر در <a href='/app/List/Error Log?reference_doctype={0}'>{1}</a>"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Checkin Radius"
+msgstr "شعاع ثبت ورود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Choose how the hourly overtime amount is calculated:\n"
+"<ol style=\"padding-left:15px\"><li>Fixed Hourly Rate: A fixed, manually entered hourly rate.</li>\n"
+"<li>Salary Component-Based:\n"
+"\n"
+"(Sum of selected component amounts) ÷ (Payment Days) ÷ (Standard Daily Hours)</li></ol>"
+msgstr ""
+"روش محاسبهٔ مبلغ ساعتی اضافه‌کاری را انتخاب کنید:\n"
+"<ol style=\"padding-left:15px\"><li>نرخ ساعتی ثابت: نرخ ساعتی ثابتی که دستی وارد می‌شود.</li>\n"
+"<li>بر اساس اجزای حقوق:\n"
+"\n"
+"(جمع مبالغ اجزای انتخاب‌شده) ÷ (روزهای کارکرد) ÷ (ساعات کار استاندارد روزانه)</li></ol>"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Choose the date on which you want to create these components as arrears."
+msgstr ""
+"تاریخی را که می‌خواهید این اجزا به‌عنوان معوقات ساخته شوند انتخاب کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Claimed amount of employee {0} exceeds maximum amount eligible for claim {1}"
+msgstr "مبلغ درخواستی کارمند {0} از سقف قابل پرداخت {1} بیشتر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Claimed amount of employee {0} should be greater than 0"
+msgstr "مبلغ درخواستی کارمند {0} باید بیشتر از صفر باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Confirm {0}"
+msgstr "تأیید {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Country Fixture Deletion Failed"
+msgstr "حذف داده‌های پیش‌فرض کشور ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Country Setup failed"
+msgstr "تنظیمات کشور ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Country of Residence"
+msgstr "کشور محل سکونت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Create Job Offer"
+msgstr "ایجاد پیشنهاد استخدام"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Create Overtime Slip For Eligible Employee(s)"
+msgstr "ایجاد برگهٔ اضافه‌کاری برای کارکنان واجد شرایط"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Create Overtime Slips"
+msgstr "ایجاد برگه‌های اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Creation of Salary Structure Assignments has been queued. It may take a few "
+"minutes."
+msgstr ""
+"ساخت تخصیص‌های ساختار حقوق در صف قرار گرفت و ممکن است چند دقیقه طول بکشد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Creation of {0} has been queued. It may take a few minutes."
+msgstr "ساخت {0} در صف قرار گرفت و ممکن است چند دقیقه طول بکشد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Current Password"
+msgstr "گذرواژهٔ فعلی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Current Payroll Period"
+msgstr "دورهٔ حقوق جاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Date Range Exceeded"
+msgstr "بازهٔ تاریخ بیش از حد مجاز است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Date {0} is repeated in Overtime Details"
+msgstr "تاریخ {0} در جزئیات اضافه‌کاری تکرار شده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Days for which Holidays are blocked for this department."
+msgstr "روزهایی که تعطیلات برای این واحد مسدود است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Deduction Arrears"
+msgstr "معوقات کسور"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Duplicate Assignment"
+msgstr "تخصیص تکراری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Duplicate Leave Adjustment"
+msgstr "تعدیل مرخصی تکراری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "ERROR({0}): {1}"
+msgstr "خطا ({0}): {1}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Earned Leave Schedule"
+msgstr "برنامهٔ مرخصی کسب‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Earning Arrears"
+msgstr "معوقات مزایا"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Edit Expense Item"
+msgstr "ویرایش قلم هزینه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Edit Expense Tax"
+msgstr "ویرایش مالیات هزینه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee CTC Break-up"
+msgstr "ریز هزینهٔ سالانهٔ کارمند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee Company"
+msgstr "شرکت کارمند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee Exit"
+msgstr "خروج کارمند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee Hours Utilization"
+msgstr "بهره‌وری ساعات کارکنان"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee Referral {0} already exists for email: {1}"
+msgstr "معرفی کارمند {0} برای ایمیل {1} از قبل وجود دارد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee not found"
+msgstr "کارمند پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Employee was marked Absent for other half due to missing Employee Checkins."
+msgstr "به دلیل نبود ثبت ورود و خروج، کارمند برای نیمهٔ دیگر روز غایب ثبت شد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Employee {0} has already claimed the benefit '{1}' for {2} ({3}).<br>To "
+"prevent overpayments, only one claim per benefit type is allowed in each "
+"payroll cycle."
+msgstr ""
+"کارمند {0} مزیت «{1}» را برای {2} ({3}) قبلاً درخواست کرده است.<br>برای "
+"جلوگیری از پرداخت اضافه، در هر دورهٔ حقوق فقط یک درخواست برای هر نوع مزیت "
+"مجاز است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employee {0} relieved on {1} must be set as 'Left'"
+msgstr "کارمند {0} که در {1} ترک کار کرده باید با وضعیت «ترک کار» ثبت شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employees on Half Day HTML"
+msgstr "HTML کارکنان نیمه‌وقت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employees on leave this month"
+msgstr "کارکنان در مرخصی این ماه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Employees on leave today"
+msgstr "کارکنان در مرخصی امروز"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Enable this to use a specific multiplier for public holidays. If unchecked, "
+"the standard multiplier will be used instead."
+msgstr ""
+"برای استفاده از ضریب جداگانه در تعطیلات رسمی فعال کنید. در غیر این صورت ضریب"
+" عادی استفاده می‌شود."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Enable this to use a specific multiplier for weekends. If unchecked, the "
+"standard multiplier will be used instead."
+msgstr ""
+"برای استفاده از ضریب جداگانه در آخر هفته فعال کنید. در غیر این صورت ضریب "
+"عادی استفاده می‌شود."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Enabled only for Employee Benefit components from Salary Structure "
+"Assignment"
+msgstr "فقط برای اجزای مزایای کارکنان از تخصیص ساختار حقوق فعال است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Enter Interview Type"
+msgstr "نوع مصاحبه را وارد کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Enter the number of Leave Without Pay (LWP) days you want to reverse. This "
+"value cannot exceed the total LWP days recorded for the selected month"
+msgstr ""
+"تعداد روزهای مرخصی بدون حقوقی را که می‌خواهید برگردانید وارد کنید. این عدد "
+"نمی‌تواند از کل مرخصی بدون حقوق ثبت‌شده در ماه انتخابی بیشتر باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Enter your email address and we'll send you a link to reset your password."
+msgstr ""
+"نشانی ایمیل خود را وارد کنید تا لینک بازنشانی گذرواژه برایتان فرستاده شود."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Exchange rate of Payment Entry against Employee Advance"
+msgstr "نرخ تسعیر سند پرداخت برای پیش‌پرداخت کارمند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Exemption Declaration"
+msgstr "اظهارنامهٔ معافیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Exemption Submission Proof"
+msgstr "مدرک معافیت ارائه‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Existing Record"
+msgstr "رکورد موجود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Existing Shift Assignments"
+msgstr "تخصیص‌های شیفت موجود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Exits (This Month)"
+msgstr "خروج‌ها (این ماه)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Expense Item"
+msgstr "قلم هزینه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Expense Tax"
+msgstr "مالیات هزینه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Expenses Settings"
+msgstr "تنظیمات هزینه‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Expire Leaves"
+msgstr "انقضای مرخصی‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Failed to download PDF: {0}"
+msgstr "دانلود PDF ناموفق بود: {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Failed to send reset link"
+msgstr "ارسال لینک بازنشانی ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Failed to update password"
+msgstr "تغییر گذرواژه ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Failed to {0} {1} for employees:"
+msgstr "{0} {1} برای این کارکنان ناموفق بود:"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Failure of Automatic Allocation of Earned Leaves"
+msgstr "تخصیص خودکار مرخصی کسب‌شده ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Fetch Overtime Details"
+msgstr "دریافت جزئیات اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Fetch Shift"
+msgstr "دریافت شیفت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Fetch Shifts"
+msgstr "دریافت شیفت‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Fetching Shift"
+msgstr "در حال دریافت شیفت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Filter by Shift"
+msgstr "فیلتر بر اساس شیفت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Fixed Hourly Rate"
+msgstr "نرخ ساعتی ثابت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Flexible Component"
+msgstr "جزء انعطاف‌پذیر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Formula/Amount"
+msgstr "فرمول یا مبلغ"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "From Date {0} cannot be after Payroll Period end date {1}"
+msgstr "از تاریخ {0} نمی‌تواند بعد از تاریخ پایان دورهٔ حقوق {1} باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "From Date {0} cannot be before Payroll Period start date {1}"
+msgstr "از تاریخ {0} نمی‌تواند قبل از تاریخ شروع دورهٔ حقوق {1} باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"From and to dates are mandatory for recurring type additional salaries."
+msgstr "برای حقوق‌های اضافی تکرارشونده، تاریخ شروع و پایان الزامی است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Gain Loss Account"
+msgstr "حساب سود و زیان تسعیر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Geolocation Error"
+msgstr "خطای موقعیت جغرافیایی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Get the app on your device for easy access & a better experience!"
+msgstr ""
+"برنامه را روی دستگاه خود نصب کنید تا دسترسی آسان‌تر و تجربهٔ بهتری داشته "
+"باشید!"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Get the app on your iPhone for easy access & a better experience"
+msgstr ""
+"برنامه را روی آیفون خود نصب کنید تا دسترسی آسان‌تر و تجربهٔ بهتری داشته "
+"باشید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Go to Login"
+msgstr "رفتن به صفحهٔ ورود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Gross Earnings"
+msgstr "جمع مزایا"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "HR Setup"
+msgstr "تنظیمات منابع انسانی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Half Day Marked Employee Header"
+msgstr "سرتیتر کارکنان نیمه‌وقت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Holiday List Assignment"
+msgstr "تخصیص فهرست تعطیلات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Holiday List Assignment for {0} already exists for date {1}: {2}"
+msgstr "تخصیص فهرست تعطیلات برای {0} در تاریخ {1} از قبل وجود دارد: {2}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Holiday List End"
+msgstr "پایان فهرست تعطیلات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Holiday List Start"
+msgstr "شروع فهرست تعطیلات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Holidays in this month"
+msgstr "تعطیلات این ماه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Horizontal Break"
+msgstr "شکست افقی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Hourly Rate"
+msgstr "نرخ ساعتی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"If checked, flexible benefits are considered only if benefit application "
+"exists"
+msgstr ""
+"اگر علامت بخورد، مزایای انعطاف‌پذیر فقط وقتی درخواست مزیت وجود دارد حساب "
+"می‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"If checked, overtime slip creation can be handled as part of payroll "
+"processing"
+msgstr "اگر علامت بخورد، برگهٔ اضافه‌کاری در جریان پردازش حقوق ساخته می‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"If enabled, the amount will be excluded from accounting entries during "
+"Journal Entry creation."
+msgstr "اگر فعال باشد، این مبلغ هنگام ساخت سند حسابداری در آن نمی‌آید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"If enabled, the total no. of applications received for this opening will be "
+"displayed on the website"
+msgstr ""
+"اگر فعال باشد، تعداد کل درخواست‌های این موقعیت شغلی در وب‌سایت نمایش داده "
+"می‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"If enabled, this component allows to accrue amounts without adding them to "
+"earnings. The accrued balance is tracked in the Employee Benefit Ledger and "
+"can be paid out later as needed."
+msgstr ""
+"اگر فعال باشد، این جزء مبلغ را بدون افزودن به مزایا ذخیره می‌کند. ماندهٔ "
+"ذخیره در دفتر مزایای کارکنان نگهداری می‌شود و بعداً قابل پرداخت است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "If enabled, this component will be included in arrear calculations"
+msgstr "اگر فعال باشد، این جزء در محاسبهٔ معوقات می‌آید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"If greater than zero, this sets the maximum benefit amount assignable to any"
+" employee"
+msgstr ""
+"اگر بیشتر از صفر باشد، سقف مزیت قابل تخصیص به هر کارمند را تعیین می‌کند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Include Shift Attendance Without Checkins"
+msgstr "شامل حضور شیفت بدون ثبت ورود و خروج"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Income Tax Slab is mandatory since the Salary Structure {0} has a tax "
+"component {1}"
+msgstr ""
+"چون ساختار حقوق {0} جزء مالیاتی {1} دارد، جدول مالیات بر درآمد الزامی است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Income Tax Slab: "
+msgstr "جدول مالیات بر درآمد: "
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Interview Type Name"
+msgstr "نام نوع مصاحبه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Interview Type {0} is only applicable for the Designation {1}"
+msgstr "نوع مصاحبهٔ {0} فقط برای سمت {1} کاربرد دارد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Interview Type {0} is only for Designation {1}. Job Applicant has applied "
+"for the role {2}"
+msgstr ""
+"نوع مصاحبهٔ {0} فقط برای سمت {1} است. متقاضی برای سمت {2} درخواست داده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Invalid Accrual Component"
+msgstr "جزء ذخیرهٔ نامعتبر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Invalid Arrear Component"
+msgstr "جزء معوقات نامعتبر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Invalid Benefit Amounts"
+msgstr "مبالغ مزیت نامعتبر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Invalid LWP Days Reversed"
+msgstr "روزهای برگشتی مرخصی بدون حقوق نامعتبر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Invalid employee filter: {0}"
+msgstr "فیلتر کارمند نامعتبر است: {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Invalid shift filter: {0}"
+msgstr "فیلتر شیفت نامعتبر است: {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Is Allocated"
+msgstr "تخصیص‌یافته"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Is Salary Released"
+msgstr "حقوق پرداخت شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Job Applicants are not allowed to appear twice for the same Interview Type. "
+"Interview {0} already scheduled for Job Applicant {1}"
+msgstr ""
+"یک متقاضی نمی‌تواند دو بار در یک نوع مصاحبه شرکت کند. مصاحبهٔ {0} برای "
+"متقاضی {1} از قبل زمان‌بندی شده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Job Opening Template"
+msgstr "الگوی آگهی استخدام"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Job Portal"
+msgstr "پورتال استخدام"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"LWP Days Reversed ({0}) does not match actual Payroll Corrections total "
+"({1}) for employee {2} from {3} to {4}"
+msgstr ""
+"روزهای برگشتی مرخصی بدون حقوق ({0}) با جمع واقعی اصلاحات حقوق ({1}) برای "
+"کارمند {2} از {3} تا {4} یکی نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Latitude and longitude values are required for checking in."
+msgstr "برای ثبت ورود، طول و عرض جغرافیایی لازم است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Leave Adjustment for this allocation already exists: {0}. Please amend "
+"existing adjustment."
+msgstr "برای این تخصیص تعدیل مرخصی وجود دارد: {0}. همان تعدیل را اصلاح کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Leave Balance Summary"
+msgstr "خلاصهٔ ماندهٔ مرخصی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Leave Ledger Entry's To date needs to be after From date. Currently, From "
+"Date is {0} and To Date is {1}"
+msgstr ""
+"تا تاریخ در دفتر مرخصی باید بعد از از تاریخ باشد. اکنون از تاریخ {0} و تا "
+"تاریخ {1} است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Leave Settings"
+msgstr "تنظیمات مرخصی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Leave allocation is skipped for {0}, because number of leaves to be "
+"allocated is 0."
+msgstr "تخصیص مرخصی برای {0} انجام نشد، چون تعداد مرخصی قابل تخصیص صفر است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Leaves to Adjust"
+msgstr "مرخصی قابل تعدیل"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Log Out"
+msgstr "خروج از حساب"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Login Failed"
+msgstr "ورود ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Login to Frappe HR"
+msgstr "ورود به منابع انسانی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Mandatory Benefit Application"
+msgstr "درخواست مزیت الزامی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Mandatory fields required in {0}"
+msgstr "فیلدهای الزامی در {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Mark attendance for existing check-in/out logs before changing shift "
+"settings"
+msgstr "قبل از تغییر تنظیمات شیفت، حضور ثبت‌های ورود و خروج موجود را ثبت کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Max Amount Eligible For Claim"
+msgstr "سقف قابل درخواست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Maximum Benefit Amount"
+msgstr "سقف مبلغ مزیت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Maximum Overtime Hours Allowed"
+msgstr "سقف ساعات مجاز اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Maximum Overtime Hours Allowed Per Day"
+msgstr "سقف ساعات مجاز اضافه‌کاری در روز"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Maximum annual taxable income eligible for full tax relief. No tax is "
+"applied if income does not exceed this limit"
+msgstr ""
+"سقف درآمد سالانهٔ مشمول که کاملاً معاف است. اگر درآمد از این سقف بیشتر نشود "
+"مالیاتی اعمال نمی‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Minimum calendar days required since Date of Joining to apply for this leave"
+msgstr "حداقل روز تقویمی از تاریخ استخدام برای درخواست این مرخصی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Missing Advance Account"
+msgstr "حساب پیش‌پرداخت تعیین نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Missing Mandatory Field"
+msgstr "فیلد الزامی خالی است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Missing Opening Entries"
+msgstr "اسناد افتتاحیه وجود ندارد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Missing Salary Components"
+msgstr "اجزای حقوق تعریف نشده‌اند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Missing value for filters"
+msgstr "مقدار فیلترها وارد نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Multipliers that adjust the hourly overtime amount for specific scenarios\n"
+"\n"
+msgstr ""
+"ضریب‌هایی که مبلغ ساعتی اضافه‌کاری را در حالت‌های خاص تنظیم می‌کنند\n"
+"\n"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "New Expense Item"
+msgstr "قلم هزینهٔ جدید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "New Expense Tax"
+msgstr "مالیات هزینهٔ جدید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "New passwords do not match"
+msgstr "گذرواژه‌های جدید یکسان نیستند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No Bank/Cash Account found for currency {0}. Please create one under company"
+" {1}."
+msgstr "حساب بانک یا صندوقی با ارز {0} پیدا نشد. یکی زیر شرکت {1} بسازید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No Holiday List was found for Employee {0} or their company {1} for date "
+"{2}. Please assign through {3}"
+msgstr ""
+"برای کارمند {0} یا شرکت {1} در تاریخ {2} فهرست تعطیلاتی پیدا نشد. از طریق "
+"{3} تخصیص دهید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No Salary Slips with {0} found for employee {1} for payroll period {2}."
+msgstr "برای کارمند {1} در دورهٔ حقوق {2} فیش حقوقی با {0} پیدا نشد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No Salary Structure Assignment found for employee {0} on date {1}"
+msgstr "برای کارمند {0} در تاریخ {1} تخصیص ساختار حقوق پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No Salary Structure Assignment found for employee {0} on or before {1}"
+msgstr "برای کارمند {0} تا تاریخ {1} تخصیص ساختار حقوق پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No active Salary Structure Assignment found for employee {0} with salary "
+"structure {1} on or after arrear start date {2}"
+msgstr ""
+"برای کارمند {0} با ساختار حقوق {1} از تاریخ شروع معوقات {2} به بعد تخصیص "
+"فعالی پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No active employee found associated with the email ID {0}. Try logging in "
+"with your employee email ID or contact your HR manager for access."
+msgstr ""
+"کارمند فعالی با ایمیل {0} پیدا نشد. با ایمیل کاری خود وارد شوید یا برای "
+"دسترسی با مدیر منابع انسانی تماس بگیرید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No applicable Earning component found in last salary slip for Gratuity Rule:"
+" {0}"
+msgstr ""
+"در آخرین فیش حقوق، جزء مزایای مشمول قانون پاداش پایان خدمت {0} پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No applicable Earning components found for Gratuity Rule: {0}"
+msgstr "جزء مزایای مشمول قانون پاداش پایان خدمت {0} پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No applicable slab found for the calculation of gratuity amount as per the "
+"Gratuity Rule: {0}"
+msgstr "برای محاسبهٔ پاداش پایان خدمت طبق قانون {0} پلهٔ مناسبی پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No arrear components found in the existing salary slips."
+msgstr "در فیش‌های حقوق موجود جزء معوقاتی پیدا نشد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"No arrear components found in the salary slip. Ensure Arrear Component is "
+"checked in the Salary Component master."
+msgstr ""
+"در فیش حقوق جزء معوقاتی پیدا نشد. مطمئن شوید گزینهٔ جزء معوقات در تعریف جزء "
+"حقوق علامت خورده است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No arrear details found"
+msgstr "جزئیات معوقات پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No attendance records found for employee {0} between {1} and {2}"
+msgstr "برای کارمند {0} بین {1} و {2} حضوری ثبت نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No attendance records to create due to following reasons"
+msgstr "به این دلایل حضوری برای ساخت وجود ندارد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No feedback has been received yet"
+msgstr "هنوز بازخوردی دریافت نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No login methods are available. Please contact your administrator."
+msgstr "هیچ روش ورودی در دسترس نیست. با مدیر سیستم تماس بگیرید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No salary slips found for the selected employee from {0}"
+msgstr "برای کارمند انتخاب‌شده از {0} فیش حقوقی پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No valid shift found for log time"
+msgstr "برای زمان ثبت‌شده شیفت معتبری پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "No {0} Selected"
+msgstr "هیچ {0} انتخاب نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Note: Your salary slip is password protected, the password to unlock the PDF"
+" is of the format {0}."
+msgstr "توجه: فیش حقوق شما رمزدار است؛ رمز باز کردن PDF به این شکل است: {0}."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "OTP Verification"
+msgstr "تأیید با رمز یک‌بارمصرف"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Open Feedback"
+msgstr "بازخوردهای باز"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Open Resume in New Tab"
+msgstr "باز کردن رزومه در زبانهٔ جدید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overall Average Rating"
+msgstr "میانگین کل امتیاز"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Overtime Duration for {0} is greater than Maximum Overtime Hours Allowed"
+msgstr "مدت اضافه‌کاری {0} از سقف ساعات مجاز بیشتر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Salary Component"
+msgstr "جزء حقوقی اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip Creation Error for {0}"
+msgstr "خطا در ساخت برگهٔ اضافه‌کاری برای {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip Creation Failed"
+msgstr "ساخت برگهٔ اضافه‌کاری ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip Step"
+msgstr "مرحلهٔ برگهٔ اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip Submission Error for {0}"
+msgstr "خطا در ثبت نهایی برگهٔ اضافه‌کاری برای {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip Submission Failed"
+msgstr "ثبت نهایی برگهٔ اضافه‌کاری ناموفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip Submitted"
+msgstr "برگهٔ اضافه‌کاری ثبت نهایی شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip created for {0} employee(s)"
+msgstr "برگهٔ اضافه‌کاری برای {0} کارمند ساخته شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip creation is queued. It may take a few minutes"
+msgstr "ساخت برگهٔ اضافه‌کاری در صف قرار گرفت و ممکن است چند دقیقه طول بکشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip submission is queued. It may take a few minutes"
+msgstr ""
+"ثبت نهایی برگهٔ اضافه‌کاری در صف قرار گرفت و ممکن است چند دقیقه طول بکشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slip:{0} has been created between {1} and {2}"
+msgstr "برگهٔ اضافه‌کاری {0} بین {1} و {2} ساخته شده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slips Created"
+msgstr "برگه‌های اضافه‌کاری ساخته شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Slips submitted for {0} employee(s)"
+msgstr "برگه‌های اضافه‌کاری برای {0} کارمند ثبت نهایی شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Overtime Type"
+msgstr "نوع اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Overtime earnings will be booked under this salary component for payout."
+msgstr "مبلغ اضافه‌کاری برای پرداخت زیر این جزء حقوقی ثبت می‌شود."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Overwrite Salary Structure Amount is disabled as the Salary Component: {0} "
+"not part of the Salary Structure: {1}"
+msgstr ""
+"جایگزینی مبلغ ساختار حقوق غیرفعال است، چون جزء {0} بخشی از ساختار حقوق {1} "
+"نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Password reset link has been sent to your email."
+msgstr "لینک بازنشانی گذرواژه به ایمیل شما فرستاده شد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Pay Details"
+msgstr "جزئیات پرداخت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Pay Rate Multipliers"
+msgstr "ضریب‌های نرخ پرداخت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Payment Days calculations are based on these Payroll Settings"
+msgstr "محاسبهٔ روزهای کارکرد بر اساس همین تنظیمات حقوق است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Payout"
+msgstr "پرداخت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Payout Method"
+msgstr "روش پرداخت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Payout Unclaimed Amount in Final Payroll Cycle"
+msgstr "پرداخت مبلغ مطالبه‌نشده در آخرین دورهٔ حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Payroll Correction Child"
+msgstr "ردیف اصلاحیهٔ حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Payroll date cannot be in the past. This is to ensure that claims are made "
+"for the current or future payroll cycles."
+msgstr ""
+"تاریخ حقوق نمی‌تواند در گذشته باشد تا درخواست‌ها فقط برای دورهٔ جاری یا "
+"آینده ثبت شوند."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Payroll date is mandatory for non-recurring type additional salaries."
+msgstr "برای حقوق‌های اضافی غیرتکراری، تاریخ حقوق الزامی است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Pending (unpaid) amount from previous advances"
+msgstr "مبلغ پرداخت‌نشده از پیش‌پرداخت‌های قبلی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Pending Asset Returns"
+msgstr "دارایی‌های برگشت‌داده‌نشده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Percent of CTC (%)"
+msgstr "درصد از هزینهٔ سالانهٔ کارمند (٪)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please enter a valid email address"
+msgstr "یک نشانی ایمیل معتبر وارد کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please enter your email address"
+msgstr "نشانی ایمیل خود را وارد کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please fill all fields"
+msgstr "همهٔ فیلدها را پر کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Please fill in Employee, Posting Date, and Company before fetching overtime "
+"details."
+msgstr "قبل از دریافت جزئیات اضافه‌کاری، کارمند، تاریخ ثبت و شرکت را پر کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please reduce {0} to avoid shift time overlapping with itself"
+msgstr "{0} را کم کنید تا زمان شیفت با خودش هم‌پوشانی نداشته باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please select Filter Based On"
+msgstr "مبنای فیلتر را انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please select From Date and Payroll Frequency first"
+msgstr "اول از تاریخ و دورهٔ پرداخت حقوق را انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please select From Date."
+msgstr "از تاریخ را انتخاب کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please select half day attendance status."
+msgstr "وضعیت حضور نیمه‌وقت را انتخاب کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please set a date range less than 90 days."
+msgstr "بازهٔ تاریخ را کمتر از ۹۰ روز انتخاب کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please set cost to company(CTC) for employee {0} in the {1}"
+msgstr "هزینهٔ سالانهٔ کارمند (CTC) را برای کارمند {0} در {1} وارد کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please set employee's total cost to company to see CTC breakup."
+msgstr "برای دیدن ریز هزینهٔ سالانه، کل هزینهٔ سالانهٔ کارمند را وارد کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please set the Advance Account {0} or in {1}"
+msgstr "حساب پیش‌پرداخت {0} را تنظیم کنید یا در {1}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Please set {0} to get CTC report"
+msgstr "برای گزارش هزینهٔ سالانه، {0} را تنظیم کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Prevent self approval for expense claims even if user has permissions"
+msgstr ""
+"جلوگیری از تأیید هزینه توسط خود درخواست‌کننده، حتی اگر دسترسی داشته باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Process Requests"
+msgstr "پردازش درخواست‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Process {0} Shift Request(s) as <b>{1}</b>?"
+msgstr "{0} درخواست شیفت به‌صورت <b>{1}</b> پردازش شود؟"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Processing Requests"
+msgstr "در حال پردازش درخواست‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Processing Requests..."
+msgstr "در حال پردازش درخواست‌ها..."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Processing of Shift Requests has been queued. It may take a few minutes."
+msgstr ""
+"پردازش درخواست‌های شیفت در صف قرار گرفت و ممکن است چند دقیقه طول بکشد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Publish Applications Received"
+msgstr "انتشار تعداد درخواست‌های دریافتی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Push Notification permission denied"
+msgstr "اجازهٔ اعلان رد شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Radius within which check-in is allowed (in meters)"
+msgstr "شعاع مجاز برای ثبت ورود (متر)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Recommended for a single biometric device / checkins via mobile app"
+msgstr "پیشنهادی برای یک دستگاه حضور و غیاب یا ثبت ورود با اپ موبایل"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Recover Cost"
+msgstr "بازیافت هزینه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Reducing maximum leaves allowed after allocation may cause scheduler to "
+"allocate incorrect number of earned leaves. Proceed with caution."
+msgstr ""
+"کم کردن سقف مرخصی بعد از تخصیص ممکن است باعث تخصیص نادرست مرخصی کسب‌شده شود."
+" با احتیاط ادامه دهید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Reduction is more than {0}'s available leave balance {1} for leave type {2}"
+msgstr "کاهش از ماندهٔ مرخصی {0} ({1}) برای نوع مرخصی {2} بیشتر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Reject"
+msgstr "رد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Rejection"
+msgstr "رد درخواست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Released"
+msgstr "پرداخت‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Repeat On Days"
+msgstr "تکرار در روزها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Retry Failed"
+msgstr "تکرار موارد ناموفق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Retry Failed Allocations"
+msgstr "تکرار تخصیص‌های ناموفق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Retry Successful"
+msgstr "تکرار موفق بود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Retrying allocations"
+msgstr "در حال تکرار تخصیص‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Row {0}# Paid Amount cannot be greater than Encashment amount"
+msgstr "ردیف {0}: مبلغ پرداختی نمی‌تواند از مبلغ بازخرید بیشتر باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Row {0}: Goal Score cannot be greater than {1}"
+msgstr "ردیف {0}: امتیاز اهداف نمی‌تواند از {1} بیشتر باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Salary Component Based"
+msgstr "بر اساس اجزای حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Salary Component {0} cannot be selected more than once in Employee Benefits"
+msgstr "جزء حقوق {0} نمی‌تواند بیش از یک بار در مزایای کارکنان انتخاب شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Salary Component {0} is currently not used in any Salary Structure."
+msgstr "جزء حقوق {0} فعلاً در هیچ ساختار حقوقی استفاده نشده است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Salary Component {0} must be of type 'Earning' to be used in Employee "
+"Benefit Ledger"
+msgstr "جزء حقوق {0} برای دفتر مزایای کارکنان باید از نوع «مزایا» باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Salary Structure Assignment not found for employee {0} on date {1}"
+msgstr "برای کارمند {0} در تاریخ {1} تخصیص ساختار حقوق پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Salary Structure not assigned for employee {0} for date {1}"
+msgstr "برای کارمند {0} در تاریخ {1} ساختار حقوق تخصیص داده نشده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Salary Structure: "
+msgstr "ساختار حقوق: "
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Salary Structures updated successfully"
+msgstr "ساختارهای حقوق با موفقیت به‌روز شدند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Salary components of type Provident Fund, Additional Provident Fund or "
+"Provident Fund Loan are not set up."
+msgstr ""
+"اجزای حقوقی صندوق ذخیره، صندوق ذخیرهٔ اضافی یا وام صندوق ذخیره تعریف "
+"نشده‌اند."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Sanctioned Amount (Company Currency)"
+msgstr "مبلغ تأییدشده (به ارز شرکت)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "See CTC Break-up"
+msgstr "ریز هزینهٔ سالانه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Select Applicable Components for Overtime Type"
+msgstr "اجزای مشمول نوع اضافه‌کاری را انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Select Interview Type First"
+msgstr "اول نوع مصاحبه را انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Select Month for LWP Reversal"
+msgstr "ماه برگشت مرخصی بدون حقوق را انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Select Shift Requests"
+msgstr "انتخاب درخواست‌های شیفت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Select if any of the days selected for request are holidays"
+msgstr "اگر روزی از روزهای درخواست تعطیل است انتخاب کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Select the salary components whose total will be used from the salary slip "
+"to calculate the hourly overtime rate."
+msgstr ""
+"اجزای حقوقی را انتخاب کنید که جمع آن‌ها در فیش حقوق برای محاسبهٔ نرخ ساعتی "
+"اضافه‌کاری استفاده می‌شود."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Selected employee advance is not of employee {0}"
+msgstr "پیش‌پرداخت انتخاب‌شده متعلق به کارمند {0} نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Selected employee advance is not of employee {}"
+msgstr "پیش‌پرداخت انتخاب‌شده متعلق به کارمند {} نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Self Appraisal Score"
+msgstr "امتیاز خودارزیابی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Self-approval for Expense Claims is not allowed"
+msgstr "تأیید هزینه توسط خود درخواست‌کننده مجاز نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Send Reset Link"
+msgstr "ارسال لینک بازنشانی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Sender Copy"
+msgstr "رونوشت برای فرستنده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Sending Failed due to missing email information for employee(s): {1}"
+msgstr "ارسال به دلیل نبود ایمیل این کارکنان ناموفق بود: {1}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Set opening balances for earnings and taxes from the previous employer"
+msgstr "ماندهٔ اول دورهٔ مزایا و مالیات از کارفرمای قبلی را وارد کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Settle against Advances"
+msgstr "تسویه با پیش‌پرداخت‌ها"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Shared document with the user {0} with 'Submit' permission"
+msgstr "سند با دسترسی «ثبت نهایی» با کاربر {0} به اشتراک گذاشته شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Shift Assignments created for the schedule between {0} and {1} via "
+"background job"
+msgstr "تخصیص‌های شیفت برای بازهٔ {0} تا {1} در پس‌زمینه ساخته شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Shift Timings"
+msgstr "زمان‌بندی شیفت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Shift and Attendance"
+msgstr "شیفت و حضور و غیاب"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Shift assignments for {0} after {1} are already created. Please change {2} "
+"date to a date later than {3} {4}"
+msgstr ""
+"تخصیص شیفت برای {0} بعد از {1} از قبل ساخته شده است. تاریخ {2} را به بعد از "
+"{3} {4} تغییر دهید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Shortlist"
+msgstr "انتخاب برای مرحلهٔ بعد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Shortlisted"
+msgstr "انتخاب‌شده برای مرحلهٔ بعد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Source and target shifts cannot be the same"
+msgstr "شیفت مبدأ و مقصد نمی‌توانند یکی باشند"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Start date cannot be greater than end date."
+msgstr "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Submission of {0} before {1} is not allowed"
+msgstr "ثبت نهایی {0} قبل از {1} مجاز نیست"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Submitted via Payroll Entry"
+msgstr "ثبت نهایی از طریق پردازش حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Successfully created {0} for employees:"
+msgstr "{0} برای این کارکنان با موفقیت ساخته شد:"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Successfully {0} {1} for the following employees:"
+msgstr "{0} {1} برای این کارکنان با موفقیت انجام شد:"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Sum of benefit amounts {0} exceeds maximum limit of {1}"
+msgstr "جمع مبالغ مزیت {0} از سقف {1} بیشتر است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Taxable Income Relief Threshold Limit"
+msgstr "سقف معافیت درآمد مشمول مالیات"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Template Name"
+msgstr "نام الگو"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Tenure"
+msgstr "سابقهٔ خدمت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"The currency of {0} should be same as the company's default currency. Please"
+" select another account."
+msgstr "ارز {0} باید با ارز پیش‌فرض شرکت یکی باشد. حساب دیگری انتخاب کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"The metrics for this report are calculated based on the {0}. Please set {0} "
+"in {1}."
+msgstr ""
+"شاخص‌های این گزارش بر اساس {0} محاسبه می‌شوند. {0} را در {1} تنظیم کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"The metrics for this report are calculated based on {0}. Please set {0} in "
+"{1}."
+msgstr ""
+"شاخص‌های این گزارش بر اساس {0} محاسبه می‌شوند. {0} را در {1} تنظیم کنید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"There are multiple shifts assigned to the employee for the same period. "
+"Please mention the shift"
+msgstr ""
+"برای این کارمند در یک بازه چند شیفت تخصیص داده شده است. شیفت را مشخص کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"There are no arrear differences between existing and new salary structure "
+"components."
+msgstr "بین اجزای ساختار حقوق فعلی و جدید تفاوت معوقه‌ای وجود ندارد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"There is no Salary Structure assigned to {0}. First assign a Salary "
+"Structure."
+msgstr ""
+"برای {0} ساختار حقوقی تخصیص داده نشده است. اول ساختار حقوق را تخصیص دهید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"This will overwrite the tax component {0} in the salary slip and tax won't "
+"be calculated based on the Income Tax Slabs"
+msgstr ""
+"این کار جزء مالیاتی {0} را در فیش حقوق جایگزین می‌کند و مالیات بر اساس جدول "
+"مالیات بر درآمد حساب نمی‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"To overwrite the salary component amount for a tax component, please enable "
+"{0}"
+msgstr "برای جایگزینی مبلغ جزء حقوقی مالیاتی، {0} را فعال کنید"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Today {0} completed {1} {2} at our Company! 🎉"
+msgstr "امروز {0} {1} {2} همکاری با شرکت ما را کامل کرد! 🎉"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Accrued"
+msgstr "جمع ذخیره‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Advance Amount (Company Currency)"
+msgstr "جمع پیش‌پرداخت (به ارز شرکت)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Amount Reimbursed"
+msgstr "جمع مبلغ بازپرداخت‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Asset Recovery Cost"
+msgstr "جمع هزینهٔ بازیافت دارایی"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Claimed Amount (Company Currency)"
+msgstr "جمع مبلغ درخواستی (به ارز شرکت)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Cost To Company (CTC)"
+msgstr "کل هزینهٔ سالانهٔ کارمند (CTC)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Days Without Pay"
+msgstr "جمع روزهای بدون حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Exchange Gain/Loss"
+msgstr "جمع سود و زیان تسعیر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Expense Claim (via Expense Claim)"
+msgstr "جمع هزینه‌ها (از طریق درخواست هزینه)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Expense Claim (via Expense Claims)"
+msgstr "جمع هزینه‌ها (از طریق درخواست‌های هزینه)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Interest Amount"
+msgstr "جمع مبلغ بهره"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Overtime Duration"
+msgstr "جمع مدت اضافه‌کاری"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Payout"
+msgstr "جمع پرداخت"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Principal Amount"
+msgstr "جمع اصل مبلغ"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Total Sanctioned Amount (Company Currency)"
+msgstr "جمع مبلغ تأییدشده (به ارز شرکت)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Total of all employee benefits cannot be greater that Max Benefits Amount "
+"{0}"
+msgstr "جمع همهٔ مزایای کارمند نمی‌تواند از سقف مزایا {0} بیشتر باشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Trainings (This Week)"
+msgstr "آموزش‌ها (این هفته)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unable to retrieve your location"
+msgstr "موقعیت شما پیدا نشد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unclaimed Amount (Company Currency)"
+msgstr "مبلغ مطالبه‌نشده (به ارز شرکت)"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unmarked Check-in Logs Found"
+msgstr "ثبت‌های ورود و خروج بدون حضور پیدا شد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unmarked Employee Header"
+msgstr "سرتیتر کارکنان بدون ثبت حضور"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unmarked Employees HTML"
+msgstr "HTML کارکنان بدون ثبت حضور"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unpaid Accrual"
+msgstr "ذخیرهٔ پرداخت‌نشده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Unsettled Transactions"
+msgstr "تراکنش‌های تسویه‌نشده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"Updated Status for Other Half from {0} to {1} for date {2} in the attendance"
+" record {3}"
+msgstr ""
+"وضعیت نیمهٔ دیگر روز در سابقهٔ حضور {3} برای تاریخ {2} از {0} به {1} تغییر "
+"کرد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "View Job Offer"
+msgstr "مشاهدهٔ پیشنهاد استخدام"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"When set to 'Inactive', employees with conflicting active shifts will not be"
+" excluded."
+msgstr ""
+"اگر روی «غیرفعال» باشد، کارکنانی که شیفت فعال متداخل دارند کنار گذاشته "
+"نمی‌شوند."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Yearly Amount"
+msgstr "مبلغ سالانه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Yearly Benefit"
+msgstr "مزیت سالانه"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"You cannot reverse more than the total LWP days {0}. You have already "
+"reversed {1} days for this employee."
+msgstr ""
+"نمی‌توانید بیشتر از کل روزهای مرخصی بدون حقوق ({0}) برگردانید. برای این "
+"کارمند تا کنون {1} روز برگشت داده شده است."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "You must be within {0} meters of your shift location to check in."
+msgstr "برای ثبت ورود باید در فاصلهٔ {0} متری محل شیفت باشید."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "Your password has been updated."
+msgstr "گذرواژهٔ شما تغییر کرد."
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "action"
+msgstr "اقدام"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "cancellation"
+msgstr "لغو"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "here"
+msgstr "اینجا"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "or for the Employee's Department: {0}"
+msgstr "یا برای واحد کارمند: {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "process"
+msgstr "پردازش"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "processed"
+msgstr "پردازش‌شده"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "reason"
+msgstr "دلیل"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "via Salary Component sync"
+msgstr "از طریق همگام‌سازی جزء حقوق"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "years"
+msgstr "سال"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "{0} & {1} more"
+msgstr "{0} و {1} مورد دیگر"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "{0} Field"
+msgstr "فیلد {0}"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "{0} applicable after {1} calendar days"
+msgstr "{0} پس از {1} روز تقویمی قابل استفاده است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "{0} completed {1} {2}"
+msgstr "{0} {1} {2} را کامل کرد"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "{0} has {1} enabled"
+msgstr "{1} برای {0} فعال است"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid ""
+"{0} is an Accrual Component and this will be recorded as a payout in "
+"Employee Benefits Ledger"
+msgstr "{0} جزء ذخیره است و به‌عنوان پرداخت در دفتر مزایای کارکنان ثبت می‌شود"
+
+# FardaERP CORE-042: hrms string missing from its fa.po
+msgid "{0} to {1} employee(s)?"
+msgstr "{0} برای {1} کارمند؟"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "API Endpoint Args"
+msgstr "آرگومان‌های نشانی API"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "API Secret"
+msgstr "رمز API"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Brute Force Security"
+msgstr "امنیت در برابر حملهٔ حدس رمز"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "DocType Action"
+msgstr "اقدام نوع سند"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Failed to get method for command {0} with {1}"
+msgstr "متد فرمان {0} با {1} پیدا نشد"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Invalid request body"
+msgstr "بدنهٔ درخواست نامعتبر است"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "OAuth Bearer Token"
+msgstr "توکن دسترسی OAuth"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Redirect HTTP Status"
+msgstr "وضعیت HTTP تغییر مسیر"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Refresh Token"
+msgstr "توکن تازه‌سازی"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Webhook Secret"
+msgstr "رمز وب‌هوک"
+
+# FardaERP CORE-042: Frappe ships this one untranslated (English)
+msgid "Webhook URL"
+msgstr "نشانی وب‌هوک"
+
+# FardaERP CORE-042
+msgid "Authority"
+msgstr "کد پیگیری درگاه"
+
+# FardaERP CORE-042
+msgid "IP"
+msgstr "نشانی IP"
