@@ -507,8 +507,10 @@ def prepare(sales_invoice: str, action: str = "original", invoice_type=None) -> 
 	cfg = mconfig.load()
 	if not cint(_settings().get("enabled", 1)):
 		frappe.throw(_("ارسال به سامانه مودیان در «تنظیمات سامانه مودیان» غیرفعال است"))
-	if not cfg.memory_id:
-		frappe.throw(_("شناسه یکتای حافظه مالیاتی تنظیم نشده است (FARDA_MOADIAN_MEMORY_ID در فایل .env)"))
+	# Without a memory id the preview still runs (dry run) so the data can be
+	# checked before the keys arrive; nothing is reserved or stored.
+	dry = not cfg.memory_id
+	memory = cfg.memory_id or "AAAAAA"
 	allowed, notice = available_actions(doc)
 	if action not in allowed:
 		frappe.throw(notice or _("این عملیات برای این سند در وضعیت فعلی ممکن نیست"))
@@ -527,9 +529,11 @@ def prepare(sales_invoice: str, action: str = "original", invoice_type=None) -> 
 	if ref and action != "original":
 		indatim = min(max(indatim, cint(ref.indatim) + 1000), _now_ms())  # after the reference (S1 §7-2)
 
-	log = _draft_for(doc.name, subject)
+	log = None if dry else _draft_for(doc.name, subject)
 	day = indatim // minv.taxid_mod.DAY_MS
-	if log and cint(log.indatim) // minv.taxid_mod.DAY_MS == day:
+	if dry:
+		serial, log = 1, frappe.new_doc(LOG)
+	elif log and cint(log.indatim) // minv.taxid_mod.DAY_MS == day:
 		serial = cint(log.serial)  # same draft, same day -> keep the reserved taxid
 	else:
 		serial = _next_serial()
@@ -537,17 +541,17 @@ def prepare(sales_invoice: str, action: str = "original", invoice_type=None) -> 
 
 	inty = cint(ref.inty) if ref else _invoice_type(doc, invoice_type)
 	if action == "original":
-		spec = build_spec(doc, serial, cfg.memory_id, inty, indatim)
+		spec = build_spec(doc, serial, memory, inty, indatim)
 	elif action == "correction":
-		spec = build_spec(doc, serial, cfg.memory_id, inty, indatim, ins=2, irtaxid=ref.taxid)
+		spec = build_spec(doc, serial, memory, inty, indatim, ins=2, irtaxid=ref.taxid)
 		_correction_guard(doc, ref, spec["lines"])
 	elif action == "return":
-		spec = build_return_spec(doc, serial, cfg.memory_id, indatim, ref)
+		spec = build_return_spec(doc, serial, memory, indatim, ref)
 		if spec is None:  # everything returned -> cancellation (S1 §5)
 			subject = CANCELLATION
 			note = "همه اقلام برگشت خورده است؛ طبق دستورالعمل، صورتحساب در سامانه «ابطال» می‌شود."
 	if subject == CANCELLATION:
-		spec = {"memory_id": cfg.memory_id, "serial": serial, "indatim": indatim, "seller_tin": _seller_tin(doc.company), "ins": 3, "irtaxid": ref.taxid}
+		spec = {"memory_id": memory, "serial": serial, "indatim": indatim, "seller_tin": _seller_tin(doc.company), "ins": 3, "irtaxid": ref.taxid}
 
 	inv = minv.build(spec)
 	payload = _canonical(inv)
@@ -576,12 +580,18 @@ def prepare(sales_invoice: str, action: str = "original", invoice_type=None) -> 
 			"messages": note or "",
 		}
 	)
-	log.flags.ignore_permissions = True
-	log.save() if not log.is_new() else log.insert()
+	if not dry:
+		log.flags.ignore_permissions = True
+		log.save() if not log.is_new() else log.insert()
 
 	validation = minv.validate(inv, now_ms=_now_ms(), inty=inty, inp=inp)
 	if note:
 		validation["warnings"].insert(0, {"field": "ins", "message": note})
+	if dry:
+		validation["warnings"].insert(
+			0,
+			{"field": "taxid", "message": "پیش‌نمایش بدون شناسه حافظه مالیاتی: شماره مالیاتی نمونه است و چیزی ذخیره یا ارسال نمی‌شود."},
+		)
 	if subject in (ORIGINAL, CORRECTION) and h.get("tbill") is not None:
 		erp_total = minv.trunc(flt(doc.base_grand_total))  # before rounding adjustment
 		if abs(erp_total - int(h["tbill"])) > max(len(inv["body"]), 1):
