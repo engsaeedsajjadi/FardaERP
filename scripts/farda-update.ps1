@@ -22,8 +22,14 @@ foreach ($try in 1..3) {
 if (-not $ok) { throw "ساخت ایمیج سه بار ناموفق بود؛ اتصال اینترنت را بررسی کنید و اسکریپت را دوباره اجرا کنید" }
 
 Write-Host "2/4 راه‌اندازی دوباره سرویس‌ها..." -ForegroundColor Cyan
-docker compose up -d
-if ($LASTEXITCODE -ne 0) { throw "راه‌اندازی ناموفق بود" }
+$ok = $false
+foreach ($try in 1..3) {
+    docker compose up -d
+    if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+    Write-Host "سرویس‌ها هنوز آماده نیستند؛ تلاش دوباره $try از 3 ..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 30
+}
+if (-not $ok) { throw "راه‌اندازی ناموفق بود؛ خروجی 'docker compose logs backend --tail 120' را بفرستید" }
 Start-Sleep -Seconds 20
 
 Write-Host "3/4 به‌روزرسانی پایگاه داده (migrate)..." -ForegroundColor Cyan

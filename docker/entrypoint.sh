@@ -15,19 +15,45 @@ SITE_NAME="${SITE_NAME:-}"
 
 mkdir -p sites/logs config/pids logs   # bench's is_bench_directory() checks all of these
 [ -f sites/apps.txt ] || printf 'frappe\nerpnext\nhrms\n' > sites/apps.txt
-[ -f sites/common_site_config.json ] || echo '{}' > sites/common_site_config.json
-# (update_site_config edits in place — it does NOT create the file)
+# common_site_config.json lives on the shared "sites" volume and backend,
+# workers, scheduler and websocket all start at the same time. Several
+# concurrent `bench set-config` calls could read a half-written file
+# ("Expecting value: line 1 column 1") and crash the container, so the keys
+# are upserted once, under a file lock, with an atomic replace.
+DB_HOST="$DB_HOST" DB_PORT="$DB_PORT" REDIS_CACHE_URL="$REDIS_CACHE_URL" REDIS_QUEUE_URL="$REDIS_QUEUE_URL" \
+python - <<'PY'
+import fcntl, json, os, time
 
-# common_site_config: bench set-config -g writes to ./common_site_config.json
-# RELATIVE TO CWD, so these must run from sites/ (idempotent upserts).
-# NOTE: -p (ast.literal_eval) is ONLY for numeric values; URLs are plain strings.
-cd "$BENCH/sites"
-bench set-config -g db_host "$DB_HOST"
-bench set-config -gp db_port "$DB_PORT"
-bench set-config -g redis_cache "$REDIS_CACHE_URL"
-bench set-config -g redis_queue "$REDIS_QUEUE_URL"
-bench set-config -g redis_socketio "$REDIS_QUEUE_URL"
-bench set-config -gp socketio_port 9000
+path = "sites/common_site_config.json"
+want = {
+    "db_host": os.environ["DB_HOST"],
+    "db_port": int(os.environ["DB_PORT"]),
+    "redis_cache": os.environ["REDIS_CACHE_URL"],
+    "redis_queue": os.environ["REDIS_QUEUE_URL"],
+    "redis_socketio": os.environ["REDIS_QUEUE_URL"],
+    "socketio_port": 9000,
+}
+with open("sites/.common_site_config.lock", "w") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    conf = {}
+    for _ in range(10):
+        try:
+            with open(path) as fh:
+                text = fh.read().strip()
+            conf = json.loads(text) if text else {}
+            break
+        except FileNotFoundError:
+            break
+        except ValueError:
+            time.sleep(0.5)  # a writer outside the lock may be mid-write
+    if any(conf.get(k) != v for k, v in want.items()):
+        conf.update(want)
+        tmp = f"{path}.{os.getpid()}.tmp"
+        with open(tmp, "w") as fh:
+            json.dump(conf, fh, indent=1, sort_keys=True)
+        os.replace(tmp, path)
+    fcntl.flock(lock, fcntl.LOCK_UN)
+PY
 cd "$BENCH"
 
 # --- wait for dependencies ---------------------------------------------
