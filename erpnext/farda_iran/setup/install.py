@@ -250,6 +250,9 @@ def ensure_moadian_defaults() -> None:
 	"""Fill only missing settings, sandbox-safe; never overwrite the user's choices."""
 	if not frappe.db.exists("DocType", "Farda Moadian Settings"):
 		return
+	# before_migrate runs before new DocType fields are synced: skip unknown fields,
+	# after_migrate fills them.
+	meta = frappe.get_meta("Farda Moadian Settings", cached=False)
 	for field, value in (
 		("enabled", 1),
 		("auto_inquiry", 1),
@@ -257,6 +260,8 @@ def ensure_moadian_defaults() -> None:
 		("default_pattern", "1 - فروش"),
 		("last_serial", 0),
 	):
+		if not meta.has_field(field):
+			continue
 		if frappe.db.get_single_value("Farda Moadian Settings", field) in (None, ""):
 			frappe.db.set_single_value("Farda Moadian Settings", field, value)
 
@@ -294,6 +299,17 @@ def ensure_custom_fields() -> None:
 		"Purchase Invoice": INVOICE_FIELDS,
 		"Payment Entry": PAYMENT_ENTRY_FIELDS,
 	}
+	# a Table/Link to one of our DocTypes waits until migrate has created that DocType
+	for doctype, fields in custom_fields.items():
+		custom_fields[doctype] = [
+			f
+			for f in fields
+			if not (
+				f.get("fieldtype") in ("Table", "Link")
+				and str(f.get("options") or "").startswith("Farda ")
+				and not frappe.db.exists("DocType", f["options"])
+			)
+		]
 	create_custom_fields(custom_fields, ignore_validate=True, update=True)
 
 
@@ -488,7 +504,7 @@ def after_install(**_kwargs) -> None:
 
 
 def after_migrate(**_kwargs) -> None:
-	execute()
+	execute()  # second pass: new DocTypes/fields from this release now exist
 
 
 def ensure_workspace() -> None:
