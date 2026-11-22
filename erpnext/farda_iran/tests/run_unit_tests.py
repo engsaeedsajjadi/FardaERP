@@ -36,6 +36,7 @@ MODULES = (
 	"test_moadian_pure",
 	"test_payroll_engine",
 	"test_sso_disk",
+	"test_assistant_core",
 )
 
 

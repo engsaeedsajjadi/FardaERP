@@ -67134,3 +67134,8 @@ msgstr "کد پیگیری درگاه"
 # FardaERP CORE-042
 msgid "IP"
 msgstr "نشانی IP"
+
+
+# FardaERP CORE-043: in-app help assistant
+msgid "Farda Assistant Settings"
+msgstr "تنظیمات دستیار"

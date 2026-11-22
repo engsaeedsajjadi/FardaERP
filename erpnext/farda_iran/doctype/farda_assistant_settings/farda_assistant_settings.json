@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "creation": "2026-11-22 22:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "per_user_hourly_limit",
+  "ai_section",
+  "use_ai",
+  "api_base_url",
+  "api_key",
+  "column_ai",
+  "model",
+  "timeout",
+  "extra_section",
+  "extra_instructions"
+ ],
+ "fields": [
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "default": "1",
+   "label": "دستیار فعال است",
+   "description": "دکمهٔ «دستیار» در گوشهٔ صفحه برای همهٔ کاربران نمایش داده می‌شود."
+  },
+  {
+   "fieldname": "per_user_hourly_limit",
+   "fieldtype": "Int",
+   "default": "30",
+   "label": "حداکثر سؤال هر کاربر در ساعت",
+   "non_negative": 1,
+   "description": "برای کنترل هزینهٔ سرویس هوش مصنوعی. صفر یعنی بدون محدودیت."
+  },
+  {
+   "fieldname": "ai_section",
+   "fieldtype": "Section Break",
+   "label": "سرویس هوش مصنوعی (اختیاری)",
+   "description": "اگر روشن نباشد یا سرویس در دسترس نباشد، دستیار از راهنمای داخلی فارسی جواب می‌دهد."
+  },
+  {
+   "fieldname": "use_ai",
+   "fieldtype": "Check",
+   "default": "0",
+   "label": "استفاده از سرویس هوش مصنوعی",
+   "description": "فقط سؤال کاربر، نام صفحه و متن راهنماهای مرتبط به سرویس فرستاده می‌شود؛ هیچ اطلاعات مالی، مشتری یا فاکتوری ارسال نمی‌شود."
+  },
+  {
+   "fieldname": "api_base_url",
+   "fieldtype": "Data",
+   "label": "آدرس سرویس (سازگار با OpenAI)",
+   "depends_on": "use_ai",
+   "mandatory_depends_on": "use_ai",
+   "description": "مثلاً برای مدل محلی Ollama: http://ollama:11434/v1"
+  },
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "کلید دسترسی",
+   "depends_on": "use_ai",
+   "description": "برای مدل محلی لازم نیست. کلید را فقط همین‌جا وارد کنید و در چت یا پیام‌رسان نفرستید."
+  },
+  {
+   "fieldname": "column_ai",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "نام مدل",
+   "depends_on": "use_ai",
+   "mandatory_depends_on": "use_ai",
+   "description": "مثلاً qwen2.5:7b"
+  },
+  {
+   "fieldname": "timeout",
+   "fieldtype": "Int",
+   "default": "30",
+   "label": "حداکثر زمان انتظار (ثانیه)",
+   "depends_on": "use_ai",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "extra_section",
+   "fieldtype": "Section Break",
+   "label": "دستورهای تکمیلی",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "extra_instructions",
+   "fieldtype": "Small Text",
+   "label": "دستورهای تکمیلی برای دستیار",
+   "description": "مثلاً: «برای پشتیبانی با داخلی ۲۰۵ تماس بگیرید.» این متن به دستورهای دستیار اضافه می‌شود."
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-22 22:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Assistant Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

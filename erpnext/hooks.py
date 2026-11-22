@@ -762,6 +762,7 @@ extend_bootinfo = [*extend_bootinfo, "erpnext.farda_iran.ui.boot.extend_bootinfo
 app_include_js = [
 	*([app_include_js] if isinstance(app_include_js, str) else app_include_js),
 	"/assets/erpnext/farda_iran/js/farda_ui.js",
+	"/assets/erpnext/farda_iran/js/farda_assistant.js",
 ]
 
 

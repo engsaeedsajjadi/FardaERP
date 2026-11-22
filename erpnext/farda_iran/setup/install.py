@@ -530,7 +530,7 @@ def ensure_ui_assets() -> None:
 	nginx container, so Docker deployments rendered without RTL/fonts).
 	"""
 	public = frappe.get_app_path("erpnext", "public", "farda_iran")
-	for rel in ("js/farda_ui.js", "css/farda_rtl.css", "css/farda_design.css"):
+	for rel in ("js/farda_ui.js", "js/farda_assistant.js", "css/farda_rtl.css", "css/farda_design.css"):
 		if not os.path.exists(os.path.join(public, rel)):
 			frappe.log_error(f"farda_iran: missing UI asset {rel}")
 
@@ -607,6 +607,34 @@ def before_migrate(**_kwargs) -> None:
 def after_install(**_kwargs) -> None:
 	"""bench new-site / install-app (CORE-020)."""
 	execute()
+
+
+# CORE-043 — fixes for strings another app translates wrongly. App catalogs merge
+# frappe → erpnext → hrms, so an erpnext fa.po entry cannot override HRMS;
+# a user Translation record overrides every app.
+TRANSLATION_OVERRIDES = {
+	"Get Employees": "دریافت فهرست کارکنان",  # HRMS: «استخدام کارمندان» (hire)
+	"Submit Salary Slip": "ثبت نهایی فیش‌های حقوق",
+}
+
+
+def ensure_translation_overrides() -> None:
+	if not frappe.db.exists("DocType", "Translation"):
+		return
+	changed = False
+	for source, target in TRANSLATION_OVERRIDES.items():
+		name = frappe.db.get_value("Translation", {"language": "fa", "source_text": source})
+		if name:
+			if frappe.db.get_value("Translation", name, "translated_text") != target:
+				frappe.db.set_value("Translation", name, "translated_text", target)
+				changed = True
+			continue
+		frappe.get_doc(
+			{"doctype": "Translation", "language": "fa", "source_text": source, "translated_text": target}
+		).insert(ignore_permissions=True)
+		changed = True
+	if changed:
+		frappe.clear_cache()
 
 
 def after_migrate(**_kwargs) -> None:
@@ -761,6 +789,7 @@ SIDEBAR = [
 		("کاربران", "DocType", "User"),
 		("تراکنش‌های درگاه", "DocType", "Farda Payment Log"),
 		("گزارش ممیزی", "DocType", "Farda Audit Log"),
+		("تنظیمات دستیار", "DocType", "Farda Assistant Settings"),
 	]),
 ]
 
@@ -877,5 +906,9 @@ def execute() -> str:
 		ensure_ui_assets()
 	except Exception:
 		frappe.log_error("farda_iran: UI asset copy failed")  # non-fatal outside a site
+	try:
+		ensure_translation_overrides()
+	except Exception:
+		frappe.log_error("farda_iran: translation overrides failed")  # non-fatal
 	frappe.clear_cache()
 	return "farda_iran setup applied (custom fields + VAT defaults + UI assets)"
