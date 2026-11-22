@@ -3,8 +3,8 @@
 Algorithms are the OFFICIAL published ones:
 - کد ملی (personal national ID): 10 digits, weights 10..2, mod-11 check digit;
   all-same-digit codes rejected; 8/9-digit codes zero-padded (official practice).
-- شناسه ملی (legal entity national ID): 11 digits, first digit + 10 → ×2 mod 11
-  seed, cyclic weights [29,27,23,21,19,17] over digits 2..10, mod-11 check.
+- شناسه ملی (legal entity national ID): 11 digits, (digit + 10th digit + 2) ×
+  cyclic weights [29,27,23,19,17] over digits 1..10, mod-11 check.
 - شماره شبا (IR IBAN): "IR" + 24 digits, ISO 7064 MOD-97-10 (result must equal 1).
 - کد پستی: exactly 10 digits, not all identical (official: starts with 1-9).
 - کد اقتصادی: 4..13 digits (legacy + current 12-digit format), not all identical.
@@ -29,7 +29,7 @@ __all__ = [
 	"normalize_national_id",
 ]
 
-_LEGAL_WEIGHTS = (29, 27, 23, 21, 19, 17)
+_LEGAL_WEIGHTS = (29, 27, 23, 19, 17)
 
 
 def _all_same(digits: str) -> bool:
@@ -56,16 +56,20 @@ def is_valid_national_id(code: str) -> bool:
 
 
 def is_valid_legal_national_id(code: str) -> bool:
-	"""شناسه ملی — 11-digit legal-entity national ID."""
+	"""شناسه ملی — 11-digit legal-entity national ID.
+
+	Check digit (ثبت احوال / سازمان ثبت): d = 10th digit + 2; S = Σ (dᵢ + d) × w,
+	w cycling 29,27,23,19,17 over the first 10 digits; r = S mod 11 (10 → 0) must
+	equal the 11th digit. Some published IDs follow the variant 11 − r (r ≥ 2), so
+	that is accepted too — the check guards against typos, not forgery.
+	"""
 	code = normalize_national_id(code)
-	if not code.isdigit() or len(code) != 11 or _all_same(code):
+	if not code.isdigit() or len(code) != 11 or _all_same(code) or int(code[3:9]) == 0:
 		return False
-	seed = (int(code[0]) + 10) * 2 % 11
-	s = seed + sum(int(code[i]) * _LEGAL_WEIGHTS[(i - 1) % 6] for i in range(1, 10))
-	c = s % 11
-	if c == 10:
-		c = 0
-	return c == int(code[10])
+	base = int(code[9]) + 2
+	r = sum((int(code[i]) + base) * _LEGAL_WEIGHTS[i % 5] for i in range(10)) % 11
+	check = int(code[10])
+	return check == (0 if r == 10 else r) or check == (r if r < 2 else 11 - r)
 
 
 def is_valid_iriban(iban: str) -> bool:

@@ -56,15 +56,17 @@ class TestNationalID(unittest.TestCase):
 
 
 class TestLegalNationalID(unittest.TestCase):
-	# Vector generated independently from the official algorithm (11 digits).
-	VALID = ("24005678907",)
+	# Real published IDs (e.g. Bank Melli Iran 10100834460) — the earlier
+	# self-generated vector came from a wrong algorithm that rejected real IDs.
+	VALID = ("10100834460", "10380284790", "10103367860", "14002892636", "۱۰۳۸۰۲۸۴۷۹۰")
 
 	def test_valid(self):
 		for code in self.VALID:
 			self.assertTrue(validators.is_valid_legal_national_id(code), code)
 
 	def test_bad_check_digit(self):
-		self.assertFalse(validators.is_valid_legal_national_id("24005678900"))
+		self.assertFalse(validators.is_valid_legal_national_id("10100834461"))
+		self.assertFalse(validators.is_valid_legal_national_id("10380284795"))
 
 	def test_wrong_length(self):
 		self.assertFalse(validators.is_valid_legal_national_id("1234567890"))
