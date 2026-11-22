@@ -128,7 +128,7 @@ class FardaHome {
 				<section class="fh-modules" aria-label="قابلیت‌ها">
 					<header class="fh-section-head">
 						<h2>بخش‌های برنامه</h2>
-						<p>بخش‌های فردا و کاری که هر کدام انجام می‌دهد</p>
+						<p>بخش‌های سیمراکس و کاری که هر کدام انجام می‌دهد — <a class="fh-all-modules" href="/desk">نمای همهٔ ماژول‌ها</a></p>
 					</header>
 					<div class="fh-module-list">${FardaHome.MODULES.map((m) => this.module_row(m)).join("")}</div>
 				</section>
@@ -159,6 +159,11 @@ class FardaHome {
 			e.preventDefault();
 			const t = this._links[e.currentTarget.dataset.fh];
 			if (t) this.go(t);
+		});
+		this.$root.on("click", ".fh-all-modules", (e) => {
+			e.preventDefault();
+			try { sessionStorage.setItem("farda_show_grid", "1"); } catch (err) { /* private mode */ }
+			window.location.href = "/desk";
 		});
 		this.$root.on("click", "[data-fh-go]", (e) => this.go(JSON.parse(e.currentTarget.dataset.fhGo)));
 		this.$root.on("change", ".fh-company-select", (e) => {

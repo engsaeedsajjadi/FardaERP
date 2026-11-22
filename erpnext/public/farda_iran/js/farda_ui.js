@@ -431,21 +431,24 @@
 	window.FardaIR.parseJalaliInput = parseJalaliInput;
 	window.FardaIR.jMonthLength = jMonthLength;
 
-	/* Persian home (CORE-022): Persian users land on «سیمراکس» once per browser
-	 * session instead of the bare app grid, and the FardaERP workspace (whose
-	 * job is the sidebar) opens the home page. */
+	/* Persian home (CORE-022, CORE-040): for Persian users the bare app grid at
+	 * /desk is replaced by the «سیمراکس» home every time — the grid of English
+	 * module names was the most confusing screen in the product. The grid stays
+	 * reachable from the home page («نمای همهٔ ماژول‌ها» sets a one-visit flag). The
+	 * FardaERP workspace (whose job is the sidebar) also opens the home page. */
 	function homeRouting() {
 		if (!window.frappe || !frappe.router || !frappe.boot || (frappe.boot.lang || "").slice(0, 2) !== "fa") { return; }
 		if (!frappe.boot.farda_iran || frappe.boot.farda_iran.home === false) { return; }
-		var KEY = "farda_home_landed";
 		var check = function () {
 			var r = frappe.get_route() || [];
-			var atDesktop = r.length === 0 || (r.length === 1 && !r[0]);
+			var atDesktop = r.length === 0 || (r.length === 1 && (!r[0] || r[0] === "desk"));
 			var atFardaWs = r[0] === "Workspaces" && r[1] === "FardaERP";
-			var landed = false;
-			try { landed = sessionStorage.getItem(KEY) === "1"; } catch (e) { landed = true; }
-			if (atFardaWs || (atDesktop && !landed)) {
-				try { sessionStorage.setItem(KEY, "1"); } catch (e) { /* private mode */ }
+			var wantsGrid = false;
+			try {
+				wantsGrid = sessionStorage.getItem("farda_show_grid") === "1";
+				if (wantsGrid && !atDesktop) { sessionStorage.removeItem("farda_show_grid"); }
+			} catch (e) { /* private mode */ }
+			if (atFardaWs || (atDesktop && !wantsGrid)) {
 				frappe.set_route("farda-home");
 			}
 		};

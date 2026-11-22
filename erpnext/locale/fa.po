@@ -18528,7 +18528,7 @@ msgstr "ERPNext"
 #: erpnext/setup/workspace/erpnext_settings/erpnext_settings.json
 #: erpnext/workspace_sidebar/erpnext_settings.json
 msgid "ERPNext Settings"
-msgstr "تنظیمات ERPNext"
+msgstr "تنظیمات عمومی"
 
 #. Label of the user_id (Data) field in DocType 'Employee Group Table'
 #: erpnext/setup/doctype/employee_group_table/employee_group_table.json
@@ -64603,3 +64603,11 @@ msgstr "فیش حقوق فارسی"
 #. FardaERP (CORE-038)
 msgid "Farda Visitor"
 msgstr "ویزیتور (سفارش‌گیری موبایل)"
+
+#. FardaERP desktop (CORE-040)
+msgid "Frappe HR"
+msgstr "منابع انسانی"
+
+#. FardaERP desktop (CORE-040)
+msgid "Framework"
+msgstr "مدیریت سیستم"
