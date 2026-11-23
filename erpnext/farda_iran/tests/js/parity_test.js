@@ -15,6 +15,7 @@ function loadFardaIR() {
 	sandbox.window = sandbox; // window === global like a browser global scope
 	vm.createContext(sandbox);
 	vm.runInContext(code, sandbox);
+	sandbox.FardaIR.__sandbox = sandbox;
 	return sandbox.FardaIR;
 }
 
@@ -57,6 +58,21 @@ check("toman 1,000,000", F.irrToTomanText("1,000,000", 10), "100,000");
 check("toman 1234567.5 irr", F.irrToTomanText("12345675", 10), "1,234,567.5");
 check("toman negative", F.irrToTomanText("-500,000", 10), "-50,000");
 check("toman zero", F.irrToTomanText("0", 10), "0");
+
+// 4) Jalali period labels for charts / period report columns (CORE-048)
+F.__sandbox.frappe = { datetime: { user_to_str: (s) => { const m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : s; } } };
+const L = F.jalaliPeriodLabel;
+check("label month", L("Nov 2025"), "آبان–آذر 1404");
+check("label month across years", L("Mar 2026"), "اسفند 1404–فروردین 1405");
+check("label persian gregorian month", L("اوت 2026"), "مرداد–شهریور 1405");
+check("label iso date", L("2026-01-31"), "11/11/1404");
+check("label user date", L("30-11-2025"), "09/09/1404");
+check("label quarter", L("Jan-Mar 2026"), "دی 1404–فروردین 1405");
+check("label month only + suffix", L("سپتامبر (مبلغ)").endsWith(" (مبلغ)"), true);
+check("label untouched text", L("Total"), "Total");
+check("label untouched jalali year", L("1405"), "1405");
+check("labels all years", F.relabel(["2025", "2026"]), ["1403–1404", "1404–1405"]);
+check("labels mixed keep years", F.relabel(["2025", "x"]), ["2025", "x"]);
 
 if (failures > 0) {
 	console.error(`JS parity tests: ${failures} FAILURES`);

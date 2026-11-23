@@ -109,7 +109,7 @@
 	function userDateToIso(s) {
 		s = String(s);
 		if (/^\d{4}-\d{2}-\d{2}/.test(s)) { return s.slice(0, 10); }
-		if (frappe.datetime && frappe.datetime.user_to_str) {
+		if (typeof frappe !== "undefined" && frappe.datetime && frappe.datetime.user_to_str) {
 			var iso = frappe.datetime.user_to_str(s, false);
 			if (iso && /^\d{4}-\d{2}-\d{2}/.test(iso)) { return iso.slice(0, 10); }
 		}
@@ -525,9 +525,125 @@
 		}, 500);
 	}
 
+	/* ------------------------------------------------------------------
+	 * Jalali period labels (CORE-048)
+	 * Charts and period-based reports (dashboards, Sales Analytics, Trends,
+	 * Profit and Loss …) build their buckets on the Gregorian calendar and
+	 * label them "Nov 2025", "30-11-2025", "2026", «نوامبر» or a fiscal-year
+	 * name such as "2026-2027". Relabel them for Persian users: a date becomes
+	 * the Jalali date, a Gregorian month the Jalali month(s) it covers
+	 * («آبان–آذر 1404»), a year or fiscal year its Jalali years. Only labels
+	 * change; the numbers and the buckets stay exactly as computed.
+	 * ------------------------------------------------------------------ */
+	var G_MONTH = {
+		jan: 1, january: 1, "ژانویه": 1, "ژان": 1, "ژانویهٔ": 1, feb: 2, february: 2, "فوریه": 2, "فور": 2,
+		mar: 3, march: 3, "مارس": 3, apr: 4, april: 4, "آوریل": 4, "آور": 4, may: 5, "مه": 5, "می": 5,
+		jun: 6, june: 6, "ژوئن": 6, jul: 7, july: 7, "ژوئیه": 7, "ژوئیهٔ": 7, "جولای": 7,
+		aug: 8, august: 8, "اوت": 8, "آگوست": 8, sep: 9, sept: 9, september: 9, "سپتامبر": 9, "سپت": 9,
+		oct: 10, october: 10, "اکتبر": 10, nov: 11, november: 11, "نوامبر": 11, "نوا": 11,
+		dec: 12, december: 12, "دسامبر": 12
+	};
+	var FISCAL = {};  // fiscal-year name → "1405" / "1405–1406"
+	function gMonthNo(word) { return G_MONTH[String(word || "").replace(/\.$/, "").toLowerCase()] || 0; }
+	function gDaysIn(gy, gm) { return new Date(gy, gm, 0).getDate(); }
+	function jSpan(a, b) {  // a, b = [jy, jm, jd]
+		var J = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+		if (a[0] === b[0] && a[1] === b[1]) { return J[a[1] - 1] + " " + a[0]; }
+		if (a[0] === b[0]) { return J[a[1] - 1] + "–" + J[b[1] - 1] + " " + a[0]; }
+		return J[a[1] - 1] + " " + a[0] + "–" + J[b[1] - 1] + " " + b[0];
+	}
+	function gMonthsLabel(gy, m1, m2) {
+		return jSpan(gregorianToJalali(gy, m1, 1), gregorianToJalali(gy, m2, gDaysIn(gy, m2)));
+	}
+	function jalaliPeriodLabel(label, ctx) {
+		if (label === null || label === undefined) { return label; }
+		var s = String(label).trim(), m;
+		if (!s || s.length > 60) { return label; }
+		if (FISCAL[s]) { return FISCAL[s]; }
+		// a full date: ISO or the user's date format
+		if (/^\d{1,4}[-\/.]\d{1,2}[-\/.]\d{1,4}$/.test(s)) {
+			var iso = userDateToIso(s);
+			return iso && +iso.slice(0, 4) > 1900 ? toJalaliDisplay(iso) : label;
+		}
+		// "Nov 2025", "Nov-2025", «نوامبر 2026»
+		m = s.match(/^([A-Za-z؀-ۿ‌]+)\.?[\s\-,]+((?:19|20)\d{2})$/);
+		if (m && gMonthNo(m[1])) { return gMonthsLabel(+m[2], gMonthNo(m[1]), gMonthNo(m[1])); }
+		// quarter / range: "Jan-Mar 2026", "Jan 2026 - Mar 2026"
+		m = s.match(/^([A-Za-z؀-ۿ]+)\.?(?:\s+((?:19|20)\d{2}))?\s*[-–]\s*([A-Za-z؀-ۿ]+)\.?\s+((?:19|20)\d{2})$/);
+		if (m && gMonthNo(m[1]) && gMonthNo(m[3])) {
+			var y1 = +(m[2] || m[4]), y2 = +m[4];
+			return jSpan(gregorianToJalali(y1, gMonthNo(m[1]), 1), gregorianToJalali(y2, gMonthNo(m[3]), gDaysIn(y2, gMonthNo(m[3]))));
+		}
+		// a month name alone, optionally with a suffix: «سپتامبر (مبلغ)»
+		m = s.match(/^([A-Za-z؀-ۿ]+)(\s*\(.+\))?$/);
+		if (m && gMonthNo(m[1])) {
+			var y = (ctx && ctx.year) || new Date().getFullYear();
+			var lab = gMonthsLabel(y, gMonthNo(m[1]), gMonthNo(m[1])).replace(/\s\d{4}.*$/, "");
+			return lab + (m[2] || "");
+		}
+		// a calendar year, only when every label of the series is a year
+		if (ctx && ctx.allYears && /^(?:19|20)\d{2}$/.test(s)) {
+			var a = gregorianToJalali(+s, 1, 1)[0], b = gregorianToJalali(+s, 12, 31)[0];
+			return a === b ? String(a) : a + "–" + b;
+		}
+		return label;
+	}
+	function relabel(list) {
+		if (!Array.isArray(list)) { return list; }
+		var ctx = { allYears: list.length > 0 && list.every(function (x) { return /^(?:19|20)\d{2}$/.test(String(x).trim()); }) };
+		return list.map(function (x) { return jalaliPeriodLabel(x, ctx); });
+	}
+	function chartData(d) {
+		if (d && Array.isArray(d.labels)) { d = $.extend({}, d, { labels: relabel(d.labels) }); }
+		return d;
+	}
+	function persianPeriodLabels() {
+		try {
+			frappe.db.get_list("Fiscal Year", { fields: ["name", "year_start_date", "year_end_date"], limit: 100 }).then(function (rows) {
+				(rows || []).forEach(function (r) {
+					var a = isoToJalaliParts(r.year_start_date)[0], b = isoToJalaliParts(r.year_end_date)[0];
+					FISCAL[r.name] = "سال مالی " + (a === b ? a : a + "–" + b);
+				});
+			});
+		} catch (e) { /* no permission: keep names */ }
+		var tries = 0;
+		var timer = setInterval(function () {
+			var C = frappe.Chart, QR = frappe.views && frappe.views.QueryReport;
+			if (C && !C.__farda) {
+				var Wrapped = function (parent, options) {
+					if (options && options.data) { options = $.extend({}, options, { data: chartData(options.data) }); }
+					var chart = new C(parent, options);
+					if (chart && typeof chart.update === "function") {
+						var up = chart.update;
+						chart.update = function (d) { return up.call(this, chartData(d)); };
+					}
+					return chart;
+				};
+				Wrapped.prototype = C.prototype;
+				Object.keys(C).forEach(function (k) { Wrapped[k] = C[k]; });
+				Wrapped.__farda = true;
+				frappe.Chart = Wrapped;
+			}
+			if (QR && !QR.prototype.__fardaPeriods) {
+				var prep = QR.prototype.prepare_columns;
+				QR.prototype.prepare_columns = function (columns) {
+					var out = prep.apply(this, arguments);
+					var ctx = { allYears: false };
+					(out || []).forEach(function (c) { if (c && c.name) { c.name = jalaliPeriodLabel(c.name, ctx); } });
+					return out;
+				};
+				QR.prototype.__fardaPeriods = true;
+			}
+			if ((frappe.Chart && frappe.Chart.__farda && QR && QR.prototype.__fardaPeriods) || ++tries > 240) { clearInterval(timer); }
+		}, 500);
+	}
+	window.FardaIR = window.FardaIR || {};
+	window.FardaIR.jalaliPeriodLabel = jalaliPeriodLabel;
+	window.FardaIR.relabel = relabel;
+
 	if (window.frappe) {
 		apply();
-		if ((frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa") && document.body) { persianTooltips(); persianCurrencyLabels(); }
+		if ((frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa") && document.body) { persianTooltips(); persianCurrencyLabels(); if (flags().jalali) { persianPeriodLabels(); } }
 		if (frappe.router) { homeRouting(); } else { $(document).on("app_ready", homeRouting); }
 		if (flags().jalali && (frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa")) { jalaliControls(); }
 	} else {
