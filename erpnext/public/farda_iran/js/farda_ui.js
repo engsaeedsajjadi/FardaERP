@@ -469,8 +469,41 @@
 		}
 	} catch (e) { /* storage blocked */ }
 
+	/* A few tooltips are hard-coded in English inside Frappe's bundles
+	 * (frappe-datatable, the list filter button) and never pass through __().
+	 * Rewrite just those title attributes for Persian users. */
+	var TITLE_FIXES = [
+		[/^Filter based on (.*)$/, "فیلتر بر اساس $1"],
+		[/^1 Filter Applied$/i, "۱ فیلتر اعمال شده"],
+		[/^(\d+) Filters? Applied$/i, "$1 فیلتر اعمال شده"],
+	];
+	function persianTooltips() {
+		function fix(el) {
+			var t = el.getAttribute("title");
+			if (!t || !/[A-Za-z]/.test(t)) return;
+			for (var i = 0; i < TITLE_FIXES.length; i++) {
+				if (TITLE_FIXES[i][0].test(t)) {
+					el.setAttribute("title", t.replace(TITLE_FIXES[i][0], TITLE_FIXES[i][1]));
+					return;
+				}
+			}
+		}
+		document.querySelectorAll("[title]").forEach(fix);
+		new MutationObserver(function (muts) {
+			muts.forEach(function (m) {
+				if (m.type === "attributes") { fix(m.target); return; }
+				m.addedNodes.forEach(function (n) {
+					if (n.nodeType !== 1) return;
+					if (n.hasAttribute("title")) fix(n);
+					n.querySelectorAll && n.querySelectorAll("[title]").forEach(fix);
+				});
+			});
+		}).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
+	}
+
 	if (window.frappe) {
 		apply();
+		if ((frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa") && document.body) { persianTooltips(); }
 		if (frappe.router) { homeRouting(); } else { $(document).on("app_ready", homeRouting); }
 		if (flags().jalali && (frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa")) { jalaliControls(); }
 	} else {
