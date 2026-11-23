@@ -228,6 +228,14 @@ COPY --from=builder --chown=frappe:frappe \
     /home/frappe/frappe-bench \
     /home/frappe/frappe-bench
 
+# The "sites" volume hides sites/assets of every new image, so the asset
+# manifests (hashed bundle names) the backend renders into each page would
+# stay those of the FIRST install and point at files the new frontend no
+# longer has (unstyled pages). Keep this build's manifests outside sites/;
+# the entrypoint copies them onto the volume at every start.
+RUN mkdir -p /home/frappe/asset-manifests && \
+    cp /home/frappe/frappe-bench/sites/assets/assets*.json /home/frappe/asset-manifests/ 2>/dev/null || true
+
 
 # ------------------------------------------------------------
 # Node runtime

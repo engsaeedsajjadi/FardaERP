@@ -56,6 +56,17 @@ with open("sites/.common_site_config.lock", "w") as lock:
 PY
 cd "$BENCH"
 
+# --- asset manifests from THIS image (see Dockerfile) --------------------
+if [ -d /home/frappe/asset-manifests ] && ls /home/frappe/asset-manifests/assets*.json >/dev/null 2>&1; then
+	mkdir -p sites/assets
+	for f in /home/frappe/asset-manifests/assets*.json; do
+		dest="sites/assets/$(basename "$f")"
+		if ! cmp -s "$f" "$dest"; then
+			cp "$f" "$dest.tmp.$$" && mv -f "$dest.tmp.$$" "$dest" || true
+		fi
+	done
+fi
+
 # --- wait for dependencies ---------------------------------------------
 wait_tcp() { # host port label
 	local host="$1" port="$2" label="$3" i=0
