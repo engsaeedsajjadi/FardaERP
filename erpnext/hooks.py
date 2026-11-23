@@ -63,6 +63,8 @@ welcome_email = "erpnext.setup.utils.welcome_email"
 # setup wizard
 setup_wizard_requires = "assets/erpnext/js/setup_wizard.js"
 setup_wizard_stages = "erpnext.setup.setup_wizard.setup_wizard.get_setup_stages"
+# CORE-050: Persian sites get Jalali fiscal-year names («1405») after setup
+setup_wizard_complete = ["erpnext.farda_iran.setup.fiscal_year.after_setup_wizard"]
 
 after_install = "erpnext.setup.install.after_install"
 

@@ -556,6 +556,9 @@ def ensure_brand() -> None:
 			"splash_image": BRAND + "simorax-logo-stacked-on-light.svg",
 		},
 		"Navbar Settings": {"app_logo": BRAND + "simorax-app-icon.svg"},
+		# CORE-050: the name in emails, the login page title and the
+		# authenticator-app entry for two-step login
+		"System Settings": {"app_name": BRAND_NAME, "otp_issuer_name": BRAND_NAME},
 	}
 	for doctype, values in wanted.items():
 		if not frappe.db.exists("DocType", doctype):
@@ -565,8 +568,8 @@ def ensure_brand() -> None:
 			if not meta.has_field(field):
 				continue
 			current = frappe.db.get_single_value(doctype, field)
-			if field == "app_name":
-				if current in (None, "", "ERPNext", "Frappe", "FardaERP", "فردا ERP"):
+			if field in ("app_name", "otp_issuer_name"):
+				if current in (None, "", "ERPNext", "Frappe", "Frappe Framework", "FardaERP", "فردا ERP"):
 					frappe.db.set_single_value(doctype, field, value)
 			elif stock(current):
 				frappe.db.set_single_value(doctype, field, value)

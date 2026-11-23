@@ -161,3 +161,23 @@ class TestWorkflows(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class TestFiscalYearNames(unittest.TestCase):
+	def test_names(self):
+		try:
+			from farda_iran.setup import fiscal_year as FY
+		except ImportError:
+			from erpnext.farda_iran.setup import fiscal_year as FY
+		import datetime
+
+		self.assertEqual(FY.jalali_fy_name(datetime.date(2026, 3, 21), datetime.date(2027, 3, 20)), "1405")
+		self.assertEqual(FY.jalali_fy_name(datetime.date(2026, 6, 23), datetime.date(2027, 6, 22)), "1405-1406")
+		self.assertTrue(FY.is_gregorian_name("2026-2027"))
+		self.assertTrue(FY.is_gregorian_name("2026"))
+		self.assertFalse(FY.is_gregorian_name("1405"))
+		self.assertFalse(FY.is_gregorian_name("FY 2026"))
+
+
+if __name__ == "__main__":
+	unittest.main()
