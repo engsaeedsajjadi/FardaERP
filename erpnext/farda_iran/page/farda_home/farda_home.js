@@ -442,6 +442,7 @@ FardaHome.MODULES = [
 			{ label: "دریافت و پرداخت", go: ["list", "Payment Entry"] },
 			{ label: "گزارش بانک", go: ["report", "Farda Bank Report"], report: 1 },
 			{ label: "گزارش چک", go: ["report", "Farda Cheque Report"], report: 1 },
+			{ label: "پرداخت گروهی بانکی", go: ["list", "Farda Bank Payment Batch"] },
 		],
 	},
 	{
@@ -456,6 +457,8 @@ FardaHome.MODULES = [
 			{ label: "سود و زیان", go: ["report", "Farda Profit and Loss"], report: 1 },
 			{ label: "ترازنامه", go: ["report", "Farda Balance Sheet"], report: 1 },
 			{ label: "جریان وجوه نقد", go: ["report", "Farda Cash Flow"], report: 1 },
+			{ label: "دفتر روزنامهٔ قانونی", go: ["report", "Farda Legal Journal"], report: 1 },
+			{ label: "دفتر کل قانونی", go: ["report", "Farda Legal Ledger"], report: 1 },
 		],
 	},
 	{
@@ -466,6 +469,7 @@ FardaHome.MODULES = [
 			{ label: "تنظیمات ارزش افزوده", go: ["form", "Farda VAT Settings"], doctype: "Farda VAT Settings" },
 			{ label: "قالب‌های مالیاتی کالا", go: ["list", "Item Tax Template"] },
 			{ label: "گزارش ارزش افزوده", go: ["report", "Farda VAT Report"], report: 1 },
+			{ label: "معاملات فصلی", go: ["report", "Farda Seasonal Transactions"], report: 1 },
 			{ label: "مانده طرف‌حساب‌ها", go: ["report", "Farda Party Balance"], report: 1 },
 		],
 	},

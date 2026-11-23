@@ -37,6 +37,7 @@ MODULES = (
 	"test_payroll_engine",
 	"test_sso_disk",
 	"test_assistant_core",
+	"test_phase1_core",
 )
 
 

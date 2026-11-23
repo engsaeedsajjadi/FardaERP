@@ -51,6 +51,9 @@ REPORT_ALLOWLIST: frozenset[str] = frozenset(
 		"farda_cash_flow",
 		"farda_profit_and_loss",
 		"farda_balance_sheet",
+		"farda_seasonal_transactions",
+		"farda_legal_journal",
+		"farda_legal_ledger",
 	}
 )
 
@@ -75,6 +78,9 @@ REPORT_DOC_NAMES: dict[str, str] = {
 	"farda_cash_flow": "Farda Cash Flow",
 	"farda_profit_and_loss": "Farda Profit and Loss",
 	"farda_balance_sheet": "Farda Balance Sheet",
+	"farda_seasonal_transactions": "Farda Seasonal Transactions",
+	"farda_legal_journal": "Farda Legal Journal",
+	"farda_legal_ledger": "Farda Legal Ledger",
 }
 
 # farda.reports.run per-user sliding-window budget (heavy aggregations).

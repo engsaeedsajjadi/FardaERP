@@ -1,0 +1,200 @@
+{
+ "actions": [],
+ "autoname": "format:BPB-{YYYY}-{#####}",
+ "creation": "2026-11-23 11:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "bank",
+  "file_format",
+  "column_main",
+  "posting_date",
+  "status",
+  "currency",
+  "source_section",
+  "source",
+  "payroll_entry",
+  "due_until",
+  "description",
+  "rows_section",
+  "rows",
+  "totals_section",
+  "row_count",
+  "column_tot",
+  "total_amount",
+  "file_section",
+  "bank_file"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "شرکت",
+   "options": "Company",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Select",
+   "label": "بانک پرداخت‌کننده",
+   "options": "ملت\nملی\nسامان\nپاسارگاد\nتجارت\nصادرات",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "file_format",
+   "fieldtype": "Select",
+   "label": "قالب فایل",
+   "options": "پایا گروهی (اکسل)\nملت — واریز گروهی (.PAY)",
+   "default": "پایا گروهی (اکسل)",
+   "reqd": 1,
+   "description": "پایا گروهی (اکسل): انتقال به هر بانکی با شبا. ملت (.PAY): فقط واریز به حساب‌های بانک ملت."
+  },
+  {
+   "fieldname": "column_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "تاریخ",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "وضعیت",
+   "options": "پیش‌نویس\nفایل ساخته شد\nپرداخت شد",
+   "default": "پیش‌نویس",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "ارز",
+   "options": "Currency",
+   "default": "IRR",
+   "hidden": 1
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "آوردن ردیف‌ها"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "منبع",
+   "options": "حقوق ماهانه\nفاکتورهای خرید پرداخت‌نشده\nدستی",
+   "default": "حقوق ماهانه",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payroll_entry",
+   "fieldtype": "Link",
+   "label": "ثبت حقوق و دستمزد",
+   "options": "Payroll Entry",
+   "depends_on": "eval:doc.source=='حقوق ماهانه'"
+  },
+  {
+   "fieldname": "due_until",
+   "fieldtype": "Date",
+   "label": "سررسید تا",
+   "depends_on": "eval:doc.source=='فاکتورهای خرید پرداخت‌نشده'"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "label": "شرح پرداخت",
+   "description": "در فایل بانک برای هر ردیف می‌آید؛ مثلاً «حقوق آبان ۱۴۰۵»."
+  },
+  {
+   "fieldname": "rows_section",
+   "fieldtype": "Section Break",
+   "label": "ردیف‌های پرداخت"
+  },
+  {
+   "fieldname": "rows",
+   "fieldtype": "Table",
+   "label": "ردیف‌ها",
+   "options": "Farda Bank Payment Row"
+  },
+  {
+   "fieldname": "totals_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "row_count",
+   "fieldtype": "Int",
+   "label": "تعداد",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_tot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "جمع (ریال)",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "file_section",
+   "fieldtype": "Section Break",
+   "label": "فایل بانک"
+  },
+  {
+   "fieldname": "bank_file",
+   "fieldtype": "Attach",
+   "label": "فایل ساخته‌شده",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-23 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Farda Iran",
+ "name": "Farda Bank Payment Batch",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "track_changes": 1,
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1,
+   "export": 1,
+   "print": 1,
+   "report": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1,
+   "export": 1,
+   "print": 1,
+   "report": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts User",
+   "report": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "description"
+}

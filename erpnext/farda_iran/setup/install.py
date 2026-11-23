@@ -661,6 +661,14 @@ TRANSLATION_OVERRIDES = {
 	"API Request Log": "گزارش درخواست‌های رابط برنامه",
 	"Webhook Request Log": "گزارش درخواست‌های وب‌هوک",
 	"Slack Webhook URL": "آدرس وب‌هوک اسلک",
+	# CORE-046 — new reports, doctypes and approval roles
+	"Farda Seasonal Transactions": "معاملات فصلی",
+	"Farda Legal Journal": "دفتر روزنامهٔ قانونی",
+	"Farda Legal Ledger": "دفتر کل قانونی",
+	"Farda Bank Payment Batch": "پرداخت گروهی بانکی",
+	"Farda Bank Payment Row": "ردیف پرداخت گروهی",
+	"Farda CEO": "مدیرعامل",
+	"Farda Unit Manager": "مدیر واحد",
 }
 
 
@@ -719,10 +727,13 @@ def ensure_workspace() -> None:
 		("گزارش بانک", "Report", "Farda Bank Report"),
 		("چک‌ها", "DocType", "Cheque"),
 		("گزارش چک", "Report", "Farda Cheque Report"),
+		("پرداخت گروهی بانکی", "DocType", "Farda Bank Payment Batch"),
 		("گزارش فروش", "Report", "Farda Sales Register"),
 		("گزارش خرید", "Report", "Farda Purchase Register"),
 		("گزارش مالیات بر ارزش افزوده", "Report", "Farda VAT Report"),
 		("مانده طرف‌حساب‌ها", "Report", "Farda Party Balance"),
+		("دفتر روزنامهٔ قانونی", "Report", "Farda Legal Journal"),
+		("دفتر کل قانونی", "Report", "Farda Legal Ledger"),
 	]
 	# CORE-022: the workspace's job in v16 is the sidebar + desktop icon; its page
 	# redirects to the «سیمراکس» home (farda_ui.js). Content is kept to valid
@@ -792,6 +803,7 @@ SIDEBAR = [
 		("دریافت و پرداخت", "DocType", "Payment Entry"),
 		("گزارش بانک", "Report", "Farda Bank Report"),
 		("گزارش چک", "Report", "Farda Cheque Report"),
+		("پرداخت گروهی بانکی", "DocType", "Farda Bank Payment Batch"),
 	]),
 	("حسابداری", None, None, "accounting", [
 		("سرفصل حساب‌ها", "DocType", "Account"),
@@ -802,11 +814,14 @@ SIDEBAR = [
 		("ترازنامه", "Report", "Farda Balance Sheet"),
 		("جریان وجوه نقد", "Report", "Farda Cash Flow"),
 		("مانده طرف‌حساب‌ها", "Report", "Farda Party Balance"),
+		("دفتر روزنامهٔ قانونی", "Report", "Farda Legal Journal"),
+		("دفتر کل قانونی", "Report", "Farda Legal Ledger"),
 	]),
 	("مالیات بر ارزش افزوده", None, None, "book-text", [
 		("تنظیمات ارزش افزوده", "DocType", "Farda VAT Settings"),
 		("قالب‌های مالیاتی کالا", "DocType", "Item Tax Template"),
 		("گزارش ارزش افزوده", "Report", "Farda VAT Report"),
+		("معاملات فصلی", "Report", "Farda Seasonal Transactions"),
 	]),
 	("حقوق و دستمزد", None, None, "users", [
 		("کارکنان", "DocType", "Employee"),
@@ -836,6 +851,7 @@ SIDEBAR = [
 		("تراکنش‌های درگاه", "DocType", "Farda Payment Log"),
 		("گزارش ممیزی", "DocType", "Farda Audit Log"),
 		("تنظیمات دستیار", "DocType", "Farda Assistant Settings"),
+		("گردش‌های تأیید", "DocType", "Workflow"),
 	]),
 ]
 
@@ -952,6 +968,12 @@ def execute() -> str:
 		ensure_ui_assets()
 	except Exception:
 		frappe.log_error("farda_iran: UI asset copy failed")  # non-fatal outside a site
+	try:
+		from erpnext.farda_iran.setup.workflows import ensure_workflows
+
+		ensure_workflows()
+	except Exception:
+		frappe.log_error("farda_iran: workflows setup failed")  # non-fatal
 	try:
 		ensure_translation_overrides()
 	except Exception:
