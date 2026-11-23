@@ -82,10 +82,11 @@ def get_data_by_time(filters, common_columns):
 			data = customers_in.get(key)
 			new = data["new"] if data else [0, 0.0]
 			repeat = data["repeat"] if data else [0, 0.0]
+			year_label, month_label = _period_labels(year, month)
 			out.append(
 				{
-					"year": cstr(year),
-					"month": calendar.month_name[month],
+					"year": year_label,
+					"month": month_label,
 					"new_customers": new[0],
 					"repeat_customers": repeat[0],
 					"total": new[0] + repeat[0],
@@ -95,6 +96,22 @@ def get_data_by_time(filters, common_columns):
 				}
 			)
 	return columns, out
+
+
+def _period_labels(year, month):
+	"""FardaERP CORE-048: Persian users see the Jalali months/year a Gregorian
+	month bucket covers («آبان–آذر», «1404»); others keep the Gregorian names."""
+	if not (getattr(frappe.local, "lang", None) or "").startswith("fa"):
+		return cstr(year), calendar.month_name[month]
+	import datetime
+
+	from erpnext.farda_iran.jalali.service import MONTH_NAMES_FA, date_to_jalali
+
+	a = date_to_jalali(datetime.date(year, month, 1))
+	b = date_to_jalali(datetime.date(year, month, calendar.monthrange(year, month)[1]))
+	months = MONTH_NAMES_FA[a[1] - 1] if a[1] == b[1] else f"{MONTH_NAMES_FA[a[1] - 1]}–{MONTH_NAMES_FA[b[1] - 1]}"
+	years = str(a[0]) if a[0] == b[0] else f"{a[0]}–{b[0]}"
+	return years, months
 
 
 def get_data_by_territory(filters, common_columns):

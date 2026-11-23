@@ -672,6 +672,18 @@ TRANSLATION_OVERRIDES = {
 }
 
 
+def ensure_week_start() -> None:
+	"""CORE-048: Persian sites start the week on Saturday (calendars, date picker).
+	Only changes the stock defaults (Sunday/Monday/empty); an admin's choice stays."""
+	try:
+		if not (frappe.db.get_single_value("System Settings", "language") or "").startswith("fa"):
+			return
+		if (frappe.db.get_single_value("System Settings", "first_day_of_the_week") or "") in ("", "Sunday", "Monday"):
+			frappe.db.set_single_value("System Settings", "first_day_of_the_week", "Saturday")
+	except Exception:
+		frappe.log_error("farda_iran: week start setup failed")  # non-fatal
+
+
 def ensure_translation_overrides() -> None:
 	if not frappe.db.exists("DocType", "Translation"):
 		return
@@ -974,6 +986,7 @@ def execute() -> str:
 		ensure_workflows()
 	except Exception:
 		frappe.log_error("farda_iran: workflows setup failed")  # non-fatal
+	ensure_week_start()
 	try:
 		ensure_translation_overrides()
 	except Exception:

@@ -71,6 +71,7 @@ check("label quarter", L("Jan-Mar 2026"), "دی 1404–فروردین 1405");
 check("label month only + suffix", L("سپتامبر (مبلغ)").endsWith(" (مبلغ)"), true);
 check("label untouched text", L("Total"), "Total");
 check("label untouched jalali year", L("1405"), "1405");
+check("label quarter word", L("Quarter 4 2025"), "مهر–دی 1404");
 check("labels all years", F.relabel(["2025", "2026"]), ["1403–1404", "1404–1405"]);
 check("labels mixed keep years", F.relabel(["2025", "x"]), ["2025", "x"]);
 

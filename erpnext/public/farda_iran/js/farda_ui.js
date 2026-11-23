@@ -543,7 +543,9 @@
 		oct: 10, october: 10, "اکتبر": 10, nov: 11, november: 11, "نوامبر": 11, "نوا": 11,
 		dec: 12, december: 12, "دسامبر": 12
 	};
-	var FISCAL = {};  // fiscal-year name → "1405" / "1405–1406"
+	var PERIOD_CELL = /^[A-Za-z\u0600-\u06FF]+\.?[\s\-,]+(?:19|20)\d{2}$/;
+	var FISCAL = {};
+	var FISCAL_START = null;  // [month, day] of this site's fiscal year start  // fiscal-year name → "1405" / "1405–1406"
 	function gMonthNo(word) { return G_MONTH[String(word || "").replace(/\.$/, "").toLowerCase()] || 0; }
 	function gDaysIn(gy, gm) { return new Date(gy, gm, 0).getDate(); }
 	function jSpan(a, b) {  // a, b = [jy, jm, jd]
@@ -574,6 +576,16 @@
 			var y1 = +(m[2] || m[4]), y2 = +m[4];
 			return jSpan(gregorianToJalali(y1, gMonthNo(m[1]), 1), gregorianToJalali(y2, gMonthNo(m[3]), gDaysIn(y2, gMonthNo(m[3]))));
 		}
+		// "Quarter 4 2025" / "Q4 2025"
+		m = s.match(/^(?:Quarter|Q|سه[\s\u200c]?ماهه)\s*([1-4])\s+((?:19|20)\d{2})$/i);
+		if (m) { var q = +m[1]; return gMonthsLabel(+m[2], 3 * q - 2, 3 * q); }
+		// a fiscal-year-like "2023-2024" that is not one of this site's fiscal years
+		m = s.match(/^((?:19|20)\d{2})\s*[-–]\s*((?:19|20)\d{2})$/);
+		if (m && +m[2] === +m[1] + 1 && FISCAL_START) {
+			var st = gregorianToJalali(+m[1], FISCAL_START[0], FISCAL_START[1])[0];
+			var en = gregorianToJalali(+m[2], FISCAL_START[0], Math.max(1, FISCAL_START[1] - 1))[0];
+			return "سال مالی " + (st === en ? st : st + "–" + en);
+		}
 		// a month name alone, optionally with a suffix: «سپتامبر (مبلغ)»
 		m = s.match(/^([A-Za-z؀-ۿ]+)(\s*\(.+\))?$/);
 		if (m && gMonthNo(m[1])) {
@@ -603,6 +615,7 @@
 				(rows || []).forEach(function (r) {
 					var a = isoToJalaliParts(r.year_start_date)[0], b = isoToJalaliParts(r.year_end_date)[0];
 					FISCAL[r.name] = "سال مالی " + (a === b ? a : a + "–" + b);
+					if (!FISCAL_START && r.year_start_date) { FISCAL_START = [+String(r.year_start_date).slice(5, 7), +String(r.year_start_date).slice(8, 10)]; }
 				});
 			});
 		} catch (e) { /* no permission: keep names */ }
@@ -629,7 +642,19 @@
 				QR.prototype.prepare_columns = function (columns) {
 					var out = prep.apply(this, arguments);
 					var ctx = { allYears: false };
-					(out || []).forEach(function (c) { if (c && c.name) { c.name = jalaliPeriodLabel(c.name, ctx); } });
+					(out || []).forEach(function (c) {
+						if (!c) { return; }
+						if (c.name) { c.name = jalaliPeriodLabel(c.name, ctx); }
+						// cells that hold a month bucket ("Nov 2026": Gross Profit, Fixed Asset Register)
+						if (typeof c.format === "function" && (!c.fieldtype || c.fieldtype === "Data")) {
+							var fmt = c.format;
+							c.format = function (value) {
+								var args = Array.prototype.slice.call(arguments);
+								if (typeof value === "string" && PERIOD_CELL.test(value.trim())) { args[0] = jalaliPeriodLabel(value); }
+								return fmt.apply(this, args);
+							};
+						}
+					});
 					return out;
 				};
 				QR.prototype.__fardaPeriods = true;
