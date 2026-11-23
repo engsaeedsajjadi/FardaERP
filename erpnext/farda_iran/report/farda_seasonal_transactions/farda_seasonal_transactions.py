@@ -83,7 +83,7 @@ def execute(filters=None):
 	rows = build_rows(invoices, _parties(kind, {i.party for i in invoices}), limit)
 
 	columns = [
-		{"label": _("ردیف"), "fieldname": "idx", "fieldtype": "Int", "width": 60},
+		{"label": _("ردیف"), "fieldname": "idx", "fieldtype": "Data", "width": 60},
 		{"label": _("نوع شخص"), "fieldname": "person_type", "fieldtype": "Data", "width": 100},
 		{"label": _("کد ملی / شناسه ملی"), "fieldname": "identity", "fieldtype": "Data", "width": 130},
 		{"label": _("کد اقتصادی"), "fieldname": "economic_code", "fieldtype": "Data", "width": 120},

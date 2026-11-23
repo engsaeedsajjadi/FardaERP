@@ -40,11 +40,9 @@ server {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=3600";
     }
-    # private files are only delivered via frappe's X-Accel-Redirect
-    location /private/files/ {
-        internal;
-        alias /var/www/sites/$farda_site/private/files/;
-    }
+    # private files (/private/files/…) are NOT served here: they fall through to
+    # frappe (location /), which checks the user's permission and streams the
+    # file. An internal-only block here made every private download a 404.
     location /protected/ {
         internal;
         alias /var/www/sites/$farda_site/protected/;
