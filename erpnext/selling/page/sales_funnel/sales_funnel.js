@@ -43,8 +43,27 @@ erpnext.SalesFunnel = class SalesFunnel {
 		})),
 			(this.elements = {
 				layout: $(wrapper).find(".layout-main"),
-				from_date: wrapper.page.add_date(__("From Date")),
-				to_date: wrapper.page.add_date(__("To Date")),
+				// FardaERP CORE-048: real Date controls (Jalali calendar for Persian users)
+				from_date: wrapper.page.add_field({
+					fieldname: "from_date",
+					label: __("From Date"),
+					fieldtype: "Date",
+					default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+					change: function () {
+						me.options.from_date = this.get_value() || frappe.datetime.get_today();
+						me.get_data();
+					},
+				}),
+				to_date: wrapper.page.add_field({
+					fieldname: "to_date",
+					label: __("To Date"),
+					fieldtype: "Date",
+					default: frappe.datetime.get_today(),
+					change: function () {
+						me.options.to_date = this.get_value() || frappe.datetime.get_today();
+						me.get_data();
+					},
+				}),
 				chart: wrapper.page.add_select(__("Chart"), [
 					{ value: "sales_funnel", label: __("Sales Funnel") },
 					{ value: "sales_pipeline", label: __("Sales Pipeline") },
@@ -77,24 +96,11 @@ erpnext.SalesFunnel = class SalesFunnel {
 		};
 
 		// set defaults and bind on change
-		$.each(this.options, function (k, v) {
-			if (["from_date", "to_date"].includes(k)) {
-				me.elements[k].val(frappe.datetime.str_to_user(v));
-			} else {
-				me.elements[k].val(v);
-			}
-
-			me.elements[k].on("change", function () {
-				if (["from_date", "to_date"].includes(k)) {
-					me.options[k] =
-						frappe.datetime.user_to_str($(this).val()) != "Invalid date"
-							? frappe.datetime.user_to_str($(this).val())
-							: frappe.datetime.get_today();
-				} else {
-					me.options.chart = $(this).val();
-				}
-				me.get_data();
-			});
+		// dates are controls with their own defaults/change handlers (above)
+		me.elements.chart.val(this.options.chart);
+		me.elements.chart.on("change", function () {
+			me.options.chart = $(this).val();
+			me.get_data();
 		});
 
 		// bind refresh
