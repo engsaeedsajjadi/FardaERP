@@ -582,6 +582,15 @@ def ensure_brand() -> None:
 			values = {f: v for f, v in (("label", name), ("logo_url", BRAND + "simorax-app-icon.svg")) if meta.has_field(f)}
 			frappe.db.set_value("Desktop Icon", name, values, update_modified=False)
 			frappe.cache.delete_key("desktop_icons")
+	# CORE-045: the help menu must not send Simorax users to the upstream vendor's support site
+	if frappe.db.exists("DocType", "Navbar Item"):
+		for item in frappe.get_all(
+			"Navbar Item",
+			filters={"parent": "Navbar Settings", "parentfield": "help_dropdown", "hidden": 0},
+			fields=["name", "route"],
+		):
+			if "frappe.io" in (item.route or "") or "erpnext.com" in (item.route or ""):
+				frappe.db.set_value("Navbar Item", item.name, "hidden", 1, update_modified=False)
 	frappe.clear_cache()
 
 

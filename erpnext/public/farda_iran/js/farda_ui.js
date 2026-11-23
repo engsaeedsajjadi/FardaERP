@@ -501,9 +501,29 @@
 		}).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
 	}
 
+	/* Form fields show money labels as "Rate (IRR)" — the ISO code. Persian
+	 * users read «نرخ (ریال)». Only the label text changes; values, formatting
+	 * and the stored currency stay as they are. The form bundle can load after
+	 * this file, so patch it once it exists. */
+	var CURRENCY_FA = { IRR: "ریال", IRT: "تومان", USD: "دلار", EUR: "یورو", AED: "درهم", TRY: "لیر", CNY: "یوان" };
+	function persianCurrencyLabels() {
+		var tries = 0;
+		var timer = setInterval(function () {
+			var F = frappe.ui && frappe.ui.form && frappe.ui.form.Form;
+			if (F && F.prototype.set_currency_labels && !F.prototype.__fardaCurrency) {
+				var orig = F.prototype.set_currency_labels;
+				F.prototype.set_currency_labels = function (fields, currency, parentfield) {
+					return orig.call(this, fields, CURRENCY_FA[currency] || currency, parentfield);
+				};
+				F.prototype.__fardaCurrency = true;
+			}
+			if ((F && F.prototype.__fardaCurrency) || ++tries > 120) clearInterval(timer);
+		}, 500);
+	}
+
 	if (window.frappe) {
 		apply();
-		if ((frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa") && document.body) { persianTooltips(); }
+		if ((frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa") && document.body) { persianTooltips(); persianCurrencyLabels(); }
 		if (frappe.router) { homeRouting(); } else { $(document).on("app_ready", homeRouting); }
 		if (flags().jalali && (frappe.boot && (frappe.boot.lang || "").slice(0, 2) === "fa")) { jalaliControls(); }
 	} else {
