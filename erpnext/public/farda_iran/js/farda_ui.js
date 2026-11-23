@@ -440,9 +440,13 @@
 		if (!window.frappe || !frappe.router || !frappe.boot || (frappe.boot.lang || "").slice(0, 2) !== "fa") { return; }
 		if (!frappe.boot.farda_iran || frappe.boot.farda_iran.home === false) { return; }
 		var check = function () {
+			// Decide from the real address, not frappe.get_route(): on a full page
+			// load the route is still [] when this first runs, which used to send
+			// every refreshed or bookmarked page (/desk/sales-invoice …) home.
+			var path = (window.location.pathname || "").replace(/\/+$/, "").toLowerCase();
 			var r = frappe.get_route() || [];
-			var atDesktop = r.length === 0 || (r.length === 1 && (!r[0] || r[0] === "desk"));
-			var atFardaWs = r[0] === "Workspaces" && r[1] === "FardaERP";
+			var atDesktop = path === "/desk" || path === "/app";
+			var atFardaWs = path === "/desk/fardaerp" || path === "/app/fardaerp" || (r[0] === "Workspaces" && r[1] === "FardaERP");
 			var wantsGrid = false;
 			try {
 				wantsGrid = sessionStorage.getItem("farda_show_grid") === "1";
@@ -459,7 +463,7 @@
 	/* Desk caches page scripts in localStorage keyed only by metadata_version,
 	 * which a rebuild does not always change — so an updated home page could
 	 * keep showing the old one. Drop our cached pages once per release. */
-	var FARDA_UI_RELEASE = "2026-11-22-brand";
+	var FARDA_UI_RELEASE = "2026-11-23-deeplink";
 	try {
 		if (localStorage.getItem("farda_ui_release") !== FARDA_UI_RELEASE) {
 			Object.keys(localStorage).forEach(function (k) {
