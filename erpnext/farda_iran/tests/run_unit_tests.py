@@ -38,6 +38,7 @@ MODULES = (
 	"test_sso_disk",
 	"test_assistant_core",
 	"test_phase1_core",
+	"test_jalali_format",
 )
 
 

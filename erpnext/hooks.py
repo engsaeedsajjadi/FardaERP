@@ -76,6 +76,10 @@ leaderboards = "erpnext.startup.leaderboard.get_leaderboards"
 filters_config = "erpnext.startup.filters.get_filters_config"
 additional_print_settings = "erpnext.controllers.print_settings.get_print_settings"
 
+# CORE-048: Jalali dates in server-formatted text (print, PDF, email) for Persian users
+before_request = ["erpnext.farda_iran.compat.jalali_format.apply_hook"]
+before_job = ["erpnext.farda_iran.compat.jalali_format.apply_hook"]
+
 on_session_creation = [
 	"erpnext.portal.utils.create_customer_or_supplier",
 	# CORE-014: apply strict-PostgreSQL compatibility shims at session start.
