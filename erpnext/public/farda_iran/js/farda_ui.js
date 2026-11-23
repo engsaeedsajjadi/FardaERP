@@ -463,11 +463,12 @@
 	/* Desk caches page scripts in localStorage keyed only by metadata_version,
 	 * which a rebuild does not always change — so an updated home page could
 	 * keep showing the old one. Drop our cached pages once per release. */
-	var FARDA_UI_RELEASE = "2026-11-23-deeplink";
+	var FARDA_UI_RELEASE = "2026-11-23-jalali";
 	try {
 		if (localStorage.getItem("farda_ui_release") !== FARDA_UI_RELEASE) {
 			Object.keys(localStorage).forEach(function (k) {
-				if (k.indexOf("_page:farda-") === 0) { localStorage.removeItem(k); }
+				// every cached page script: core pages we patch (e.g. sales-funnel) too
+				if (k.indexOf("_page:") === 0) { localStorage.removeItem(k); }
 			});
 			localStorage.setItem("farda_ui_release", FARDA_UI_RELEASE);
 		}
